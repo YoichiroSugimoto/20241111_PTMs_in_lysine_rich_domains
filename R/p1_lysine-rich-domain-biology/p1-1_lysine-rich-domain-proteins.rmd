@@ -144,7 +144,7 @@ ggplot(
     y = protein_len,
     x = factor(max_k_ratio)
   )
-) + geom_boxplot(outlier.shape = NA) +
+) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   coord_cartesian(ylim = c(0, 2000))
 
 ## RBPs
@@ -172,7 +172,7 @@ ggplot(
     y = max_k_ratio
     )
   ) +
-  geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme(aspect.ratio = 3)
 

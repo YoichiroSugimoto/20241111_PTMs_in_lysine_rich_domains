@@ -54,7 +54,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.43s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.39s]
 
 ``` r
 temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
@@ -172,12 +172,27 @@ protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_pe
 # Basic statistics
 
 ``` r
+protein.feature.dt[, table(K_ratio)]
+```
+
+    ## K_ratio
+    ##       0     0.1     0.2     0.3     0.4     0.5     0.6     0.7     0.8     0.9 
+    ## 6672182 3249314 1066633  255694   52006   11627    2951     979     322      54 
+    ##       1 
+    ##       2
+
+``` r
+protein.feature.dt[, K_ratio_group := case_when(
+  K_ratio >= 0.9 ~ 0.9,
+  TRUE ~ K_ratio
+)]
+
 ## The number of proteins per max K score
 
 ggplot(
     protein.feature.dt,
     aes(
-        x = K_ratio
+        x = K_ratio_group
     )
 ) +
     geom_bar() +
@@ -192,11 +207,11 @@ ggplot(
 ggplot(
   protein.feature.dt,
   aes(
-    x = factor(K_ratio),
+    x = factor(K_ratio_group),
     y = IUPRED2
   )
 ) + 
-  geom_boxplot(outlier.shape = NA)
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
 ```
 
 ![](p1-2_lysine-rich-domains_files/figure-gfm/basic_stats-2.png)<!-- -->
@@ -206,11 +221,12 @@ ggplot(
 ggplot(
   protein.feature.dt,
   aes(
-    x = factor(K_ratio),
+    x = factor(K_ratio_group),
     y = windowCharge
   )
 ) + 
-  geom_boxplot(outlier.shape = NA)
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
 ```
 
     ## Warning: Removed 211124 rows containing non-finite outside the scale range

@@ -55,7 +55,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.37s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.39s]
 
 ``` r
 temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
@@ -300,7 +300,7 @@ ggplot(
     y = protein_len,
     x = factor(max_k_ratio)
   )
-) + geom_boxplot(outlier.shape = NA) +
+) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   coord_cartesian(ylim = c(0, 2000))
 ```
 
@@ -338,7 +338,7 @@ ggplot(
     y = max_k_ratio
     )
   ) +
-  geom_boxplot(outlier.shape = NA) +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme(aspect.ratio = 3)
 ```

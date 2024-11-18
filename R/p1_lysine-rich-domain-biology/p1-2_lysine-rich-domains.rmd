@@ -54,12 +54,19 @@ protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_pe
 
 ```{r basic_stats}
 
+protein.feature.dt[, table(K_ratio)]
+
+protein.feature.dt[, K_ratio_group := case_when(
+  K_ratio >= 0.9 ~ 0.9,
+  TRUE ~ K_ratio
+)]
+
 ## The number of proteins per max K score
 
 ggplot(
     protein.feature.dt,
     aes(
-        x = K_ratio
+        x = K_ratio_group
     )
 ) +
     geom_bar() +
@@ -70,22 +77,23 @@ ggplot(
 ggplot(
   protein.feature.dt,
   aes(
-    x = factor(K_ratio),
+    x = factor(K_ratio_group),
     y = IUPRED2
   )
 ) + 
-  geom_boxplot(outlier.shape = NA)
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
 
 
 ## Charge
 ggplot(
   protein.feature.dt,
   aes(
-    x = factor(K_ratio),
+    x = factor(K_ratio_group),
     y = windowCharge
   )
 ) + 
-  geom_boxplot(outlier.shape = NA)
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
 
 ```
 
