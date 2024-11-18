@@ -23,6 +23,7 @@ data/
 ## ignore sofrware directory
 software/
 temp/
+R/renv/
 
 ## ignore md and figure documents in R
 R/**/*_files
@@ -126,3 +127,4 @@ Thumbs.db
 
 # renv
 R/renv/
+.Rproj.user
