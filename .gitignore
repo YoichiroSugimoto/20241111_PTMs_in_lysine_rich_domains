@@ -26,9 +26,9 @@ temp/
 R/renv/
 
 ## ignore md and figure documents in R
-R/**/*_files
+## R/**/*_files
 ! R/**/*.md
-! R/**/*_files/figure-gfm/*.png
+
 
 ## ignore figure documents in doc
 ## doc/**/*_files
