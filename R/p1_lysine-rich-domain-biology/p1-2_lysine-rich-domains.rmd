@@ -1,0 +1,98 @@
+---
+title: "1-2. Lysine-rich domains"
+author: "Yoichiro Sugimoto"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+
+# Environment setup
+
+```{r env_set}
+
+# renv::init(
+#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#       )
+
+project.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains")
+## renv::snapshot(file.path(project.dir, "R"))
+
+renv::restore(file.path(project.dir, "R"))
+
+temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+
+```
+
+# Set up environment
+
+```{r set parameters}
+
+## paths
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+r0.dir <- file.path(results.dir, "p0-data-preprocessing")
+
+```
+
+# Import data
+
+
+```{r import_data, warning=FALSE}
+
+protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
+
+```
+
+# Basic statistics
+
+```{r basic_stats}
+
+## The number of proteins per max K score
+
+ggplot(
+    protein.feature.dt,
+    aes(
+        x = K_ratio
+    )
+) +
+    geom_bar() +
+    scale_x_continuous(breaks=seq(0, 1, 0.1))
+
+## Disorderedness
+
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio),
+    y = IUPRED2
+  )
+) + 
+  geom_boxplot(outlier.shape = NA)
+
+
+## Charge
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio),
+    y = windowCharge
+  )
+) + 
+  geom_boxplot(outlier.shape = NA)
+
+```
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```

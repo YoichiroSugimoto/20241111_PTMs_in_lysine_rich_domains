@@ -71,7 +71,12 @@ gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id
 
 fwrite(gene.id.dt, file.path(r0.dir, "uniprot-ensembl.csv"))
 
-max.k.score.dt <- protein.feature.dt[, list(max_k_ratio = max(K_ratio)), by = list(Accession, uniprot_id)] 
+max.k.score.dt <- protein.feature.dt[
+  , list(
+    max_k_ratio = max(K_ratio),
+    protein_len = max(position)
+    ), 
+  by = list(Accession, uniprot_id)] 
 
 max.k.score.dt <- merge(
     gene.id.dt,
@@ -131,6 +136,18 @@ ggplot(
     geom_bar() +
     scale_x_continuous(breaks=seq(0, 1, 0.1))
 
+## Max K ratio vs protein length
+
+ggplot(
+  max.k.score.dt,
+  aes(
+    y = protein_len,
+    x = factor(max_k_ratio)
+  )
+) + geom_boxplot(outlier.shape = NA) +
+  coord_cartesian(ylim = c(0, 2000))
+
+## RBPs
 
 rbp.count.dt <- merge(
   max.k.score.dt, rbp.count.dt, by = "uniprot_id"
@@ -143,12 +160,10 @@ data.set.names <- c(
 
 rbp.count.dt[, RBP := case_when(
   identified_RBP > 2 ~ "RBP (> 2 dataset)",
-  # identified_RBP > 1 ~ "RBP (2 dataset)",
-  # identified_RBP > 0 ~ "RBP (1 dataset)", 
+  identified_RBP > 1 ~ "RBP (2 dataset)",
+  identified_RBP > 0 ~ "RBP (1 dataset)", 
   TRUE ~ "Others") %>% factor(levels = data.set.names)]
 rbp.count.dt[, table(RBP)]
-
-
 
 ggplot(
   data = rbp.count.dt,
@@ -162,8 +177,87 @@ ggplot(
   theme(aspect.ratio = 3)
 
 
+```
+
+# Subcellular localisation
+
+```{r subcellular_localisation_analysis}
+
+library("subcellularvis")
+
+extractCompartment <- function(gene.set, class.name){
+  comp.out <- compartmentData(
+    gene.set,
+    id_type = "UNIPROT",
+    aspect = c("Whole cell"),
+    organism = c("Human"),
+    annotationSource =c("Gene Ontology") #c("Human Protein Atlas")
+  )
+  
+  comp.out.dt <- data.table(comp.out$enrichment)
+  comp.out.dt[, `:=`(
+    Genes = NA,
+    n_unmmaped = length(str_split(comp.out$unmapped, ",")[[1]]),
+    n_mapped = comp.out$nMapped,
+    class_name = class.name
+  )]
+  
+  return(comp.out.dt)
+}
+
+max.k.score.dt[, max_k_ratio_group := case_when(
+  max_k_ratio >= 0.9 ~ 0.9,
+  TRUE ~ max_k_ratio
+)]
+
+k.score.compartment.dt <- mapply(
+  extractCompartment,
+  gene.set = lapply(
+    seq(0, 9, by = 1) / 10, 
+    function(x){max.k.score.dt[max_k_ratio_group == x, uniprot_id]}
+    ),
+  class.name = as.character(seq(0, 0.9, by = 0.1)),
+  SIMPLIFY = FALSE
+) %>% rbindlist
+  
+k.score.compartment.dt[, mlog10FDR := -log10(FDR)]
+
+library("pheatmap")
+
+d.k.score.compartment.dt <- dcast(
+  k.score.compartment.dt,
+  Compartment ~ factor(class_name),
+  value.var = "mlog10FDR"
+)
+
+d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
+rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
+
+library(RColorBrewer)
+
+mat_breaks <- seq(min(d.k.score.compartment.mat), max(d.k.score.compartment.mat), length.out = 40)
+
+pheatmap(
+  d.k.score.compartment.mat,
+  cluster_cols = FALSE,
+  color = colorRampPalette(c("white", "steelblue"))(length(mat_breaks)),
+  breaks = mat_breaks
+)
+
+ggplot(
+  data = k.score.compartment.dt[Compartment == "Nucleus"],
+  aes(
+    x = factor(class_name),
+    y = mlog10FDR
+  )
+) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = -log10(0.05), color = "gray60") +
+  ylab("-log10(FDR) of nuclear localisation enrichment") +
+  xlab("Maximum K score of protein")
 
 ```
+
 
 # Session information
 
