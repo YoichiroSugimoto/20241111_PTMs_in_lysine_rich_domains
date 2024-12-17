@@ -1,0 +1,434 @@
+---
+title: "2-2. Calculate PTM stoichiometry"
+author: "Yoichiro Sugimoto"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+This script calculates the stoichiometry of PTMs.
+
+# Environment setup
+
+```{r renv_set}
+
+# renv::init(
+#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#       )
+
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+```{r set parameters}
+
+temp <-
+  sapply(list.files(
+    file.path(project.dir, "R/functions"),
+    pattern = "*.R",
+    full.names = TRUE
+  ),
+  source)
+
+# install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
+library("readxl")
+
+p2.res.dir <- file.path(project.dir,
+                        "results",
+                        "p2-analysis-setting")
+
+
+```
+
+# Import basic data
+
+```{r import_basic_data, warning=FALSE}
+
+pnas2022_data <- file.path(
+  project.dir,
+  "data/MQ_output/PNAS2022" 
+)
+
+all_sample_run_info <- read_excel(
+  file.path(pnas2022_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+data.dir <- file.path(project.dir, "data")
+protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
+
+setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+```
+
+
+# MS/MS count by different setting
+
+
+```{r MS_MS_count}
+
+read_evidence <- function(prefix, dir_path){
+  input.file <- file.path(
+    dir_path, 
+    paste0("including_SECPEP_", prefix, "all_processed_evidence_data.csv")
+  )
+  if(file.exists(input.file)){
+    dt <- fread(input.file)
+    dt[, condition := gsub("_$", "", prefix)]
+  } else {
+    dt <- data.table()
+  }
+  return(dt)
+}
+
+evidence.dt <- lapply(
+  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix],
+  read_evidence,
+  dir_path = p2.res.dir
+  ) %>% rbindlist
+
+data.count.dt <- evidence.dt[, list(
+  total_peptide_count = .N,
+  total_msms_count = sum(psm_mapped),
+  total_intensity = sum(peak_intensity) 
+), by = list(file_name, sample_name, condition, type)]
+
+data.count.dt[, `:=`(
+  propionylation = case_when(
+    grepl("^data-D", condition) ~ "no_propionylation",
+    TRUE ~ "propionylation"
+  ),
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+"),
+  protease_setting = str_split_fixed(condition, "_", n = 3)[, 2]
+)]
+
+data_col = c("total_peptide_count", "total_msms_count", "total_intensity")
+
+m2_v2.dt <- data.count.dt[
+  MQ_setting == "m2_v2" & type == "MULTI-MSMS"
+  ][, c("file_name", data_col), with = FALSE]
+setnames(m2_v2.dt, old = data_col, new = paste0("m2_v2_", data_col))
+
+rel_count.dt <- data.count.dt
+
+rel_count.dt <- merge(
+  rel_count.dt,
+  m2_v2.dt,
+  by = c("file_name")
+)
+
+rel_count.dt[, `:=`(
+  rel_total_peptide_count = total_peptide_count / m2_v2_total_peptide_count,
+  rel_msms_count = total_msms_count / m2_v2_total_msms_count,
+  rel_intensity = total_intensity / m2_v2_total_intensity 
+)]
+
+rel_count_stat.dt <- rel_count.dt[, list(
+  meab_rel_total_peptide_count = mean(rel_total_peptide_count),
+  sd_rel_total_peptide_count = sd(rel_total_peptide_count),
+  mean_rel_msms_count = mean(rel_msms_count),
+  sd_rel_msms_count = sd(rel_msms_count),
+  mean_rel_intensity = mean(rel_intensity),
+  sd_rel_intensity = sd(rel_intensity)
+), by = list(propionylation, MQ_setting, protease_setting, type)]
+
+rel_count_stat.dt[, `:=`(
+  protease_setting = factor(protease_setting, levels = c("trp", "argC")),
+  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP")),
+  stacked_mean_rel_msms_count = mean_rel_msms_count
+)]
+
+rel_count_stat.dt[type == "MULTI-SECPEP", `:=`(
+  stacked_mean_rel_msms_count = 
+    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-MSMS"]) +
+    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-SECPEP"])
+)]
+
+ggplot(
+  rel_count_stat.dt,
+  aes(
+    x = MQ_setting,
+    y = mean_rel_msms_count,
+    fill = type
+  )
+) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(aes(
+    ymin = mean_rel_msms_count - sd_rel_msms_count,
+    ymax = mean_rel_msms_count + sd_rel_msms_count
+  ), width = 0.5, position = position_dodge(width = 0.9)) +
+  facet_grid(~ propionylation + protease_setting, scales = "free", space = "free") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ylab("Relative MS/MS count") +
+  scale_fill_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE")) #+
+  # scale_color_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE"))
+
+```
+
+The results indicate that the setting with 7 miscleavage and 7 variable modifications identify the highest MS/MS count.
+
+
+# QC by the position of propionylated lysines
+
+
+```{r high_confident_PTM_sites}
+
+read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
+  dt <- fread(file.path(dir_path, paste0("including_SECPEP_", prefix, "all_per_pos_data.csv")))
+  dt[, condition := gsub("_$", "", prefix)]
+  return(dt)
+}
+
+all_per_pos_with_SECPEP.dt <- lapply(
+  all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
+  read_all_per_pos_data_with_SECPEP,
+  dir_path = p2.res.dir
+  ) %>% rbindlist
+
+all_per_pos_with_SECPEP.dt[, `:=`(
+  propionylation = case_when(
+    grepl("^data-D", condition) ~ "no_propionylation",
+    TRUE ~ "propionylation"
+  ),
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+"),
+  protease_setting = str_split_fixed(condition, "_", n = 3)[, 2],
+  is_peptide_C_term = peptide_end == aa_pos,
+  is_propionylated = ptm %in% c("[Propionylation]", "[Oxidised Propionylation]")
+)]
+
+all_per_K_pos_with_SECPEP.dt <- all_per_pos_with_SECPEP.dt[aa == "K"]
+
+propionylated_K_count.dt <- all_per_K_pos_with_SECPEP.dt[
+  , list(total_MS_MS_count = sum(psm_mapped)),
+  by = list(is_propionylated, is_peptide_C_term, type)
+]
+
+propionylated_K_count.dt
+
+ggplot(
+  propionylated_K_count.dt,
+  aes(
+    x = is_peptide_C_term,
+    y = total_MS_MS_count,
+    fill = is_propionylated
+  )
+) +
+  geom_bar(stat = "identity", position="fill") +
+  scale_fill_manual(values = c("TRUE" = "#4477AA", "FALSE" = "#BBBBBB")) +
+  facet_grid(~ type) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+Based on the analyses here, we decided to focus on using MULTI-MSMS data.
+
+
+# The effect of MQ setting by K score
+
+```{r high_confident_PTM_sites}
+
+read_stoic_data <- function(prefix, dir_path){
+  dt <- fread(file.path(dir_path, paste0(prefix, "PTM_stoichiometry.csv")))
+  dt[, condition := gsub("_$", "", prefix)]
+  return(dt)
+}
+
+all_stoic_pos.dt <- lapply(
+  all_sample_run_info[
+    data != "data-D" & 
+      grepl("_trp_", prefix) &
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[257]_v[257]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_stoic_data,
+  dir_path = p2.res.dir
+) %>% rbindlist
+
+all_stoic_pos.dt[, `:=`(
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+")
+)]
+
+ms_ms_count.dt <- all_stoic_pos.dt[
+  , list(total_ms_ms_count = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos, MQ_setting)
+]
+
+ms_ms_count.dt <- merge(
+  ms_ms_count.dt,
+  protein.feature.dt[, .(protein_accession, aa_pos, K_ratio, K_ratio_score)],
+  by = c("protein_accession", "aa_pos")
+)
+
+d.ms_ms_count.dt <- dcast(
+  ms_ms_count.dt,
+  protein_accession + aa_pos + K_ratio + K_ratio_score ~ MQ_setting,
+  value.var = "total_ms_ms_count", fill = 0
+  
+)
+
+library("RColorBrewer")
+library("patchwork")
+
+d.ms_ms_count.dt[, table(K_ratio)]
+
+p1 <- ggplot(
+  d.ms_ms_count.dt[order(K_ratio)],
+  aes(
+    x = m2_v2,
+    y = m5_v5
+  )
+) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60") +
+  geom_point() +
+  coord_cartesian(xlim = c(0, 1000), ylim = c(0, 1000)) +
+  theme(aspect.ratio = 1)
+
+p2 <- ggplot(
+  d.ms_ms_count.dt[order(K_ratio)],
+  aes(
+    x = m5_v5,
+    y = m7_v7
+  )
+) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60") +
+  geom_point() +
+  coord_cartesian(xlim = c(0, 1000), ylim = c(0, 1000)) +
+  theme(aspect.ratio = 1)
+
+p1 + p2
+
+p3 <- ggplot(
+  d.ms_ms_count.dt,
+  aes(
+    x = factor(K_ratio),
+    y = m5_v5 - m2_v2
+  )
+) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(outlier.shape = NA, fill = "steelblue") +
+  coord_cartesian(ylim = c(-15, 25)) +
+  theme(aspect.ratio = 1)
+
+p4 <- ggplot(
+  d.ms_ms_count.dt,
+  aes(
+    x = factor(K_ratio),
+    y = m7_v7 - m5_v5
+  )
+) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(outlier.shape = NA, fill = "steelblue") +
+  coord_cartesian(ylim = c(-15, 25))
+
+p3 + p4
+
+```
+
+# Comparison of the results of PNAS paper (hydoxylation stoichometry)
+
+```{r comparison_with_PNAS_paper}
+
+all_stoic_pos.dt[, table(sample_name)]
+
+wt_ko_comparison.dt <- all_stoic_pos.dt[
+  sample_name %in% c(
+    "JMJD6peptide_HeLaWT_derivatised",
+    "JMJD6peptide_HeLaJMJD6KO_derivatised",
+    "JQ1_HeLaWT_derivatised",
+    "JQ1_HeLaJMJD6KO_derivatised"
+  )
+]
+
+wt_ko_comparison.dt[, `:=`(
+  JMJD6_GT = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
+)]
+
+
+zero.stoic.dt <- wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
+
+
+zero.stoic.dt[, `:=`(
+  sum_psm_mapped = 0,
+  stoichiometry = 0,
+  ptm = "[Oxidation (K)]"
+)]
+
+wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
+
+
+## Hydroxylation stoichiometry comparisons
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)]
+
+non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
+  (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
+    (curated_oxK_site == TRUE) &
+    total_n_feature_K > 2
+][
+  order(
+    data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep"),
+    curated_oxK_site == TRUE,
+    oxK_ratio,
+    decreasing = TRUE
+  )][
+    !duplicated(accession_position)
+]
+
+selected_stoic_pos.dt <- all_stoic_pos.dt[
+  sample_name %in% c("JQ1_HeLaWT_derivatised", "JMJD6peptide_HeLaWT_derivatised") &
+    aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)
+][order(stoichiometry, decreasing = TRUE)][!duplicated(paste0(protein_accession, "_", aa_pos))]
+
+pnas2022.mq1.stoic.dt <- merge(
+  non.duplicated.pnas2022.stoic.dt,
+  selected_stoic_pos.dt[, .(protein_accession, aa_pos, stoichiometry)],
+  by = c("protein_accession", "aa_pos")
+)
+
+pnas2022.mq1.stoic.dt[, cor.test(oxK_ratio, stoichiometry)]
+
+ggplot(
+  pnas2022.mq1.stoic.dt,
+  aes(
+    x = oxK_ratio,
+    y = stoichiometry
+  )
+) +
+  geom_point() +
+  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+  theme(aspect.ratio = 1) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  xlab("Stoichiometry in PNAS2022") +
+  ylab("Stoichiometry in new workflow")
+
+```
+
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```

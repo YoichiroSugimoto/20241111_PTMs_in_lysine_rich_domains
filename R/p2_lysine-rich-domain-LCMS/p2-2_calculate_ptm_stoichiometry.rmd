@@ -1,0 +1,172 @@
+---
+title: "2-2. Calculate PTM stoichiometry"
+author: "Yoichiro Sugimoto"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+This script calculates the stoichiometry of PTMs.
+
+# Environment setup
+
+```{r renv_set}
+
+# renv::init(
+#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#       )
+
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+```{r set parameters}
+
+temp <-
+  sapply(list.files(
+    file.path(project.dir, "R/functions"),
+    pattern = "*.R",
+    full.names = TRUE
+  ),
+  source)
+
+# install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
+library("readxl")
+library("ptm.stoichiometry")
+
+p2.res.dir <- file.path(project.dir,
+                        "results",
+                        "p2-analysis-setting")
+
+create.dirs(c(p2.res.dir))
+
+```
+
+# Import basic data
+
+```{r import_basic_data, warning=FALSE}
+
+ref_protein_dt <- import_reference_fasta(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+pnas2022_data <- file.path(
+  project.dir,
+  "data/MQ_output/PNAS2022" 
+)
+
+all_sample_run_info <- read_excel(
+  file.path(pnas2022_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+all_sample_run_info[, sample_id := 1:.N]
+
+```
+
+# Calculate stoichiometry for each data and run setting
+
+```{r calculate_stoichiometry}
+
+## First, analyse with both MULTI-MSMS and MULTI-SECPEP
+for(i in all_sample_run_info[data %in% c("data-A", "data-D"), sample_id]) {
+
+  mq_evidence_data = file.path(pnas2022_data,
+                               "evidence",
+                               paste0(all_sample_run_info[sample_id == i, prefix], "evidence.txt"))
+  
+  print(paste0("Processing: ", basename(mq_evidence_data)))
+  
+  if (file.exists(mq_evidence_data)) {
+    stoic.dt <- calculate_stoichiometry(
+      mq_evidence_data = mq_evidence_data,
+      sample_info_file = file.path(
+        pnas2022_data,
+        "sample_info",
+        paste0(
+          "MS_dataset_overview_PXD031221_",
+          all_sample_run_info[sample_id == i, data],
+          ".csv"
+        )
+      ),
+      ref_protein_dt = ref_protein_dt,
+      output_prefix = file.path(p2.res.dir, paste0(
+        "including_SECPEP_", all_sample_run_info[sample_id == i, prefix] 
+        )),
+      ptm_mapping_file = file.path(
+        project.dir, 
+        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+      ),
+      K_only = FALSE,
+      selected_type = NA
+    )
+  } else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+  }
+  
+  gc()
+}
+
+for(i in 1:nrow(all_sample_run_info)) {
+
+  mq_evidence_data = file.path(pnas2022_data,
+                               "evidence",
+                               paste0(all_sample_run_info[i, prefix], "evidence.txt"))
+  
+  print(paste0("Processing: ", basename(mq_evidence_data)))
+  
+  if (file.exists(mq_evidence_data)) {
+    stoic.dt <- calculate_stoichiometry(
+      mq_evidence_data = mq_evidence_data,
+      sample_info_file = file.path(
+        pnas2022_data,
+        "sample_info",
+        paste0(
+          "MS_dataset_overview_PXD031221_",
+          all_sample_run_info[i, data],
+          ".csv"
+        )
+      ),
+      ref_protein_dt = ref_protein_dt,
+      output_prefix = file.path(p2.res.dir, all_sample_run_info[i, prefix]),
+      ptm_mapping_file = file.path(
+        project.dir, 
+        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+      ),
+      K_only = FALSE,
+      selected_type = c("MULTI-MSMS")
+    )
+  } else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+  }
+  
+  gc()
+}
+
+```
+
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```
