@@ -1,5 +1,5 @@
 ---
-title: "2-2. Calculate PTM stoichiometry"
+title: "2-3. Optimise MQ parameters"
 author: "Yoichiro Sugimoto"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -16,7 +16,7 @@ This script calculates the stoichiometry of PTMs.
 
 # Environment setup
 
-```{r renv_set}
+```{r renv_set, warning=FALSE}
 
 # renv::init(
 #           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
@@ -56,7 +56,7 @@ p2.res.dir <- file.path(project.dir,
 
 # Import basic data
 
-```{r import_basic_data, warning=FALSE}
+```{r import_basic_data}
 
 pnas2022_data <- file.path(
   project.dir,
@@ -186,7 +186,7 @@ The results indicate that the setting with 7 miscleavage and 7 variable modifica
 # QC by the position of propionylated lysines
 
 
-```{r high_confident_PTM_sites}
+```{r QC_by_propionylated_lysine_position}
 
 read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
   dt <- fread(file.path(dir_path, paste0("including_SECPEP_", prefix, "all_per_pos_data.csv")))
