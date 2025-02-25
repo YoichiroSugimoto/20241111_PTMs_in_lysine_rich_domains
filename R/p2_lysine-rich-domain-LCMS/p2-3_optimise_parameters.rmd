@@ -148,14 +148,7 @@ rel_count_stat.dt <- rel_count.dt[, list(
 
 rel_count_stat.dt[, `:=`(
   protease_setting = factor(protease_setting, levels = c("trp", "argC")),
-  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP")),
-  stacked_mean_rel_msms_count = mean_rel_msms_count
-)]
-
-rel_count_stat.dt[type == "MULTI-SECPEP", `:=`(
-  stacked_mean_rel_msms_count = 
-    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-MSMS"]) +
-    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-SECPEP"])
+  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP"))
 )]
 
 ggplot(
@@ -241,7 +234,7 @@ Based on the analyses here, we decided to focus on using MULTI-MSMS data.
 
 # The effect of MQ setting by K score
 
-```{r high_confident_PTM_sites}
+```{r MQ_setting_by_k_score}
 
 read_stoic_data <- function(prefix, dir_path){
   dt <- fread(file.path(dir_path, paste0(prefix, "PTM_stoichiometry.csv")))
@@ -340,37 +333,93 @@ p3 + p4
 
 ```
 
-# Comparison of the results of PNAS paper (hydoxylation stoichometry)
+# The effect of MQ setting on runtime
 
-```{r comparison_with_PNAS_paper}
+```{r MQ_setting_on_runtime}
 
-all_stoic_pos.dt[, table(sample_name)]
+read_runtime_data <- function(prefix, dir_path){
+  dt <- fread(file.path(dir_path, paste0(prefix, "runningTimes.txt")))
+  dt[, condition := gsub("_$", "", prefix)]
+  
+  dt <- janitor::clean_names(dt)
+  
+  dt[, job := 
+       janitor::clean_names(setNames(nm = job)) %>%
+       names %>% as.character
+  ]
+  
+  dt[, `:=`(
+    job = dplyr::case_when(
+      job == "ms_ms_first_search" ~ "First_search",
+      job == "ms_ms_main_search" ~ "Main_search",
+      job == "second_peptide_search" ~ "Second_peptide_search",
+      TRUE ~ job
+    )
+  )]
+  return(dt)
+}
 
-wt_ko_comparison.dt <- all_stoic_pos.dt[
-  sample_name %in% c(
-    "JMJD6peptide_HeLaWT_derivatised",
-    "JMJD6peptide_HeLaJMJD6KO_derivatised",
-    "JQ1_HeLaWT_derivatised",
-    "JQ1_HeLaJMJD6KO_derivatised"
-  )
-]
+all_runtime.dt <- lapply(
+  all_sample_run_info[
+    data == "data-A" & 
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_runtime_data,
+  dir_path = file.path(data.dir, "MQ_output/PNAS2022/runtime")
+) %>% rbindlist
 
-wt_ko_comparison.dt[, `:=`(
-  JMJD6_GT = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
+job_names <- all_runtime.dt[, unique(job)]
+
+all_runtime.dt[, `:=`(
+  job = factor(job, levels = rev(job_names)),
+  condition = factor(condition, levels = c(
+    all_sample_run_info[
+      data == "data-A" & 
+        !grepl("including_SECPEP", prefix) &
+        grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+        !is.na(prefix), prefix
+    ] %>% {gsub("_$", "", .)}
+  ))
 )]
 
-
-zero.stoic.dt <- wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
-
-
-zero.stoic.dt[, `:=`(
-  sum_psm_mapped = 0,
-  stoichiometry = 0,
-  ptm = "[Oxidation (K)]"
+all_runtime.dt[, `:=`(
+  protease_setting = 
+    str_split_fixed(condition, "_", n = 5)[, 2] %>%
+    factor(levels = c("trp", "argC"))
 )]
 
-wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
+runtime_plot_colors <- setNames(
+  rep("gray80", times = length(job_names)), nm = job_names
+) 
 
+runtime_plot_colors[c("First_search", "Main_search", "Second_peptide_search")] <- c("royalblue1", "royalblue2", "royalblue3")
+
+ggplot(
+  data = all_runtime.dt,
+  aes(
+    x = condition,
+    y = running_time_min,
+    fill = job
+  ),
+  color = NA
+) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(
+    breaks = c("First_search", "Main_search", "Second_peptide_search"),
+    values = runtime_plot_colors
+  ) +
+  facet_grid(~ protease_setting, scales = "free_x", space = "free") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ylab("Run time [min]")
+
+```
+
+
+# The hydroxylation sites reported in the PNAS2022 paper
+
+```{r hydroxylation_site_reported_in_PNAS2022}
 
 ## Hydroxylation stoichiometry comparisons
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
@@ -379,6 +428,145 @@ setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_
 pnas2022.stoic.dt[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )]
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))])
+
+# Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
+
+all_stoic_pos.dt[, `:=`(
+  curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)],
+  genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
+)]
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(protein_accession, aa_pos))])
+
+# The number of hydroxylated sites identified by 
+all_stoic_pos.dt[
+  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
+][order(stoichiometry, MQ_setting, decreasing = TRUE)][
+  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
+  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+
+## The sites not identified by the new workflow
+print("Unidentified sites out of 150")
+pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))][!(accession_position %in% all_stoic_pos.dt[MQ_setting == "m7_v7" & curated_oxK_site == TRUE & grepl("[Oxidation (K)]", ptm, fixed = TRUE) & genotype == "WT", paste0(protein_accession, "_", aa_pos)]), .(Accession, aa_pos)]
+
+```
+
+The following sites were identified by non-unique peptides (therefore total number used here is 153 instead of 150 in the paper).
+
+           Accession position curated_oxK_site    screen
+1:  Q14331|FRG1_HUMAN       27  JMJD6_substrate FLAGJMJD6
+2:  Q14331|FRG1_HUMAN       29  JMJD6_substrate FLAGJMJD6
+3:  Q14331|FRG1_HUMAN       30  JMJD6_substrate FLAGJMJD6
+4: Q9UQ35|SRRM2_HUMAN      241  JMJD6_substrate FLAGJMJD6
+5: Q9UQ35|SRRM2_HUMAN      243  JMJD6_substrate FLAGJMJD6
+6: Q9UQ35|SRRM2_HUMAN      244  JMJD6_substrate FLAGJMJD6
+
+In the end, 91% of hydroxylated sites were covered by the data, and 80% (120 / 150) of reported hydroxylation sites were identified by this workflow.
+
+# Comparison of WT and KO data
+
+```{r comparison_WT_KO}
+
+## Compare WT vs KO data
+wt_ko_comparison.dt <- all_stoic_pos.dt[
+  sample_name %in% c(
+    "JMJD6peptide_HeLaWT_derivatised",
+    "JMJD6peptide_HeLaJMJD6KO_derivatised",
+    "JQ1_HeLaWT_derivatised",
+    "JQ1_HeLaJMJD6KO_derivatised"
+  ) &
+  MQ_setting == "m7_v7"
+]
+
+wt_ko_comparison.dt[, `:=`(
+  total_sum_psm_mapped = sum_psm_mapped
+)]
+
+no_hydroxyK.stoic.dt <- copy(wt_ko_comparison.dt[aa == "K"])
+# Analyse positions for which at least one sample identified hydroxylation
+no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
+  paste0(protein_accession, "_", aa_pos) %in% 
+    wt_ko_comparison.dt[
+      grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
+      paste0(protein_accession, "_", aa_pos)
+    ]
+]
+
+# Assign 0 for the hydroxylation stoichiometry for the position which only identified unmodified K
+no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
+  !(paste0(sample_name, "_", protein_accession, "_", aa_pos) %in% 
+      wt_ko_comparison.dt[
+        grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
+        paste0(sample_name, "_", protein_accession, "_", aa_pos)
+      ]
+  )
+]
+
+no_hydroxyK.stoic.dt[, `:=`(
+  sum_psm_mapped = 0,
+  stoichiometry = 0,
+  ptm = "[Oxidation (K)]"
+)]
+
+hydroxyK.stoic.dt <- rbind(
+  wt_ko_comparison.dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+  no_hydroxyK.stoic.dt
+)
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[, list(
+  stoichiometry = sum(stoichiometry),
+  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position),
+  max_ptm_probability = max(max_ptm_probability)
+), by = list(sample_name, protein_accession, gene_name, aa_pos, genotype)]
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
+  !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype))
+]
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[
+  sum_psm_mapped_per_position > 2 &
+    max_ptm_probability > 0.5
+]
+
+d.hydroxyK.stoic.dt <- dcast(
+  hydroxyK.stoic.dt,
+  protein_accession + gene_name + aa_pos ~ genotype,
+  value.var = "stoichiometry"
+)
+
+d.hydroxyK.stoic.dt[, `:=`(
+  curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)]
+)]
+
+ggplot(
+  data = d.hydroxyK.stoic.dt[order(curated_oxK_site)],
+  aes(
+    x = JMJD6KO,
+    y = WT,
+    color = curated_oxK_site
+  )
+) + geom_point() +
+  theme(aspect.ratio = 1) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+
+d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
+
+```
+
+The sites for BRD2 (551, 552, 555), ARL6IP4 (120, 122, 123), and maybe NIPBL (1023, 1034, 1923) might be novel hydroxylation sites.
+
+
+# Comparison of the results of PNAS paper (hydoxylation stoichometry)
+
+```{r comparison_with_PNAS_paper}
 
 non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
   (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &

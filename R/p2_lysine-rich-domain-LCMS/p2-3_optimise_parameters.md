@@ -1,7 +1,7 @@
 2-3. Optimise MQ parameters
 ================
 Yoichiro Sugimoto
-17 December, 2024
+31 December, 2024
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -10,6 +10,11 @@ Yoichiro Sugimoto
   lysines](#qc-by-the-position-of-propionylated-lysines)
 - [The effect of MQ setting by K
   score](#the-effect-of-mq-setting-by-k-score)
+- [The effect of MQ setting on
+  runtime](#the-effect-of-mq-setting-on-runtime)
+- [The hydroxylation sites reported in the PNAS2022
+  paper](#the-hydroxylation-sites-reported-in-the-pnas2022-paper)
+- [Comparison of WT and KO data](#comparison-of-wt-and-ko-data)
 - [Comparison of the results of PNAS paper (hydoxylation
   stoichometry)](#comparison-of-the-results-of-pnas-paper-hydoxylation-stoichometry)
 - [Session information](#session-information)
@@ -65,7 +70,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.49s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.7s]
 
 ``` r
 temp <-
@@ -163,13 +168,6 @@ temp <-
     ## The following object is masked from 'package:base':
     ## 
     ##     strsplit
-
-    ## 
-    ## Attaching package: 'janitor'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     chisq.test, fisher.test
 
 ``` r
 # install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
@@ -269,14 +267,7 @@ rel_count_stat.dt <- rel_count.dt[, list(
 
 rel_count_stat.dt[, `:=`(
   protease_setting = factor(protease_setting, levels = c("trp", "argC")),
-  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP")),
-  stacked_mean_rel_msms_count = mean_rel_msms_count
-)]
-
-rel_count_stat.dt[type == "MULTI-SECPEP", `:=`(
-  stacked_mean_rel_msms_count = 
-    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-MSMS"]) +
-    with(rel_count_stat.dt, mean_rel_msms_count[type == "MULTI-SECPEP"])
+  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP"))
 )]
 
 ggplot(
@@ -455,7 +446,7 @@ p2 <- ggplot(
 p1 + p2
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/high_confident_PTM_sites-1.png)<!-- -->
+![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-1.png)<!-- -->
 
 ``` r
 p3 <- ggplot(
@@ -484,127 +475,92 @@ p4 <- ggplot(
 p3 + p4
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/high_confident_PTM_sites-2.png)<!-- -->
+![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-2.png)<!-- -->
 
-# Comparison of the results of PNAS paper (hydoxylation stoichometry)
-
-``` r
-all_stoic_pos.dt[, table(sample_name)]
-```
-
-    ## sample_name
-    ##              FLAG_HeLaWT_derivatised JMJD6peptide_HeLaJMJD6KO_derivatised 
-    ##                               438940                              1285413 
-    ##      JMJD6peptide_HeLaWT_derivatised          JQ1_HeLaJMJD6KO_derivatised 
-    ##                              1014522                               325618 
-    ##               JQ1_HeLaWT_derivatised 
-    ##                               318286
+# The effect of MQ setting on runtime
 
 ``` r
-wt_ko_comparison.dt <- all_stoic_pos.dt[
-  sample_name %in% c(
-    "JMJD6peptide_HeLaWT_derivatised",
-    "JMJD6peptide_HeLaJMJD6KO_derivatised",
-    "JQ1_HeLaWT_derivatised",
-    "JQ1_HeLaJMJD6KO_derivatised"
-  )
-]
+read_runtime_data <- function(prefix, dir_path){
+  dt <- fread(file.path(dir_path, paste0(prefix, "runningTimes.txt")))
+  dt[, condition := gsub("_$", "", prefix)]
+  
+  dt <- janitor::clean_names(dt)
+  
+  dt[, job := 
+       janitor::clean_names(setNames(nm = job)) %>%
+       names %>% as.character
+  ]
+  
+  dt[, `:=`(
+    job = dplyr::case_when(
+      job == "ms_ms_first_search" ~ "First_search",
+      job == "ms_ms_main_search" ~ "Main_search",
+      job == "second_peptide_search" ~ "Second_peptide_search",
+      TRUE ~ job
+    )
+  )]
+  return(dt)
+}
 
-wt_ko_comparison.dt[, `:=`(
-  JMJD6_GT = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
+all_runtime.dt <- lapply(
+  all_sample_run_info[
+    data == "data-A" & 
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_runtime_data,
+  dir_path = file.path(data.dir, "MQ_output/PNAS2022/runtime")
+) %>% rbindlist
+
+job_names <- all_runtime.dt[, unique(job)]
+
+all_runtime.dt[, `:=`(
+  job = factor(job, levels = rev(job_names)),
+  condition = factor(condition, levels = c(
+    all_sample_run_info[
+      data == "data-A" & 
+        !grepl("including_SECPEP", prefix) &
+        grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+        !is.na(prefix), prefix
+    ] %>% {gsub("_$", "", .)}
+  ))
 )]
 
-
-zero.stoic.dt <- wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
-
-
-zero.stoic.dt[, `:=`(
-  sum_psm_mapped = 0,
-  stoichiometry = 0,
-  ptm = "[Oxidation (K)]"
+all_runtime.dt[, `:=`(
+  protease_setting = 
+    str_split_fixed(condition, "_", n = 5)[, 2] %>%
+    factor(levels = c("trp", "argC"))
 )]
 
-wt_ko_comparison.dt[aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)]
+runtime_plot_colors <- setNames(
+  rep("gray80", times = length(job_names)), nm = job_names
+) 
+
+runtime_plot_colors[c("First_search", "Main_search", "Second_peptide_search")] <- c("royalblue1", "royalblue2", "royalblue3")
+
+ggplot(
+  data = all_runtime.dt,
+  aes(
+    x = condition,
+    y = running_time_min,
+    fill = job
+  ),
+  color = NA
+) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(
+    breaks = c("First_search", "Main_search", "Second_peptide_search"),
+    values = runtime_plot_colors
+  ) +
+  facet_grid(~ protease_setting, scales = "free_x", space = "free") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ylab("Run time [min]")
 ```
 
-    ##                                sample_name protein_accession gene_name     aa
-    ##                                     <char>            <char>    <char> <char>
-    ##    1:               JQ1_HeLaWT_derivatised            A6NIE6    RRN3P2      K
-    ##    2:               JQ1_HeLaWT_derivatised            A7E2F4   GOLGA8A      K
-    ##    3:               JQ1_HeLaWT_derivatised            A7E2F4   GOLGA8A      K
-    ##    4:          JQ1_HeLaJMJD6KO_derivatised            B1AJZ9     FHAD1      K
-    ##    5:          JQ1_HeLaJMJD6KO_derivatised            B1AJZ9     FHAD1      K
-    ##   ---                                                                        
-    ## 9192: JMJD6peptide_HeLaJMJD6KO_derivatised            Q9Y5Q9    GTF3C3      K
-    ## 9193: JMJD6peptide_HeLaJMJD6KO_derivatised            Q9Y608   LRRFIP2      K
-    ## 9194: JMJD6peptide_HeLaJMJD6KO_derivatised            Q9Y608   LRRFIP2      K
-    ## 9195: JMJD6peptide_HeLaJMJD6KO_derivatised            Q9Y6J9     TAF6L      K
-    ## 9196:      JMJD6peptide_HeLaWT_derivatised            Q9Y6J9     TAF6L      K
-    ##       aa_pos             ptm sum_peak_intensity sum_psm_mapped
-    ##        <int>          <char>              <num>          <int>
-    ##    1:     62 [Oxidation (K)]          385580000              2
-    ##    2:    121 [Oxidation (K)]          778810000              1
-    ##    3:    124 [Oxidation (K)]          778810000              1
-    ##    4:    734 [Oxidation (K)]          635280000              1
-    ##    5:    738 [Oxidation (K)]          635280000              1
-    ##   ---                                                         
-    ## 9192:    134 [Oxidation (K)]            9580000              1
-    ## 9193:    692 [Oxidation (K)]           90984000              1
-    ## 9194:    705 [Oxidation (K)]            3550000              1
-    ## 9195:    484 [Oxidation (K)]           12774000              2
-    ## 9196:    484 [Oxidation (K)]            5141600              1
-    ##       the_number_of_peptide max_score max_ptm_probability
-    ##                       <int>     <num>               <num>
-    ##    1:                     1    70.622               0.969
-    ##    2:                     1    95.502               0.667
-    ##    3:                     1    95.502               0.667
-    ##    4:                     1   109.860               1.000
-    ##    5:                     1   109.860               1.000
-    ##   ---                                                    
-    ## 9192:                     1    47.288               0.291
-    ## 9193:                     1    46.663               0.910
-    ## 9194:                     1    56.121               0.711
-    ## 9195:                     2    85.737               1.000
-    ## 9196:                     1    62.362               1.000
-    ##       sum_intensity_per_position sum_psm_mapped_per_position
-    ##                            <num>                       <int>
-    ##    1:                  385580000                           2
-    ##    2:                  778810000                           1
-    ##    3:                  778810000                           1
-    ##    4:                  635280000                           1
-    ##    5:                  635280000                           1
-    ##   ---                                                       
-    ## 9192:                   28228000                           4
-    ## 9193:                  339284200                          17
-    ## 9194:                  339284200                          17
-    ## 9195:                   12774000                           2
-    ## 9196:                    5141600                           1
-    ##       sum_the_number_of_peptide stoichiometry            condition MQ_setting
-    ##                           <int>         <num>               <char>     <char>
-    ##    1:                         1     1.0000000 data-A_trp_m2_v2_def      m2_v2
-    ##    2:                         1     1.0000000 data-A_trp_m2_v2_def      m2_v2
-    ##    3:                         1     1.0000000 data-A_trp_m2_v2_def      m2_v2
-    ##    4:                         1     1.0000000 data-A_trp_m2_v2_def      m2_v2
-    ##    5:                         1     1.0000000 data-A_trp_m2_v2_def      m2_v2
-    ##   ---                                                                        
-    ## 9192:                         3     0.3393793 data-B_trp_m7_v7_mCC      m7_v7
-    ## 9193:                        15     0.2681646 data-B_trp_m7_v7_mCC      m7_v7
-    ## 9194:                        15     0.0104632 data-B_trp_m7_v7_mCC      m7_v7
-    ## 9195:                         2     1.0000000 data-B_trp_m7_v7_mCC      m7_v7
-    ## 9196:                         1     1.0000000 data-B_trp_m7_v7_mCC      m7_v7
-    ##       JMJD6_GT
-    ##         <char>
-    ##    1:       WT
-    ##    2:       WT
-    ##    3:       WT
-    ##    4:  JMJD6KO
-    ##    5:  JMJD6KO
-    ##   ---         
-    ## 9192:  JMJD6KO
-    ## 9193:  JMJD6KO
-    ## 9194:  JMJD6KO
-    ## 9195:  JMJD6KO
-    ## 9196:       WT
+![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
+
+# The hydroxylation sites reported in the PNAS2022 paper
 
 ``` r
 ## Hydroxylation stoichiometry comparisons
@@ -615,6 +571,237 @@ pnas2022.stoic.dt[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )]
 
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))])
+```
+
+    ## [1] 153
+
+``` r
+# Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
+
+all_stoic_pos.dt[, `:=`(
+  curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)],
+  genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
+)]
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(protein_accession, aa_pos))])
+```
+
+    ## [1] 153
+
+``` r
+# The number of hydroxylated sites identified by 
+all_stoic_pos.dt[
+  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
+][order(stoichiometry, MQ_setting, decreasing = TRUE)][
+  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
+  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+```
+
+    ##    genotype MQ_setting             ptm     N
+    ##      <char>     <char>          <char> <int>
+    ## 1:       WT      m2_v2 [Oxidation (K)]    23
+    ## 2:       WT      m5_v5 [Oxidation (K)]   110
+    ## 3:       WT      m7_v7 [Oxidation (K)]   120
+
+``` r
+## The sites not identified by the new workflow
+print("Unidentified sites out of 150")
+```
+
+    ## [1] "Unidentified sites out of 150"
+
+``` r
+pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))][!(accession_position %in% all_stoic_pos.dt[MQ_setting == "m7_v7" & curated_oxK_site == TRUE & grepl("[Oxidation (K)]", ptm, fixed = TRUE) & genotype == "WT", paste0(protein_accession, "_", aa_pos)]), .(Accession, aa_pos)]
+```
+
+    ##              Accession aa_pos
+    ##                 <char>  <int>
+    ##  1: O15042|SR140_HUMAN    962
+    ##  2: O15042|SR140_HUMAN    972
+    ##  3:  O60885|BRD4_HUMAN    286
+    ##  4:  O60885|BRD4_HUMAN    289
+    ##  5:  O60885|BRD4_HUMAN    291
+    ##  6: O95232|LC7L3_HUMAN    392
+    ##  7:  P02545|LMNA_HUMAN    341
+    ##  8: P11142|HSP7C_HUMAN    248
+    ##  9:  P11387|TOP1_HUMAN     40
+    ## 10:  P11387|TOP1_HUMAN    159
+    ## 11: P18077|RL35A_HUMAN     45
+    ## 12:  P35251|RFC1_HUMAN     38
+    ## 13:  P46100|ATRX_HUMAN   1422
+    ## 14:  P46100|ATRX_HUMAN   1424
+    ## 15:  Q13428|TCOF_HUMAN   1348
+    ## 16:  Q14331|FRG1_HUMAN     27
+    ## 17:  Q14331|FRG1_HUMAN     29
+    ## 18:  Q14331|FRG1_HUMAN     30
+    ## 19:  Q15059|BRD3_HUMAN    487
+    ## 20:  Q15059|BRD3_HUMAN    683
+    ## 21: Q66PJ3|AR6P4_HUMAN    290
+    ## 22: Q66PJ3|AR6P4_HUMAN    292
+    ## 23: Q66PJ3|AR6P4_HUMAN    294
+    ## 24: Q6NYC1|JMJD6_HUMAN    219
+    ## 25: Q8WXA9|SREK1_HUMAN    269
+    ## 26: Q8WXA9|SREK1_HUMAN    400
+    ## 27: Q8WXA9|SREK1_HUMAN    414
+    ## 28: Q96SB4|SRPK1_HUMAN     18
+    ## 29:  Q9BVP2|GNL3_HUMAN     20
+    ## 30: Q9NQ29|LUC7L_HUMAN    323
+    ## 31: Q9NQ29|LUC7L_HUMAN    325
+    ## 32:  Q9NYK5|RM39_HUMAN    322
+    ## 33: Q9P1Y6|PHRF1_HUMAN   1073
+    ##              Accession aa_pos
+
+The following sites were identified by non-unique peptides (therefore
+total number used here is 153 instead of 150 in the paper).
+
+           Accession position curated_oxK_site    screen
+
+1: Q14331\|FRG1_HUMAN 27 JMJD6_substrate FLAGJMJD6 2: Q14331\|FRG1_HUMAN
+29 JMJD6_substrate FLAGJMJD6 3: Q14331\|FRG1_HUMAN 30 JMJD6_substrate
+FLAGJMJD6 4: Q9UQ35\|SRRM2_HUMAN 241 JMJD6_substrate FLAGJMJD6 5:
+Q9UQ35\|SRRM2_HUMAN 243 JMJD6_substrate FLAGJMJD6 6: Q9UQ35\|SRRM2_HUMAN
+244 JMJD6_substrate FLAGJMJD6
+
+In the end, 91% of hydroxylated sites were covered by the data, and 80%
+(120 / 150) of reported hydroxylation sites were identified by this
+workflow.
+
+# Comparison of WT and KO data
+
+``` r
+## Compare WT vs KO data
+wt_ko_comparison.dt <- all_stoic_pos.dt[
+  sample_name %in% c(
+    "JMJD6peptide_HeLaWT_derivatised",
+    "JMJD6peptide_HeLaJMJD6KO_derivatised",
+    "JQ1_HeLaWT_derivatised",
+    "JQ1_HeLaJMJD6KO_derivatised"
+  ) &
+  MQ_setting == "m7_v7"
+]
+
+wt_ko_comparison.dt[, `:=`(
+  total_sum_psm_mapped = sum_psm_mapped
+)]
+
+no_hydroxyK.stoic.dt <- copy(wt_ko_comparison.dt[aa == "K"])
+# Analyse positions for which at least one sample identified hydroxylation
+no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
+  paste0(protein_accession, "_", aa_pos) %in% 
+    wt_ko_comparison.dt[
+      grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
+      paste0(protein_accession, "_", aa_pos)
+    ]
+]
+
+# Assign 0 for the hydroxylation stoichiometry for the position which only identified unmodified K
+no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
+  !(paste0(sample_name, "_", protein_accession, "_", aa_pos) %in% 
+      wt_ko_comparison.dt[
+        grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
+        paste0(sample_name, "_", protein_accession, "_", aa_pos)
+      ]
+  )
+]
+
+no_hydroxyK.stoic.dt[, `:=`(
+  sum_psm_mapped = 0,
+  stoichiometry = 0,
+  ptm = "[Oxidation (K)]"
+)]
+
+hydroxyK.stoic.dt <- rbind(
+  wt_ko_comparison.dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+  no_hydroxyK.stoic.dt
+)
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[, list(
+  stoichiometry = sum(stoichiometry),
+  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position),
+  max_ptm_probability = max(max_ptm_probability)
+), by = list(sample_name, protein_accession, gene_name, aa_pos, genotype)]
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
+  !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype))
+]
+
+hydroxyK.stoic.dt <- hydroxyK.stoic.dt[
+  sum_psm_mapped_per_position > 2 &
+    max_ptm_probability > 0.5
+]
+
+d.hydroxyK.stoic.dt <- dcast(
+  hydroxyK.stoic.dt,
+  protein_accession + gene_name + aa_pos ~ genotype,
+  value.var = "stoichiometry"
+)
+
+d.hydroxyK.stoic.dt[, `:=`(
+  curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)]
+)]
+
+ggplot(
+  data = d.hydroxyK.stoic.dt[order(curated_oxK_site)],
+  aes(
+    x = JMJD6KO,
+    y = WT,
+    color = curated_oxK_site
+  )
+) + geom_point() +
+  theme(aspect.ratio = 1) +
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+```
+
+    ## Warning: Removed 669 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+![](p2-3_optimise_parameters_files/figure-gfm/comparison_WT_KO-1.png)<!-- -->
+
+``` r
+d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
+```
+
+    ## Key: <protein_accession, gene_name, aa_pos>
+    ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
+    ##                <char>    <char>  <int>   <num>     <num>           <lgcl>
+    ##  1:            O60264   SMARCA5    249       0 1.0000000            FALSE
+    ##  2:            O60573    EIF4E2    215       0 0.9054387            FALSE
+    ##  3:            O95232    LUC7L3    377       0 0.5050502            FALSE
+    ##  4:            P25440      BRD2    551       0 0.6077523            FALSE
+    ##  5:            P25440      BRD2    552       0 0.7837141            FALSE
+    ##  6:            P25440      BRD2    555       0 0.8367906            FALSE
+    ##  7:            P27635     RPL10     40       0 1.0000000            FALSE
+    ##  8:            P27635     RPL10     42       0 0.8997907            FALSE
+    ##  9:            P27816      MAP4    870       0 0.5186066            FALSE
+    ## 10:            P46100      ATRX    956       0 0.7404017            FALSE
+    ## 11:            Q13123        IK    556       0 0.6816335            FALSE
+    ## 12:            Q66PJ3   ARL6IP4    120       0 1.0000000            FALSE
+    ## 13:            Q66PJ3   ARL6IP4    122       0 0.5600105            FALSE
+    ## 14:            Q66PJ3   ARL6IP4    123       0 1.0000000            FALSE
+    ## 15:            Q6KC79     NIPBL   1023       0 0.5172122            FALSE
+    ## 16:            Q6KC79     NIPBL   1034       0 0.6771044            FALSE
+    ## 17:            Q6KC79     NIPBL   1923       0 0.6472365            FALSE
+    ## 18:            Q6UX04     CWC27    331       0 0.9769166            FALSE
+    ## 19:            Q7L2H7     EIF3M    319       0 0.5234239            FALSE
+    ## 20:            Q7L2H7     EIF3M    324       0 0.8555795            FALSE
+    ## 21:            Q8N3C0     ASCC3   1825       0 0.7075247            FALSE
+    ## 22:            Q92541      RTF1    127       0 0.5219774            FALSE
+    ## 23:            Q99816    TSG101     10       0 0.9181354            FALSE
+    ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
+
+The sites for BRD2 (551, 552, 555), ARL6IP4 (120, 122, 123), and maybe
+NIPBL (1023, 1034, 1923) might be novel hydroxylation sites.
+
+# Comparison of the results of PNAS paper (hydoxylation stoichometry)
+
+``` r
 non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
   (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
     (curated_oxK_site == TRUE) &
@@ -690,7 +877,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2024-12-17
+    ##  date     2024-12-31
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
@@ -719,7 +906,7 @@ sessioninfo::session_info()
     ##  highr              0.11      2024-05-26 [1] CRAN (R 4.3.2)
     ##  htmltools          0.5.8.1   2024-04-04 [1] CRAN (R 4.3.2)
     ##  IRanges          * 2.36.0    2023-10-24 [1] Bioconductor
-    ##  janitor          * 2.2.0     2023-02-02 [1] CRAN (R 4.3.2)
+    ##  janitor            2.2.0     2023-02-02 [1] CRAN (R 4.3.2)
     ##  khroma           * 1.14.0    2024-08-26 [1] CRAN (R 4.3.2)
     ##  knitr            * 1.48      2024-07-07 [1] CRAN (R 4.3.2)
     ##  labeling           0.4.3     2023-08-29 [1] CRAN (R 4.3.2)
@@ -739,7 +926,7 @@ sessioninfo::session_info()
     ##  rmarkdown          2.27      2024-05-17 [1] CRAN (R 4.3.2)
     ##  rstudioapi         0.17.1    2024-10-22 [1] CRAN (R 4.3.2)
     ##  S4Vectors        * 0.40.2    2023-11-23 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  scales           * 1.3.0     2023-11-28 [1] CRAN (R 4.3.2)
+    ##  scales             1.3.0     2023-11-28 [1] CRAN (R 4.3.2)
     ##  sessioninfo        1.2.2     2021-12-06 [1] CRAN (R 4.3.2)
     ##  snakecase          0.11.1    2023-08-27 [1] CRAN (R 4.3.2)
     ##  stringi            1.8.4     2024-05-06 [1] CRAN (R 4.3.2)
