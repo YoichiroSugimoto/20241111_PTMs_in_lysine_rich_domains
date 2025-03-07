@@ -1,0 +1,232 @@
+---
+title: "2-3. Identify diagnostic ions that can mark lysine hydroxylations"
+author: "Yoichiro Sugimoto"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+This script identify diagnosic ions to identify confident hydroxylation sites.
+
+# Environment setup
+
+```{r renv_set, warning=FALSE}
+
+# renv::init(
+#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#       )
+
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+```{r set parameters}
+
+temp <-
+  sapply(list.files(
+    file.path(project.dir, "R/functions"),
+    pattern = "*.R",
+    full.names = TRUE
+  ),
+  source)
+
+library("readxl")
+library("janitor")
+library("ptm.stoichiometry")
+
+p2.res.dir <- file.path(project.dir,
+                        "results",
+                        "p2-analysis-setting")
+
+
+```
+
+# Import basic data
+
+```{r import_basic_data}
+
+data.dir <- file.path(project.dir, "data")
+
+diagnostic_ion_data <- file.path(
+  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
+) %>% 
+  fread %>%
+  clean_names
+
+fragpipe_psm <- file.path(
+  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
+) %>%
+  fread %>%
+  clean_names
+
+pnas2022_data <- file.path(
+  data.dir,
+  "MQ_output/PNAS2022" 
+)
+
+dataA_sample_info <- fread(file.path(
+  pnas2022_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
+))
+
+ref_protein_dt <- import_reference_fasta(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+```
+
+
+# Identify useful diagnostic ions to identify lysine hydroxylations
+
+
+```{r identify_diagnostic_ions}
+
+
+diagnostic_ion_data <- merge(
+  fragpipe_psm[, .(spectrum, protein_id, gene, protein_start, protein_end)], 
+  diagnostic_ion_data, 
+  by = "spectrum"
+)
+
+diagnostic_ion_data[, `:=`(
+  file_name = str_split_fixed(spectrum, "\\.", n = 2)[, 1]
+)]
+
+diagnostic_ion_data <- merge(
+  dataA_sample_info,
+  diagnostic_ion_data,
+  by = "file_name"
+)
+
+brd4_hydroxylation_site_di <- diagnostic_ion_data[
+  gene == "BRD4" & (555 >= protein_start & 535 <= protein_end)
+]
+
+m.brd4_hydroxylation_site_di <- melt(
+  brd4_hydroxylation_site_di,
+  measure.vars = grep("intensity$",colnames(brd4_hydroxylation_site_di), value = TRUE),
+  value.name = "intensity"
+)
+
+m.brd4_hydroxylation_site_di[, `:=`(
+  monoisotopic_mass = variable %>%
+    str_replace_all("ox_", "") %>%
+    str_replace_all("_intensity", "") %>%
+    str_replace_all("_", ".") %>%
+    factor(levels = c(
+      "101.1079", #Lysine	K			immonium ion	C5 H13 N2 +
+      "100.0762", #Hydroxylation (K)	K	O	15.9949	diagnostic ion	C5 H10 N O+
+      "82.0657", #Hydroxylation (K)	K	O	15.9949	diagnostic ion (water loss)	C5 H8 N+
+      "117.1028", #Hydroxylation (K)	K	O	15.9949	immonium ion	C5 H13 O N2 + calculated
+      "117.0658", #Hydroxylation (K)	K	O	15.9949	immonium ion	C5 H13 O N2 + (from citation)
+      "138.0919", #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	diagnostic ion (water loss)	C8 H12 N1 O+
+      "145.0977", #Hydroxylation (K)	K	O	15.9949	(intact, water loss)	C6H13N2O2+
+      "156.1025", #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	diagnostic ion	C8 H14 N1 O2+
+      "173.1290" #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	immonium ion	C8 H17 O2 N2 +
+      )),
+  diagnostic_ion = intensity > 0,
+  genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
+)]
+
+
+library("ggbeeswarm")
+library("khroma")
+
+ggplot(
+  data = m.brd4_hydroxylation_site_di,
+  aes(
+    x = monoisotopic_mass,
+    y = intensity,
+    color = genotype
+  )
+) +
+  geom_quasirandom(dodge.width=0.5, size = 0.2) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  scale_color_bright()
+
+ggplot(
+  data = m.brd4_hydroxylation_site_di,
+  aes(
+    x = monoisotopic_mass,
+    y = intensity,
+    fill = genotype
+  )
+) +
+  geom_violin(scale='width') +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  scale_fill_bright()
+
+
+```
+
+```{r plot_with_only_diagnostic_ions, fig.width = 6, fig.height = 4}
+
+selected.ms <- c("100.0762", "82.0657", "156.1025")
+
+psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
+  monoisotopic_mass, genotype, diagnostic_ion
+)]
+
+for(mi.ms in selected.ms){
+  print(mi.ms)
+  
+  psm.count.by.di[monoisotopic_mass == mi.ms] %>%
+    dcast(genotype ~ diagnostic_ion, value.var = "N") %>%
+    setnafill(cols = c("FALSE", "TRUE"), fill = 0)  %>%
+    {as.matrix(.[, c("FALSE", "TRUE"), with = FALSE])} %>%
+    fisher.test %>% print
+}
+
+ggplot(
+  data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
+  aes(
+    x = monoisotopic_mass,
+    y = intensity,
+    fill = genotype
+  )
+) +
+  geom_violin(scale='width') +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  scale_fill_bright()
+
+ggplot(
+  data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
+  aes(
+    x = genotype,
+    fill = diagnostic_ion
+  )
+) +
+  geom_bar(position = "fill") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  facet_grid(~ monoisotopic_mass) +
+  scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  ylab("Proportion of PSMs with diagnostic ions")
+
+```
+
+
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```

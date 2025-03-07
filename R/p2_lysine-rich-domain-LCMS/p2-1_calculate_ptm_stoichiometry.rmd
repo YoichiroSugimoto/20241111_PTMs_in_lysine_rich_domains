@@ -1,5 +1,5 @@
 ---
-title: "2-2. Calculate PTM stoichiometry"
+title: "2-1. Calculate PTM stoichiometry"
 author: "Yoichiro Sugimoto"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -67,6 +67,13 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
+```
+
+# Calculation of stoichiometry for data without diagnostic ion consideration (for optimisation of MQ run parameters)
+
+
+```{r data_directory}
+
 pnas2022_data <- file.path(
   project.dir,
   "data/MQ_output/PNAS2022" 
@@ -81,7 +88,6 @@ all_sample_run_info[, sample_id := 1:.N]
 
 ```
 
-# Calculate stoichiometry for each data and run setting
 
 ```{r calculate_stoichiometry}
 
@@ -162,6 +168,70 @@ for(i in 1:nrow(all_sample_run_info)) {
 
 ```
 
+# Calculation of stoichiometry for data with diagnostic ion consideration
+
+```{r data_location_for_DI_data}
+
+pnas2022_DI_data <- file.path(
+  project.dir,
+  "data/MQ_DI_output/PNAS2022" 
+)
+
+```
+
+```{r calculate_stoichiometry_for_data_with_DI}
+
+di_sample_run_info <- all_sample_run_info[grepl("data-[A-C]_trp_m7_v7_", prefix)]
+
+for(i in 1:nrow(di_sample_run_info)) {
+
+  mq_evidence_data = file.path(pnas2022_DI_data,
+                               "evidence",
+                               paste0(di_sample_run_info[i, prefix], "evidence.txt"))
+  
+  print(paste0("Processing: ", basename(mq_evidence_data)))
+  
+  if (file.exists(mq_evidence_data)) {
+    
+    ptm_files <- list.files(file.path(
+      pnas2022_DI_data, "ptm", 
+      paste0(di_sample_run_info[i, prefix], "ptm")
+    ), full.names = TRUE)
+    
+    ptm_names <- paste0(
+      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+    )
+    
+    stoic.dt <- calculate_stoichiometry2(
+      mq_evidence_data = mq_evidence_data,
+      sample_info_file = file.path(
+        pnas2022_data,
+        "sample_info",
+        paste0(
+          "MS_dataset_overview_PXD031221_",
+          di_sample_run_info[i, data],
+          ".csv"
+        )
+      ),
+      ref_protein_dt = ref_protein_dt,
+      ptm_files = ptm_files,
+      ptm_names = ptm_names,
+      output_prefix = file.path(p2.res.dir, paste0("DI_", di_sample_run_info[i, prefix])),
+      ptm_mapping_file = file.path(
+        project.dir, 
+        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+      ),
+      K_only = FALSE,
+      selected_type = c("MULTI-MSMS")
+    )
+  } else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+  }
+  
+  gc()
+}
+
+```
 
 # Session information
 

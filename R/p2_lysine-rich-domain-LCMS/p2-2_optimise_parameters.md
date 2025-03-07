@@ -1,7 +1,7 @@
-2-3. Optimise MQ parameters
+2-2. Optimise MQ parameters
 ================
 Yoichiro Sugimoto
-31 December, 2024
+07 March, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -59,18 +59,18 @@ renv::restore(file.path(project.dir, "R"))
     ## 
     ## # Installing packages --------------------------------------------------------
     ## - Installing BiocVersion ...                    OK [copied from cache]
-    ## - Installing zlibbioc ...                       OK [copied from cache]
     ## - Installing BiocGenerics ...                   OK [copied from cache]
-    ## - Installing GenomeInfoDbData ...               OK [copied from cache]
+    ## - Installing Biobase ...                        OK [copied from cache]
     ## - Installing S4Vectors ...                      OK [copied from cache]
     ## - Installing IRanges ...                        OK [copied from cache]
-    ## - Installing GenomeInfoDb ...                   OK [copied from cache]
+    ## - Installing zlibbioc ...                       OK [copied from cache]
     ## - Installing XVector ...                        OK [copied from cache]
-    ## - Installing Biobase ...                        OK [copied from cache]
+    ## - Installing GenomeInfoDbData ...               OK [copied from cache]
+    ## - Installing GenomeInfoDb ...                   OK [copied from cache]
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.7s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.45s]
 
 ``` r
 temp <-
@@ -290,7 +290,7 @@ ggplot(
   scale_fill_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE")) #+
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/MS_MS_count-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/MS_MS_count-1.png)<!-- -->
 
 ``` r
   # scale_color_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE"))
@@ -361,7 +361,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/QC_by_propionylated_lysine_position-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/QC_by_propionylated_lysine_position-1.png)<!-- -->
 
 Based on the analyses here, we decided to focus on using MULTI-MSMS
 data.
@@ -446,7 +446,7 @@ p2 <- ggplot(
 p1 + p2
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-1.png)<!-- -->
 
 ``` r
 p3 <- ggplot(
@@ -475,7 +475,7 @@ p4 <- ggplot(
 p3 + p4
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-2.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-2.png)<!-- -->
 
 # The effect of MQ setting on runtime
 
@@ -558,7 +558,7 @@ ggplot(
   ylab("Run time [min]")
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
 
 # The hydroxylation sites reported in the PNAS2022 paper
 
@@ -722,8 +722,7 @@ hydroxyK.stoic.dt <- rbind(
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[, list(
   stoichiometry = sum(stoichiometry),
-  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position),
-  max_ptm_probability = max(max_ptm_probability)
+  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position)
 ), by = list(sample_name, protein_accession, gene_name, aa_pos, genotype)]
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
@@ -731,8 +730,7 @@ hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
 ]
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[
-  sum_psm_mapped_per_position > 2 &
-    max_ptm_probability > 0.5
+  sum_psm_mapped_per_position > 2
 ]
 
 d.hydroxyK.stoic.dt <- dcast(
@@ -759,10 +757,10 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 ```
 
-    ## Warning: Removed 669 rows containing missing values or values outside the scale range
+    ## Warning: Removed 482 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
-![](p2-3_optimise_parameters_files/figure-gfm/comparison_WT_KO-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/comparison_WT_KO-1.png)<!-- -->
 
 ``` r
 d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
@@ -771,29 +769,39 @@ d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
     ## Key: <protein_accession, gene_name, aa_pos>
     ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
     ##                <char>    <char>  <int>   <num>     <num>           <lgcl>
-    ##  1:            O60264   SMARCA5    249       0 1.0000000            FALSE
-    ##  2:            O60573    EIF4E2    215       0 0.9054387            FALSE
-    ##  3:            O95232    LUC7L3    377       0 0.5050502            FALSE
-    ##  4:            P25440      BRD2    551       0 0.6077523            FALSE
-    ##  5:            P25440      BRD2    552       0 0.7837141            FALSE
-    ##  6:            P25440      BRD2    555       0 0.8367906            FALSE
-    ##  7:            P27635     RPL10     40       0 1.0000000            FALSE
-    ##  8:            P27635     RPL10     42       0 0.8997907            FALSE
-    ##  9:            P27816      MAP4    870       0 0.5186066            FALSE
-    ## 10:            P46100      ATRX    956       0 0.7404017            FALSE
-    ## 11:            Q13123        IK    556       0 0.6816335            FALSE
-    ## 12:            Q66PJ3   ARL6IP4    120       0 1.0000000            FALSE
-    ## 13:            Q66PJ3   ARL6IP4    122       0 0.5600105            FALSE
-    ## 14:            Q66PJ3   ARL6IP4    123       0 1.0000000            FALSE
-    ## 15:            Q6KC79     NIPBL   1023       0 0.5172122            FALSE
-    ## 16:            Q6KC79     NIPBL   1034       0 0.6771044            FALSE
-    ## 17:            Q6KC79     NIPBL   1923       0 0.6472365            FALSE
-    ## 18:            Q6UX04     CWC27    331       0 0.9769166            FALSE
-    ## 19:            Q7L2H7     EIF3M    319       0 0.5234239            FALSE
-    ## 20:            Q7L2H7     EIF3M    324       0 0.8555795            FALSE
-    ## 21:            Q8N3C0     ASCC3   1825       0 0.7075247            FALSE
-    ## 22:            Q92541      RTF1    127       0 0.5219774            FALSE
-    ## 23:            Q99816    TSG101     10       0 0.9181354            FALSE
+    ##  1:            O14979   HNRNPDL    221       0 1.0000000            FALSE
+    ##  2:            O60264   SMARCA5    249       0 1.0000000            FALSE
+    ##  3:            O60573    EIF4E2    215       0 0.9054387            FALSE
+    ##  4:            O95232    LUC7L3    377       0 0.5050502            FALSE
+    ##  5:            P07237      P4HB    326       0 0.6760288            FALSE
+    ##  6:            P11047     LAMC1   1466       0 0.5191134            FALSE
+    ##  7:            P25440      BRD2    551       0 0.6077523            FALSE
+    ##  8:            P25440      BRD2    552       0 0.7837141            FALSE
+    ##  9:            P25440      BRD2    555       0 0.8367906            FALSE
+    ## 10:            P25440      BRD2    556       0 0.7414816            FALSE
+    ## 11:            P25440      BRD2    557       0 0.8703312            FALSE
+    ## 12:            P27635     RPL10     40       0 1.0000000            FALSE
+    ## 13:            P27635     RPL10     42       0 0.8997907            FALSE
+    ## 14:            P27816      MAP4    870       0 0.5186066            FALSE
+    ## 15:            P46100      ATRX    956       0 0.7404017            FALSE
+    ## 16:            Q13123        IK    556       0 0.6816335            FALSE
+    ## 17:            Q66PJ3   ARL6IP4    120       0 1.0000000            FALSE
+    ## 18:            Q66PJ3   ARL6IP4    122       0 0.5600105            FALSE
+    ## 19:            Q66PJ3   ARL6IP4    123       0 1.0000000            FALSE
+    ## 20:            Q6KC79     NIPBL   1023       0 0.5172122            FALSE
+    ## 21:            Q6KC79     NIPBL   1029       0 0.6771044            FALSE
+    ## 22:            Q6KC79     NIPBL   1034       0 0.6771044            FALSE
+    ## 23:            Q6KC79     NIPBL   1923       0 0.6472365            FALSE
+    ## 24:            Q6UX04     CWC27    331       0 0.9769166            FALSE
+    ## 25:            Q7L2H7     EIF3M    319       0 0.5234239            FALSE
+    ## 26:            Q7L2H7     EIF3M    324       0 0.8555795            FALSE
+    ## 27:            Q8N3C0     ASCC3   1825       0 0.7075247            FALSE
+    ## 28:            Q8NC51    SERBP1    286       0 0.5397405            FALSE
+    ## 29:            Q92541      RTF1    127       0 0.5219774            FALSE
+    ## 30:            Q99816    TSG101     10       0 0.9181354            FALSE
+    ## 31:            Q99816    TSG101     14       0 0.9181354            FALSE
+    ## 32:            Q9BTC0     DIDO1    442       0 1.0000000            FALSE
+    ## 33:            Q9UGU0     TCF20     96       0 0.5165910            FALSE
     ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
 
 The sites for BRD2 (551, 552, 555), ARL6IP4 (120, 122, 123), and maybe
@@ -859,7 +867,7 @@ ggplot(
   ylab("Stoichiometry in new workflow")
 ```
 
-![](p2-3_optimise_parameters_files/figure-gfm/comparison_with_PNAS_paper-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/comparison_with_PNAS_paper-1.png)<!-- -->
 
 # Session information
 
@@ -877,7 +885,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2024-12-31
+    ##  date     2025-03-07
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────

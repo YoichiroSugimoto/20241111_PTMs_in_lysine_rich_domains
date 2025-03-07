@@ -1,5 +1,5 @@
 ---
-title: "2-3. Optimise MQ parameters"
+title: "2-2. Optimise MQ parameters"
 author: "Yoichiro Sugimoto"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -521,8 +521,7 @@ hydroxyK.stoic.dt <- rbind(
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[, list(
   stoichiometry = sum(stoichiometry),
-  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position),
-  max_ptm_probability = max(max_ptm_probability)
+  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position)
 ), by = list(sample_name, protein_accession, gene_name, aa_pos, genotype)]
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
@@ -530,8 +529,7 @@ hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
 ]
 
 hydroxyK.stoic.dt <- hydroxyK.stoic.dt[
-  sum_psm_mapped_per_position > 2 &
-    max_ptm_probability > 0.5
+  sum_psm_mapped_per_position > 2
 ]
 
 d.hydroxyK.stoic.dt <- dcast(
