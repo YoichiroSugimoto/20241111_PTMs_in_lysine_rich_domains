@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto
-07 March, 2025
+11 March, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -68,7 +68,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.36s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.81s]
 
 ``` r
 temp <-
@@ -199,11 +199,6 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
-pnas2022_DI_data <- file.path(
-  project.dir,
-  "data/MQ_DI_output/PNAS2022" 
-)
-
 pnas2022_data <- file.path(
   project.dir,
   "data/MQ_output/PNAS2022" 
@@ -216,7 +211,17 @@ all_sample_run_info <- read_excel(
 
 all_sample_run_info[, sample_id := 1:.N]
 
-di_sample_run_info <- all_sample_run_info[grepl("data-[A-C]_trp_m7_v7_", prefix)]
+pnas2022_DI_data <- file.path(
+  project.dir,
+  "data/MQ_DI_output/PNAS2022" 
+)
+
+di_sample_run_info <- read_excel(
+  file.path(pnas2022_DI_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+di_sample_run_info[, sample_id := 1:.N]
 ```
 
 # Definition of functions
@@ -387,7 +392,7 @@ ggplot(
 
 ``` r
 all_stoic_with_di_dt <- lapply(
-  di_sample_run_info[grepl("data-[A|C]", prefix), prefix],
+  di_sample_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_",
   dir_path = p2.res.dir
@@ -400,7 +405,7 @@ read_di_data <- function(prefix, dir_path){
 }
 
 all_ptm_dt <- lapply(
-  di_sample_run_info[grepl("data-[A|C]", prefix), prefix],
+  di_sample_run_info[, prefix],
   read_di_data,
   dir_path = p2.res.dir
 ) %>% rbindlist
@@ -436,11 +441,11 @@ d.hydroxyK_DI_dt[diagnostic_peak == "+"]
     ##   4:            O15042    980    U2SURP      NA 1.00000000          0.999999
     ##   5:            O15042    981    U2SURP      NA 0.74097810          0.999585
     ##  ---                                                                        
-    ## 153:            Q9Y2L6    532    FRMD4B      NA 1.00000000          1.000000
-    ## 154:            Q9Y2L6    533    FRMD4B      NA 1.00000000          1.000000
-    ## 155:            Q9Y2L6    535    FRMD4B      NA 1.00000000          1.000000
-    ## 156:            Q9Y383    365    LUC7L2      NA 0.01519482          0.999685
-    ## 157:            Q9Y383    368    LUC7L2      NA 0.02085478          0.999570
+    ## 185:            Q9Y383    365    LUC7L2      NA 0.01519482          0.999685
+    ## 186:            Q9Y383    368    LUC7L2      NA 0.02085478          0.999570
+    ## 187:            Q9Y3S2      3    ZNF330       1 0.99414424          0.984878
+    ## 188:            Q9Y3S2     10    ZNF330       1 1.00000000          0.999220
+    ## 189:            Q9Y3S2     11    ZNF330       1 1.00000000          0.999220
     ##      score_for_localization best_localization_ms_ms_id
     ##                       <num>                      <int>
     ##   1:                 96.640                      48213
@@ -449,11 +454,11 @@ d.hydroxyK_DI_dt[diagnostic_peak == "+"]
     ##   4:                101.280                       9106
     ##   5:                101.280                       9106
     ##  ---                                                  
-    ## 153:                116.730                      54133
-    ## 154:                116.730                      54133
-    ## 155:                116.730                      54133
-    ## 156:                 87.667                       8310
-    ## 157:                164.720                       8361
+    ## 185:                 87.667                       8310
+    ## 186:                164.720                       8361
+    ## 187:                115.180                     148715
+    ## 188:                 96.113                     173752
+    ## 189:                 96.113                     173752
     ##      best_localization_raw_file diagnostic_peak             ptm
     ##                          <char>          <char>          <char>
     ##   1:      20201203_GV2130_MC309               + [Oxidation (K)]
@@ -462,24 +467,54 @@ d.hydroxyK_DI_dt[diagnostic_peak == "+"]
     ##   4:      20201203_GV2130_MC311               + [Oxidation (K)]
     ##   5:      20201203_GV2130_MC311               + [Oxidation (K)]
     ##  ---                                                           
-    ## 153:      20201203_GV2130_MC301               + [Oxidation (K)]
-    ## 154:      20201203_GV2130_MC301               + [Oxidation (K)]
-    ## 155:      20201203_GV2130_MC301               + [Oxidation (K)]
-    ## 156:      20201203_GV2130_MC317               + [Oxidation (K)]
-    ## 157:      20201203_GV2130_MC309               + [Oxidation (K)]
-    ##                 condition is_diagnostic_peak
-    ##                    <char>             <lgcl>
-    ##   1: data-C_trp_m7_v7_mCC               TRUE
-    ##   2: data-C_trp_m7_v7_mCC               TRUE
-    ##   3: data-C_trp_m7_v7_mCC               TRUE
-    ##   4: data-C_trp_m7_v7_mCC               TRUE
-    ##   5: data-C_trp_m7_v7_mCC               TRUE
-    ##  ---                                        
-    ## 153: data-C_trp_m7_v7_mCC               TRUE
-    ## 154: data-C_trp_m7_v7_mCC               TRUE
-    ## 155: data-C_trp_m7_v7_mCC               TRUE
-    ## 156: data-C_trp_m7_v7_mCC               TRUE
-    ## 157: data-C_trp_m7_v7_mCC               TRUE
+    ## 185:      20201203_GV2130_MC317               + [Oxidation (K)]
+    ## 186:      20201203_GV2130_MC309               + [Oxidation (K)]
+    ## 187:      20201203_GV2132_MC364               + [Oxidation (K)]
+    ## 188:      20201203_GV2132_MC341               + [Oxidation (K)]
+    ## 189:      20201203_GV2132_MC341               + [Oxidation (K)]
+    ##                  condition is_diagnostic_peak
+    ##                     <char>             <lgcl>
+    ##   1:  data-C_trp_m7_v7_mCC               TRUE
+    ##   2:  data-C_trp_m7_v7_mCC               TRUE
+    ##   3:  data-C_trp_m7_v7_mCC               TRUE
+    ##   4:  data-C_trp_m7_v7_mCC               TRUE
+    ##   5:  data-C_trp_m7_v7_mCC               TRUE
+    ##  ---                                         
+    ## 185:  data-C_trp_m7_v7_mCC               TRUE
+    ## 186:  data-C_trp_m7_v7_mCC               TRUE
+    ## 187: data-B1_trp_m7_v7_mCC               TRUE
+    ## 188: data-B2_trp_m7_v7_mCC               TRUE
+    ## 189: data-B2_trp_m7_v7_mCC               TRUE
+
+``` r
+d.hydroxyK_DI_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)]
+```
+
+    ##     gene_name     N
+    ##        <char> <int>
+    ##  1:     U2AF2     1
+    ##  2:      SUB1     1
+    ##  3:      RPS7     1
+    ##  4:     RPS25     1
+    ##  5:    RPS27A     1
+    ##  6:     SARNP     1
+    ##  7:      GNL3     1
+    ##  8:  SREK1IP1     2
+    ##  9:     RIOK1     2
+    ## 10:      TOP1     3
+    ## 11:     SSRP1     3
+    ## 12:      BRD3     3
+    ## 13:     SRRM2     3
+    ## 14:    LUC7L3     4
+    ## 15:     SF3B2     5
+    ## 16:     SREK1     5
+    ## 17:   ARL6IP4     7
+    ## 18:   ZCCHC17     7
+    ## 19:    SRSF11     9
+    ## 20:      BRD2    11
+    ## 21:      BRD4    12
+    ## 22:      NKAP    16
+    ##     gene_name     N
 
 ``` r
 ggplot(
@@ -494,7 +529,7 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 ```
 
-    ## Warning: Removed 313 rows containing missing values or values outside the scale range
+    ## Warning: Removed 335 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/analyse_hydroxylation_sites-1.png)<!-- -->
@@ -513,11 +548,14 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 ```
 
-    ## Warning: Removed 313 rows containing missing values or values outside the scale range
+    ## Warning: Removed 335 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
-    ## Warning: Removed 489 rows containing missing values or values outside the scale range
+    ## Warning: Removed 1299 rows containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
+
+    ## Warning: ggrepel: 7 unlabeled data points (too many overlaps). Consider
+    ## increasing max.overlaps
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/analyse_hydroxylation_sites-2.png)<!-- -->
 
@@ -526,40 +564,180 @@ d.hydroxyK_DI_dt[JMJD6KO > 0.1 & diagnostic_peak == "+"]
 ```
 
     ## Key: <protein_accession, aa_pos>
-    ##    protein_accession aa_pos gene_name   JMJD6KO        WT localization_prob
-    ##               <char>  <int>    <char>     <num>     <num>             <num>
-    ## 1:            P16403    137      H1-2 1.0000000 1.0000000          0.748372
-    ## 2:            P16403    148      H1-2 0.2872049 0.5895599          0.438297
-    ## 3:            P16403    149      H1-2 1.0000000 1.0000000          0.438297
-    ## 4:            P16403    152      H1-2 1.0000000 1.0000000          0.438297
-    ## 5:            P16403    153      H1-2 0.7127951 0.4104401          0.439148
-    ## 6:            P20908    535    COL5A1 1.0000000        NA          1.000000
-    ## 7:            Q8TA86    195       RP9 0.8372242 1.0000000          1.000000
-    ##    score_for_localization best_localization_ms_ms_id best_localization_raw_file
-    ##                     <num>                      <int>                     <char>
-    ## 1:                 64.550                      77630      20201119_GV2048_MC278
-    ## 2:                 44.005                      77625      20201119_GV2048_MC277
-    ## 3:                 44.005                      77625      20201119_GV2048_MC277
-    ## 4:                 44.005                      77625      20201119_GV2048_MC277
-    ## 5:                 44.005                      77625      20201119_GV2048_MC277
-    ## 6:                131.040                      34443      20201119_GV2048_MC276
-    ## 7:                 52.490                      27478      20201203_GV2130_MC304
-    ##    diagnostic_peak             ptm            condition is_diagnostic_peak
-    ##             <char>          <char>               <char>             <lgcl>
-    ## 1:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 2:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 3:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 4:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 5:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 6:               + [Oxidation (K)] data-A_trp_m7_v7_def               TRUE
-    ## 7:               + [Oxidation (K)] data-C_trp_m7_v7_mCC               TRUE
+    ##     protein_accession aa_pos gene_name   JMJD6KO        WT localization_prob
+    ##                <char>  <int>    <char>     <num>     <num>             <num>
+    ##  1:            P13639    159      EEF2 0.1366361 0.1596582          0.999364
+    ##  2:            P16403    137      H1-2 1.0000000 1.0000000          0.906622
+    ##  3:            P16403    148      H1-2 0.5015587 0.8350577          0.455378
+    ##  4:            P16403    149      H1-2 1.0000000 1.0000000          0.491510
+    ##  5:            P16403    152      H1-2 1.0000000 1.0000000          0.491510
+    ##  6:            P16403    153      H1-2 0.7127951 0.4104401          0.491510
+    ##  7:            P20908    535    COL5A1 1.0000000 1.0000000          1.000000
+    ##  8:            Q8TA86    195       RP9 0.8372242 1.0000000          1.000000
+    ##  9:            Q9Y3S2      3    ZNF330 1.0000000 0.9941442          0.984878
+    ## 10:            Q9Y3S2     10    ZNF330 1.0000000 1.0000000          0.999220
+    ## 11:            Q9Y3S2     11    ZNF330 1.0000000 1.0000000          0.999220
+    ##     score_for_localization best_localization_ms_ms_id
+    ##                      <num>                      <int>
+    ##  1:                 81.017                      89527
+    ##  2:                 65.395                     101875
+    ##  3:                 65.395                     101883
+    ##  4:                 68.440                     101887
+    ##  5:                 68.440                     101887
+    ##  6:                 68.440                     101887
+    ##  7:                131.040                      34443
+    ##  8:                 52.490                      27478
+    ##  9:                115.180                     148715
+    ## 10:                 96.113                     173752
+    ## 11:                 96.113                     173752
+    ##     best_localization_raw_file diagnostic_peak             ptm
+    ##                         <char>          <char>          <char>
+    ##  1:      20201203_GV2132_MC373               + [Oxidation (K)]
+    ##  2:      20201203_GV2132_MC331               + [Oxidation (K)]
+    ##  3:      20201203_GV2132_MC358               + [Oxidation (K)]
+    ##  4:      20201203_GV2132_MC362               + [Oxidation (K)]
+    ##  5:      20201203_GV2132_MC362               + [Oxidation (K)]
+    ##  6:      20201203_GV2132_MC362               + [Oxidation (K)]
+    ##  7:      20201119_GV2048_MC276               + [Oxidation (K)]
+    ##  8:      20201203_GV2130_MC304               + [Oxidation (K)]
+    ##  9:      20201203_GV2132_MC364               + [Oxidation (K)]
+    ## 10:      20201203_GV2132_MC341               + [Oxidation (K)]
+    ## 11:      20201203_GV2132_MC341               + [Oxidation (K)]
+    ##                 condition is_diagnostic_peak
+    ##                    <char>             <lgcl>
+    ##  1: data-B2_trp_m7_v7_mCC               TRUE
+    ##  2: data-B1_trp_m7_v7_mCC               TRUE
+    ##  3: data-B1_trp_m7_v7_mCC               TRUE
+    ##  4: data-B1_trp_m7_v7_mCC               TRUE
+    ##  5: data-B1_trp_m7_v7_mCC               TRUE
+    ##  6: data-B1_trp_m7_v7_mCC               TRUE
+    ##  7:  data-A_trp_m7_v7_def               TRUE
+    ##  8:  data-C_trp_m7_v7_mCC               TRUE
+    ##  9: data-B1_trp_m7_v7_mCC               TRUE
+    ## 10: data-B2_trp_m7_v7_mCC               TRUE
+    ## 11: data-B2_trp_m7_v7_mCC               TRUE
 
 # Comparison of data without and with DI consideration
 
 ``` r
+d.hydroxyK_DI_dt[, `:=`(
+  hydroxylation_site_class = case_when(
+    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A",
+    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B",
+    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C",
+    TRUE ~ "others"
+  )
+)]
+
+ggplot(
+  d.hydroxyK_DI_dt[hydroxylation_site_class != "others"],
+  aes(
+    x = hydroxylation_site_class,
+    fill = is_diagnostic_peak
+  )
+) +
+  geom_bar() +
+  scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
+```
+
+![](p2-4-diagnostic-ions_files/figure-gfm/comparison_nonDI_and_DI_data-1.png)<!-- -->
+
+``` r
+d.hydroxyK_DI_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
+                   addmargins]
+```
+
+    ##                hydroxylation_site_class
+    ## diagnostic_peak class_A class_B class_C others  Sum
+    ##                     146     130     474    371 1121
+    ##             +        91       1      18     79  189
+    ##             Sum     237     131     492    450 1310
+
+``` r
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+feature.d.hydroxyK_DI_dt <- merge(
+  d.hydroxyK_DI_dt,
+  protein.feature.dt,
+  by = c("protein_accession", "aa_pos")
+)
 ```
+
+``` r
+feature.d.hydroxyK_DI_dt[, `:=`(
+  met_within_2 = case_when(
+    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes",
+    nchar(Window) == 11 ~ "No",
+    TRUE ~ "edge"
+  )
+)]
+
+feature.d.hydroxyK_DI_dt[
+  met_within_2 == "Yes" & is_diagnostic_peak == TRUE
+]
+```
+
+    ## Key: <protein_accession, aa_pos>
+    ##    protein_accession aa_pos gene_name    JMJD6KO          WT localization_prob
+    ##               <char>  <int>    <char>      <num>       <num>             <num>
+    ## 1:            P13639    159      EEF2 0.13663605 0.159658185          0.999364
+    ## 2:            P19338    282       NCL 0.02947093 0.003397929          0.846533
+    ## 3:            P60709    191      ACTB 0.02023117 0.030089207          1.000000
+    ## 4:            Q9BRS2    535     RIOK1 0.00000000 0.027109815          0.695718
+    ## 5:            Q9BRS2    539     RIOK1 0.00000000 0.062475201          0.997315
+    ##    score_for_localization best_localization_ms_ms_id best_localization_raw_file
+    ##                     <num>                      <int>                     <char>
+    ## 1:                 81.017                      89527      20201203_GV2132_MC373
+    ## 2:                 66.351                      94906      20201203_GV2132_MC361
+    ## 3:                101.390                      19020      20201119_GV2048_MC278
+    ## 4:                 78.934                      27757      20201203_GV2130_MC316
+    ## 5:                 78.934                      27757      20201203_GV2130_MC316
+    ##    diagnostic_peak             ptm             condition is_diagnostic_peak
+    ##             <char>          <char>                <char>             <lgcl>
+    ## 1:               + [Oxidation (K)] data-B2_trp_m7_v7_mCC               TRUE
+    ## 2:               + [Oxidation (K)] data-B1_trp_m7_v7_mCC               TRUE
+    ## 3:               + [Oxidation (K)]  data-A_trp_m7_v7_def               TRUE
+    ## 4:               + [Oxidation (K)]  data-C_trp_m7_v7_mCC               TRUE
+    ## 5:               + [Oxidation (K)]  data-C_trp_m7_v7_mCC               TRUE
+    ##    hydroxylation_site_class          Accession residue IUPRED2 K_position
+    ##                      <char>             <char>  <char>   <num>      <int>
+    ## 1:                  class_C   P13639|EF2_HUMAN       K  0.1229          1
+    ## 2:                  class_C  P19338|NUCL_HUMAN       K  0.8162          1
+    ## 3:                  class_C  P60709|ACTB_HUMAN       K  0.1373          1
+    ## 4:                  class_A Q9BRS2|RIOK1_HUMAN       K  0.7799          1
+    ## 5:                  class_A Q9BRS2|RIOK1_HUMAN       K  0.7459          1
+    ##    K_ratio K_ratio_score WindowHydropathy  windowCharge CenterResidue
+    ##      <num>         <num>            <num>         <num>        <char>
+    ## 1:     0.1           0.2        0.5393636  0.0901760160             K
+    ## 2:     0.3           0.5        0.2435455  0.3606715422             K
+    ## 3:     0.1           0.1        0.4585455 -0.0005117681             K
+    ## 4:     0.3           0.5        0.2132727  0.2692648367             K
+    ## 5:     0.3           0.5        0.2647273  0.2707946970             K
+    ##         Window met_within_2
+    ##         <char>       <char>
+    ## 1: VLMMNKMDRAL          Yes
+    ## 2: PGKRKKEMAKQ          Yes
+    ## 3: TDYLMKILTER          Yes
+    ## 4: DKKERKKMVKE          Yes
+    ## 5: RKKMVKEAQRE          Yes
+
+``` r
+ggplot(
+  feature.d.hydroxyK_DI_dt[
+    met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
+  ],
+  aes(
+    x = hydroxylation_site_class,
+    fill = met_within_2
+  )
+) +
+  geom_bar() +
+  facet_grid(~ is_diagnostic_peak) +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
+```
+
+![](p2-4-diagnostic-ions_files/figure-gfm/methionine_cont-1.png)<!-- -->
 
 # Session information
 
@@ -577,7 +755,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-07
+    ##  date     2025-03-11
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────

@@ -68,11 +68,6 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
-pnas2022_DI_data <- file.path(
-  project.dir,
-  "data/MQ_DI_output/PNAS2022" 
-)
-
 pnas2022_data <- file.path(
   project.dir,
   "data/MQ_output/PNAS2022" 
@@ -85,7 +80,17 @@ all_sample_run_info <- read_excel(
 
 all_sample_run_info[, sample_id := 1:.N]
 
-di_sample_run_info <- all_sample_run_info[grepl("data-[A-C]_trp_m7_v7_", prefix)]
+pnas2022_DI_data <- file.path(
+  project.dir,
+  "data/MQ_DI_output/PNAS2022" 
+)
+
+di_sample_run_info <- read_excel(
+  file.path(pnas2022_DI_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+di_sample_run_info[, sample_id := 1:.N]
 
 ```
 
@@ -252,7 +257,7 @@ ggplot(
 ```{r analyse_hydroxylation_sites}
 
 all_stoic_with_di_dt <- lapply(
-  di_sample_run_info[grepl("data-[A|C]", prefix), prefix],
+  di_sample_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_",
   dir_path = p2.res.dir
@@ -265,7 +270,7 @@ read_di_data <- function(prefix, dir_path){
 }
 
 all_ptm_dt <- lapply(
-  di_sample_run_info[grepl("data-[A|C]", prefix), prefix],
+  di_sample_run_info[, prefix],
   read_di_data,
   dir_path = p2.res.dir
 ) %>% rbindlist
@@ -290,6 +295,8 @@ d.hydroxyK_DI_dt[, `:=`(
 )]
 
 d.hydroxyK_DI_dt[diagnostic_peak == "+"]
+
+d.hydroxyK_DI_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)]
 
 ggplot(
   data = d.hydroxyK_DI_dt[order(is_diagnostic_peak)],
@@ -319,17 +326,161 @@ ggplot(
 
 d.hydroxyK_DI_dt[JMJD6KO > 0.1 & diagnostic_peak == "+"]
 
+
 ```
 
 # Comparison of data without and with DI consideration
 
 
-```{r comparison_nonDI_and_DI_data}
+```{r comparison_nonDI_and_DI_data, fig.width = 5, fig.height = 5}
+
+d.hydroxyK_DI_dt[, `:=`(
+  hydroxylation_site_class = case_when(
+    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A",
+    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B",
+    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C",
+    TRUE ~ "others"
+  )
+)]
+
+ggplot(
+  d.hydroxyK_DI_dt[hydroxylation_site_class != "others"],
+  aes(
+    x = hydroxylation_site_class,
+    fill = is_diagnostic_peak
+  )
+) +
+  geom_bar() +
+  scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
+
+d.hydroxyK_DI_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
+                   addmargins]
 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
 
+feature.d.hydroxyK_DI_dt <- merge(
+  d.hydroxyK_DI_dt,
+  protein.feature.dt,
+  by = c("protein_accession", "aa_pos")
+)
+
 ```
+
+```{r methionine_cont}
+
+feature.d.hydroxyK_DI_dt[, `:=`(
+  met_within_2 = case_when(
+    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes",
+    nchar(Window) == 11 ~ "No",
+    TRUE ~ "edge"
+  )
+)]
+
+feature.d.hydroxyK_DI_dt[
+  met_within_2 == "Yes" & is_diagnostic_peak == TRUE
+]
+
+ggplot(
+  feature.d.hydroxyK_DI_dt[
+    met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
+  ],
+  aes(
+    x = hydroxylation_site_class,
+    fill = met_within_2
+  )
+) +
+  geom_bar() +
+  facet_grid(~ is_diagnostic_peak) +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
+
+
+
+```
+
+# Comparison with previous PNAS 2022 paper
+
+```{r pnas2022_comparison}
+
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)]
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))])
+
+# Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
+
+d.hydroxyK_DI_dt[, `:=`(
+ curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
+)]
+
+d.hydroxyK_DI_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
+
+d.hydroxyK_DI_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
+
+j6_target_protein <- d.hydroxyK_DI_dt[
+  hydroxylation_site_class == "class_A" &
+    is_diagnostic_peak == TRUE
+][!duplicated(protein_accession)][, .(protein_accession, gene_name)]
+
+j6_target_protein[, `:=`(
+  known_target = protein_accession %in% pnas2022.stoic.dt[curated_oxK_site == TRUE, protein_accession]
+)]
+
+j6_target_protein[, table(known_target)]
+j6_target_protein[known_target == FALSE]
+
+
+## Correlation
+non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
+  grepl("HeLa", data_source) &
+  # (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
+    (curated_oxK_site == TRUE) &
+    total_n_feature_K > 2
+][
+  order(
+    #data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep"),
+    curated_oxK_site == TRUE,
+    oxK_ratio,
+    decreasing = TRUE
+  )][
+    !duplicated(accession_position)
+]
+
+non.duplicated.pnas2022.stoic.dt[, stoichiometry_PNAS2022 := oxK_ratio]
+
+d.pnas2022.hydroxyK_DI_dt <- merge(
+  d.hydroxyK_DI_dt,
+  non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
+  by = c("protein_accession", "aa_pos")
+)
+
+ggplot(
+  d.pnas2022.hydroxyK_DI_dt,
+  aes(
+    x = stoichiometry_PNAS2022,
+    y = WT
+  )
+) +
+  geom_point() +
+  theme(aspect.ratio = 1) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+d.pnas2022.hydroxyK_DI_dt %$%
+cor.test(
+  stoichiometry_PNAS2022, WT
+)
+
+```
+
+
 
 # Session information
 

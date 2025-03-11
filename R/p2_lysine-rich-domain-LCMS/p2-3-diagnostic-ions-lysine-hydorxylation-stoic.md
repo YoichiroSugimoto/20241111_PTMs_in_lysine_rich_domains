@@ -1,7 +1,7 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto
-07 March, 2025
+11 March, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -61,7 +61,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.4s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.47s]
 
 ``` r
 temp <-
@@ -409,7 +409,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-07
+    ##  date     2025-03-11
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 2-1. Calculate PTM stoichiometry
 ================
 Yoichiro Sugimoto
-07 March, 2025
+11 March, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -63,7 +63,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.57s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.89s]
 
 ``` r
 temp <-
@@ -250,21 +250,9 @@ for(i in all_sample_run_info[data %in% c("data-A", "data-D"), sample_id]) {
     ## [1] "Processing: data-A_trp_m7_v7_def_evidence.txt"
     ## [1] "Processing: data-A_trp_m8_v8_def_evidence.txt"
     ## [1] "Processing: data-A_argC_m2_v7_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m2_v2_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m5_v5_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m7_v7_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
 
 ``` r
 for(i in 1:nrow(all_sample_run_info)) {
@@ -312,46 +300,16 @@ for(i in 1:nrow(all_sample_run_info)) {
     ## [1] "Processing: data-A_trp_m7_v7_def_evidence.txt"
     ## [1] "Processing: data-A_trp_m8_v8_def_evidence.txt"
     ## [1] "Processing: data-A_argC_m2_v7_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-B_trp_m2_v2_mCC_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-B_trp_m5_v5_mCC_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-B_trp_m7_v7_mCC_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-C_trp_m2_v2_mCC_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-C_trp_m5_v5_mCC_evidence.txt"
-    ## [1] "Processing: data-C_trp_m6_v6_mCC_evidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/data-C_trp_m6_v6_mCC_evidence.txt"
     ## [1] "Processing: data-C_trp_m7_v7_mCC_evidence.txt"
     ## [1] "Processing: data-C_trp_m8_v8_mCC_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m2_v2_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m5_v5_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
     ## [1] "Processing: data-D_trp_m7_v7_def_evidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
-    ## [1] "Processing: NAevidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_output/PNAS2022/evidence/NAevidence.txt"
 
 # Calculation of stoichiometry for data with diagnostic ion consideration
 
@@ -363,7 +321,12 @@ pnas2022_DI_data <- file.path(
 ```
 
 ``` r
-di_sample_run_info <- all_sample_run_info[grepl("data-[A-C]_trp_m7_v7_", prefix)]
+di_sample_run_info <- read_excel(
+  file.path(pnas2022_DI_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+di_sample_run_info[, sample_id := 1:.N]
 
 for(i in 1:nrow(di_sample_run_info)) {
 
@@ -387,7 +350,7 @@ for(i in 1:nrow(di_sample_run_info)) {
     stoic.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
       sample_info_file = file.path(
-        pnas2022_data,
+        pnas2022_DI_data,
         "sample_info",
         paste0(
           "MS_dataset_overview_PXD031221_",
@@ -415,8 +378,8 @@ for(i in 1:nrow(di_sample_run_info)) {
 ```
 
     ## [1] "Processing: data-A_trp_m7_v7_def_evidence.txt"
-    ## [1] "Processing: data-B_trp_m7_v7_mCC_evidence.txt"
-    ## [1] "File does not exist: /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/data/MQ_DI_output/PNAS2022/evidence/data-B_trp_m7_v7_mCC_evidence.txt"
+    ## [1] "Processing: data-B1_trp_m7_v7_mCC_evidence.txt"
+    ## [1] "Processing: data-B2_trp_m7_v7_mCC_evidence.txt"
     ## [1] "Processing: data-C_trp_m7_v7_mCC_evidence.txt"
 
 # Session information
@@ -435,7 +398,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-07
+    ##  date     2025-03-11
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────

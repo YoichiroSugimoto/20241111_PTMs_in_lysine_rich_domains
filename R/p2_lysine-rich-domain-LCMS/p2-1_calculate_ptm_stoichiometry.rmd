@@ -181,7 +181,12 @@ pnas2022_DI_data <- file.path(
 
 ```{r calculate_stoichiometry_for_data_with_DI}
 
-di_sample_run_info <- all_sample_run_info[grepl("data-[A-C]_trp_m7_v7_", prefix)]
+di_sample_run_info <- read_excel(
+  file.path(pnas2022_DI_data, "PXD031221_sample_matrix.xlsx"),
+  sheet = "run_setting"
+) %>% data.table
+
+di_sample_run_info[, sample_id := 1:.N]
 
 for(i in 1:nrow(di_sample_run_info)) {
 
@@ -205,7 +210,7 @@ for(i in 1:nrow(di_sample_run_info)) {
     stoic.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
       sample_info_file = file.path(
-        pnas2022_data,
+        pnas2022_DI_data,
         "sample_info",
         paste0(
           "MS_dataset_overview_PXD031221_",
