@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto
-11 March, 2025
+12 March, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -14,6 +14,8 @@ Yoichiro Sugimoto
   data](#analyse-hydroxylation-sites-with-di-data)
 - [Comparison of data without and with DI
   consideration](#comparison-of-data-without-and-with-di-consideration)
+- [Comparison with previous PNAS 2022
+  paper](#comparison-with-previous-pnas-2022-paper)
 - [Session information](#session-information)
 
 This script examines how the use of diagnostic ions improve the analysis
@@ -68,7 +70,7 @@ renv::restore(file.path(project.dir, "R"))
     ## - Installing Biostrings ...                     OK [copied from cache]
     ## - Installing KEGGREST ...                       OK [copied from cache]
     ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.81s]
+    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.4s]
 
 ``` r
 temp <-
@@ -739,6 +741,154 @@ ggplot(
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/methionine_cont-1.png)<!-- -->
 
+# Comparison with previous PNAS 2022 paper
+
+``` r
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)]
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))])
+```
+
+    ## [1] 153
+
+``` r
+# Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
+
+d.hydroxyK_DI_dt[, `:=`(
+ curated_oxK_site = 
+    paste0(protein_accession, "_", aa_pos) %in%
+    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
+)]
+
+d.hydroxyK_DI_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
+```
+
+    ##                   curated_oxK_site
+    ## is_diagnostic_peak FALSE TRUE  Sum
+    ##              FALSE  1088   33 1121
+    ##              TRUE    116   73  189
+    ##              Sum    1204  106 1310
+
+``` r
+d.hydroxyK_DI_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
+```
+
+    ## , , curated_oxK_site = FALSE
+    ## 
+    ##                   hydroxylation_site_class
+    ## is_diagnostic_peak class_A class_B class_C others  Sum
+    ##              FALSE     122     130     473    363 1088
+    ##              TRUE       43       1      18     54  116
+    ##              Sum       165     131     491    417 1204
+    ## 
+    ## , , curated_oxK_site = TRUE
+    ## 
+    ##                   hydroxylation_site_class
+    ## is_diagnostic_peak class_A class_B class_C others  Sum
+    ##              FALSE      24       0       1      8   33
+    ##              TRUE       48       0       0     25   73
+    ##              Sum        72       0       1     33  106
+    ## 
+    ## , , curated_oxK_site = Sum
+    ## 
+    ##                   hydroxylation_site_class
+    ## is_diagnostic_peak class_A class_B class_C others  Sum
+    ##              FALSE     146     130     474    371 1121
+    ##              TRUE       91       1      18     79  189
+    ##              Sum       237     131     492    450 1310
+
+``` r
+j6_target_protein <- d.hydroxyK_DI_dt[
+  hydroxylation_site_class == "class_A" &
+    is_diagnostic_peak == TRUE
+][!duplicated(protein_accession)][, .(protein_accession, gene_name)]
+
+j6_target_protein[, `:=`(
+  known_target = protein_accession %in% pnas2022.stoic.dt[curated_oxK_site == TRUE, protein_accession]
+)]
+
+j6_target_protein[, table(known_target)]
+```
+
+    ## known_target
+    ## FALSE  TRUE 
+    ##     3    17
+
+``` r
+j6_target_protein[known_target == FALSE]
+```
+
+    ##    protein_accession gene_name known_target
+    ##               <char>    <char>       <lgcl>
+    ## 1:            P53999      SUB1        FALSE
+    ## 2:            P62979    RPS27A        FALSE
+    ## 3:            Q9NP64   ZCCHC17        FALSE
+
+``` r
+## Correlation
+non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
+  grepl("HeLa", data_source) &
+  # (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
+    (curated_oxK_site == TRUE) &
+    total_n_feature_K > 2
+][
+  order(
+    #data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep"),
+    curated_oxK_site == TRUE,
+    oxK_ratio,
+    decreasing = TRUE
+  )][
+    !duplicated(accession_position)
+]
+
+non.duplicated.pnas2022.stoic.dt[, stoichiometry_PNAS2022 := oxK_ratio]
+
+d.pnas2022.hydroxyK_DI_dt <- merge(
+  d.hydroxyK_DI_dt,
+  non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
+  by = c("protein_accession", "aa_pos")
+)
+
+ggplot(
+  d.pnas2022.hydroxyK_DI_dt,
+  aes(
+    x = stoichiometry_PNAS2022,
+    y = WT
+  )
+) +
+  geom_point() +
+  theme(aspect.ratio = 1) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
+![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison-1.png)<!-- -->
+
+``` r
+d.pnas2022.hydroxyK_DI_dt %$%
+cor.test(
+  stoichiometry_PNAS2022, WT
+)
+```
+
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  stoichiometry_PNAS2022 and WT
+    ## t = 24.533, df = 104, p-value < 2.2e-16
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.8892822 0.9472932
+    ## sample estimates:
+    ##       cor 
+    ## 0.9233968
+
 # Session information
 
 ``` r
@@ -755,7 +905,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-11
+    ##  date     2025-03-12
     ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
