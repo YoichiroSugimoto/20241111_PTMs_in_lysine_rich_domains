@@ -1,0 +1,92 @@
+---
+title: "3-2. PTM interplay"
+author: "Yoichiro Sugimoto"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+
+
+# Environment setup
+
+```{r renv_set, warning=FALSE}
+
+# renv::init(
+#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#       )
+
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+```{r set parameters}
+
+temp <-
+  sapply(list.files(
+    file.path(project.dir, "R/functions"),
+    pattern = "*.R",
+    full.names = TRUE
+  ),
+  source)
+
+# install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
+library("readxl")
+
+results.dir <- file.path()
+
+p3.res.dir <- file.path(project.dir,
+                        "results",
+                        "p3-ptm-interplay")
+
+create.dirs(c(p3.res.dir))
+
+
+```
+
+# Import basic data
+
+```{r import_basic_data}
+
+data.dir <- file.path(project.dir, "data")
+
+proteinGroup.dir <- file.path(data.dir, "MQ_DI_output/PNAS2022/proteinGroups")
+
+original_fasta <- file.path("/fast/AG_Sugimoto/reference/uniprot/human/UP000005640_9606.fasta")
+
+```
+
+
+# Consolidate fasta files
+
+
+```{r consolidate_fasta}
+
+library("ptm.stoichiometry")
+
+stoic_data <- fread(file.path())
+
+```
+
+
+# Session information
+
+```{r sessionInfo}
+
+## sessioninfo::session_info()
+
+```
