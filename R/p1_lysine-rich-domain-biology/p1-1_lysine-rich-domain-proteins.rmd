@@ -17,15 +17,26 @@ output:
 
 ```{r env_set}
 
+## Initialize renv (first time only)
+# Creates project specific library and renv.lock file. 
+# Use 'renv::init(filepath)' to create project library
 # renv::init(
-#           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#           "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
 #       )
 
-project.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains")
-## renv::snapshot(file.path(project.dir, "R"))
+## Define project directory 
+project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains")
 
+## Use 'renv::snapshot', if there are updates in the current dependencies 
+# renv::snapshot(file.path(project.dir, "R"))
+
+## Restore packages 
 renv::restore(file.path(project.dir, "R"))
 
+## Check package versions of current loaded library and lockfile 
+renv::status
+
+## Load all R scripts from the 'functions' folder into the current session
 temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
 
 ```
@@ -34,25 +45,34 @@ temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", 
 
 ```{r set parameters}
 
-library("org.Hs.eg.db")
-
-## paths
+## Define paths to directory
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 r0.dir <- file.path(results.dir, "p0-data-preprocessing")
+figures.dir <- file.path(project.dir, "p1-1_new_figures")
 
+# Create directory
 dir.create(r0.dir, showWarnings = FALSE)
+dir.create(figures.dir, showWarnings = FALSE)
 
 ```
 
 # Import data
 
-
 ```{r import_data, warning=FALSE}
 
+#------------------------------------------------
+# Map UniProt IDs to Gene Symbols and ENSEMBL IDs 
+#------------------------------------------------
+
+## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
+## Load library  
+library("org.Hs.eg.db")
+
 ## Convert gene id and names
+# Map UniProt IDs to gene symbols and ENSEMBL IDs
 gene.id.dt <- select(
     org.Hs.eg.db,
     keys = protein.feature.dt[, unique(uniprot_id)],
@@ -61,23 +81,34 @@ gene.id.dt <- select(
 ) %>%
     data.table
 
+# Rename columns 
 setnames(
     gene.id.dt,
     old = c("UNIPROT", "SYMBOL","ENSEMBL"),
     new = c("uniprot_id", "gene_name", "gene_id")
 )
 
+## Clean and organize gene mapping table
+# Sort gene_id in ascending order, remove duplicate UniProt id and remove rows missing gene_id 
 gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id)]
 
+# Rename data file and save to directory 
 fwrite(gene.id.dt, file.path(r0.dir, "uniprot-ensembl.csv"))
 
-max.k.score.dt <- protein.feature.dt[
+#-----------------------------------
+# Maximum K score and Protein Length
+#-----------------------------------
+
+## Compute maximum K_ratio and protein length for each protein
+max.k.score.dt <- protein.feature.dt[ 
   , list(
-    max_k_ratio = max(K_ratio),
+    max_k_ratio = max(K_ratio), 
     protein_len = max(position)
     ), 
   by = list(Accession, uniprot_id)] 
 
+## Merge gene annotations with protein summary data (max K_ratio, protein length)
+# Merge tables using the UniProt ID as the key
 max.k.score.dt <- merge(
     gene.id.dt,
     max.k.score.dt,
@@ -85,24 +116,32 @@ max.k.score.dt <- merge(
     by = "uniprot_id"
 )
 
+# Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(r0.dir, "max-k-score-per-protein.csv")) 
 
-## RBPs
+#----------------------
+# RNA-Binding Proteins 
+#----------------------
 
+# Load data into environment 
 rbp.dt <- readxl::read_excel(file.path(data.dir, "20241113_RBPbase_Hs_DescriptiveID.xlsx")) %>%
   data.table()
 
+# Remove line breaks and split into two columns
 setnames(rbp.dt, old = colnames(rbp.dt), new = str_split_fixed(colnames(rbp.dt), "\n", n = 2)[, 1])
-rbp.dt <- janitor::clean_names(rbp.dt, case = "none")
-setnames(rbp.dt, old = "UnitProtSwissProtID_Hs", new = "uniprot_id")
+rbp.dt <- janitor::clean_names(rbp.dt, case = "none") #Rename duplicate column names
+setnames(rbp.dt, old = "UnitProtSwissProtID_Hs", new = "uniprot_id") # UniProt?
 
 
+# Dataset containing only UniProt id and Hs_ columns
 rbp.dt <- rbp.dt[
   , c("uniprot_id", grep("^Hs_", colnames(rbp.dt), value = TRUE)), with = FALSE
   ]
 
+# Remove NA and duplicated values
 rbp.dt <- rbp.dt[!is.na(uniprot_id) & !duplicated(uniprot_id)]
 
+# Reshape dataset into long format for easy data management and visualization 
 m.rbp.dt <- melt(
     rbp.dt,
     id.vars = c("uniprot_id"),
@@ -110,6 +149,7 @@ m.rbp.dt <- melt(
     value.name = "RBP"
 )
 
+# Dataset containing count of identified RBP and total RBP 
 rbp.count.dt <- m.rbp.dt[!is.na(uniprot_id),
   list(
     identified_RBP = sum(RBP == "YES"),
@@ -125,30 +165,39 @@ rbp.count.dt[, table(identified_RBP)]
 
 ```{r basic_stats}
 
-## The number of proteins per max K score
+#----------------------
+# Data Visualization
+#----------------------
 
-ggplot(
+
+## Plot - The number of proteins per max K score
+
+protein_per_k_score <- ggplot(
     max.k.score.dt,
     aes(
         x = max_k_ratio
     )
 ) +
     geom_bar() +
-    scale_x_continuous(breaks=seq(0, 1, 0.1))
+    scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
+  labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
 
-## Max K ratio vs protein length
+## Plot - Max K ratio vs protein length
 
-ggplot(
+max_K_score_proteinlen <- ggplot(
   max.k.score.dt,
   aes(
     y = protein_len,
     x = factor(max_k_ratio)
   )
 ) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
+  labels(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
   coord_cartesian(ylim = c(0, 2000))
 
-## RBPs
+## RNA-Binding proteins 
 
+## Max K score versus RBP 
+# Create daatset containing max K score and RBP count
 rbp.count.dt <- merge(
   max.k.score.dt, rbp.count.dt, by = "uniprot_id"
 )
@@ -158,6 +207,7 @@ data.set.names <- c(
   "RBP (1 dataset)", "RBP (2 dataset)", "RBP (> 2 dataset)"
   )
 
+# Assign values to RBP dataset columns based on RBP count 
 rbp.count.dt[, RBP := case_when(
   identified_RBP > 2 ~ "RBP (> 2 dataset)",
   identified_RBP > 1 ~ "RBP (2 dataset)",
@@ -165,7 +215,8 @@ rbp.count.dt[, RBP := case_when(
   TRUE ~ "Others") %>% factor(levels = data.set.names)]
 rbp.count.dt[, table(RBP)]
 
-ggplot(
+## Plot - Max K score versus RBP
+max_K_score_rbp <- ggplot(
   data = rbp.count.dt,
   aes(
     x = RBP,
@@ -175,7 +226,6 @@ ggplot(
   geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme(aspect.ratio = 3)
-
 
 ```
 
