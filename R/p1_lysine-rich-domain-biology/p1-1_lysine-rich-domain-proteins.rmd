@@ -233,8 +233,14 @@ max_K_score_rbp <- ggplot(
 
 ```{r subcellular_localisation_analysis}
 
+#--------------------------------------
+# Subcellular localisation analysis
+#--------------------------------------
+
+## Load library
 library("subcellularvis")
 
+## Identify sub-cellular compartment with enrichment score
 extractCompartment <- function(gene.set, class.name){
   comp.out <- compartmentData(
     gene.set,
@@ -244,7 +250,10 @@ extractCompartment <- function(gene.set, class.name){
     annotationSource =c("Gene Ontology") #c("Human Protein Atlas")
   )
   
+  # Convert enrichment scores into a data table 
   comp.out.dt <- data.table(comp.out$enrichment)
+  
+  #Adding additional columns - number of unmapped genes, mapped genes and class_name (gene category) 
   comp.out.dt[, `:=`(
     Genes = NA,
     n_unmmaped = length(str_split(comp.out$unmapped, ",")[[1]]),
@@ -252,13 +261,17 @@ extractCompartment <- function(gene.set, class.name){
     class_name = class.name
   )]
   
+  # Final data table containing enrichment scores of subcellular compartment, 
+  # number of unmapped genes, mapped genes and class_name (gene category) 
   return(comp.out.dt)
 }
 
+# Add column containing values from 0.0 - 0.9 only
 max.k.score.dt[, max_k_ratio_group := case_when(
-  max_k_ratio >= 0.9 ~ 0.9,
-  TRUE ~ max_k_ratio
+  max_k_ratio >= 0.9 ~ 0.9, # if ≥ 0.9 → set value to 0.9
+  TRUE ~ max_k_ratio  #if < 0.9, then retain original max k ratio value
 )]
+
 
 k.score.compartment.dt <- mapply(
   extractCompartment,
@@ -272,7 +285,6 @@ k.score.compartment.dt <- mapply(
   
 k.score.compartment.dt[, mlog10FDR := -log10(FDR)]
 
-library("pheatmap")
 
 d.k.score.compartment.dt <- dcast(
   k.score.compartment.dt,
@@ -283,7 +295,9 @@ d.k.score.compartment.dt <- dcast(
 d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
+## Load libraries 
 library(RColorBrewer)
+library("pheatmap")
 
 mat_breaks <- seq(min(d.k.score.compartment.mat), max(d.k.score.compartment.mat), length.out = 40)
 
