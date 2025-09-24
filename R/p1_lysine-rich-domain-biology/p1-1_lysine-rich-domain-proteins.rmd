@@ -17,12 +17,12 @@ output:
 
 ```{r env_set}
 
-## Initialize renv (first time only)
+## Initialize renv (first time only) - re-installed 24.09.2025
 # Creates project specific library and renv.lock file. 
 # Use 'renv::init(filepath)' to create project library
 # renv::init(
-#           "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
-#       )
+#        "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#    )
 
 ## Define project directory 
 project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains")
@@ -119,9 +119,9 @@ max.k.score.dt <- merge(
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(r0.dir, "max-k-score-per-protein.csv")) 
 
-#----------------------
-# RNA-Binding Proteins 
-#----------------------
+#---------------------------
+# RNA-Binding Proteins (RBP)
+#---------------------------
 
 # Load data into environment 
 rbp.dt <- readxl::read_excel(file.path(data.dir, "20241113_RBPbase_Hs_DescriptiveID.xlsx")) %>%
@@ -130,7 +130,7 @@ rbp.dt <- readxl::read_excel(file.path(data.dir, "20241113_RBPbase_Hs_Descriptiv
 # Remove line breaks and split into two columns
 setnames(rbp.dt, old = colnames(rbp.dt), new = str_split_fixed(colnames(rbp.dt), "\n", n = 2)[, 1])
 rbp.dt <- janitor::clean_names(rbp.dt, case = "none") #Rename duplicate column names
-setnames(rbp.dt, old = "UnitProtSwissProtID_Hs", new = "uniprot_id") # UniProt?
+setnames(rbp.dt, old = "UnitProtSwissProtID_Hs", new = "uniprot_id") 
 
 
 # Dataset containing only UniProt id and Hs_ columns
@@ -169,7 +169,6 @@ rbp.count.dt[, table(identified_RBP)]
 # Data Visualization
 #----------------------
 
-
 ## Plot - The number of proteins per max K score
 
 protein_per_k_score <- ggplot(
@@ -197,7 +196,7 @@ max_K_score_proteinlen <- ggplot(
 ## RNA-Binding proteins 
 
 ## Max K score versus RBP 
-# Create daatset containing max K score and RBP count
+# Create dataset containing max K score and RBP count
 rbp.count.dt <- merge(
   max.k.score.dt, rbp.count.dt, by = "uniprot_id"
 )
@@ -240,29 +239,29 @@ max_K_score_rbp <- ggplot(
 ## Load library
 library("subcellularvis")
 
-## Identify sub-cellular compartment with enrichment score
+## Run sub-cellular compartment analysis with enrichment score according Gene Ontology
+# The 'extractCompartment' function runs sub-cellular compartment analysis, retrieves 
 extractCompartment <- function(gene.set, class.name){
-  comp.out <- compartmentData(
+  comp.out <- compartmentData(  # Run compartment enrichment analysis using the compartmentData() function
     gene.set,
     id_type = "UNIPROT",
     aspect = c("Whole cell"),
     organism = c("Human"),
-    annotationSource =c("Gene Ontology") #c("Human Protein Atlas")
+    annotationSource =c("Gene Ontology") # Alternatively, Human Protein Atlas can also be used
   )
   
-  # Convert enrichment scores into a data table 
+  # Convert enrichment results from comp.out into a data.table 
   comp.out.dt <- data.table(comp.out$enrichment)
   
-  #Adding additional columns - number of unmapped genes, mapped genes and class_name (gene category) 
+  # Add metadata columns 
   comp.out.dt[, `:=`(
     Genes = NA,
-    n_unmmaped = length(str_split(comp.out$unmapped, ",")[[1]]),
-    n_mapped = comp.out$nMapped,
-    class_name = class.name
+    n_unmapped = length(str_split(comp.out$unmapped, ",")[[1]]), # Counting the number of unmapped IDs
+    n_mapped = comp.out$nMapped, # adding mapped IDs
+    class_name = class.name 
   )]
   
-  # Final data table containing enrichment scores of subcellular compartment, 
-  # number of unmapped genes, mapped genes and class_name (gene category) 
+  #  Updated data table 
   return(comp.out.dt)
 }
 
@@ -295,7 +294,7 @@ d.k.score.compartment.dt <- dcast(
 d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
-## Load libraries 
+## Load libraries -  'RColorBrewer' and 'pheatmap'
 library(RColorBrewer)
 library("pheatmap")
 

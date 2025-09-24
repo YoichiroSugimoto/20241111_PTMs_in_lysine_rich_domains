@@ -1,0 +1,119 @@
+---
+title: "2-1. Calculate PTM stoichiometry"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+# Overview
+
+# This script calculates the 
+
+# Environment setup
+
+```{r setup_environment}
+
+## Initialize renv (first time only) - re-installed 24.09.2025
+# Creates project specific library and renv.lock file. 
+# Use 'renv::init(filepath)' to create project library
+# renv::init(
+#        "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#    )
+
+
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+#renv::restore completed 24.09.2025
+#renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+# Install and load essentials functions 
+```{r load_essential_functions_current_session}
+
+## Load all R scripts from the 'functions' folder into the current session
+temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+
+## Install private packages 
+# Install ptm.stiochiometry package
+install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries - ptm.stiochiometry
+library(ptm.stoichiometry)
+
+```
+
+# Import data 
+
+```{r import_data}
+
+# Import human protien reference data from specified file path 
+ref_protein_data <- import_reference_fasta(file.path
+("/fast/AG_Sugimoto/reference/uniprot/human", 
+  "UP000005640_9606.fasta")) 
+
+```
+
+
+# Calculation of Stoichiometry without diagnostic ion consideration 
+```{r data_directory_wo_di}
+
+
+```
+
+```{r calculate_stoichiometry_wo_di}
+
+```
+
+# Calculation of Stoichiometry with diagnostic ion consideration 
+
+```{r data_directory_w_di}
+
+```
+
+```{r calculate_stoichiometry_w_di}
+
+```
+
+# Calculation of Stoichiometry with diagnostic ion and iterative 
+
+```{r data_directory_w_di_it}
+
+```
+
+```{r calculate_stoichiometry_w_di_it}
+
+```
+
+
+# Calculation of Stoichiometry with diagnostic ion, iterative and additional PTMs  
+
+```{r data_directory_w_di_it_aPTMs}
+
+```
+
+```{r alculate_stoichiometry_w_di_it_aPTMs}
+
+```
+
+
+# Session information
+
+```{r sessionInfo}
+
+## sessioninfo::session_info()
+
+```
