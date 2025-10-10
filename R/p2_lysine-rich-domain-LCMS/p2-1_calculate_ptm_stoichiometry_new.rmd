@@ -101,24 +101,29 @@ all_sample_run_info <- read_excel(
   sheet = "MQ_standard"
 ) %>% data.table
 
-# Add a new column 'sample_id' that assigns a unique sequential number to each row (1:N), where N is the total number of rows in the data.table
+# Add a new column 'sample_id' that assigns a unique sequential number to each row (1:N), 
+#where N is the total number of rows in the data.table
 all_sample_run_info[, sample_id := 1:.N]
 
 ```
 
 ```{r calculate_stoichiometry_wo_di}
 
-## Stochiomtery analysis using with MULTI-MSMS combined with MULTI-SECPEP (secondary peptide) and MULTI-MSMS only
+## Stochiomtery analysis using with MULTI-MSMS combined with 
+# MULTI-SECPEP (secondary peptide) and MULTI-MSMS only
 
 # Retrieve data id along with its matching sample ID for data-A and -D
-# Note: data-A and -D are considered, as these samples contain fixed PTM of carbamidomethyl
+# Note: data-A and -D are considered, as these samples contain fixed PTM of 
+#carbamidomethyl
 for(i in all_sample_run_info[data %in% 
                              c("data-A", "data-D"), sample_id]){
   
 # Build full path to MaxQuant evidence file
    mq_evidence_data = file.path(pnas2022_data, 
                                "evidence",
-                               paste0(all_sample_run_info[sample_id == i, prefix], "evidence.txt"))
+                               paste0(all_sample_run_info[sample_id == i, 
+                                                          prefix], 
+                                      "evidence.txt"))
    
 # Print the name of the evidence file currently being processed
    print(paste0("Processing: ", basename(mq_evidence_data)))
@@ -139,9 +144,9 @@ for(i in all_sample_run_info[data %in%
       output_prefix = file.path(p2_results_dir, paste0(
         "including_SECPEP_", all_sample_run_info[sample_id == i, prefix] 
         )),
-      ptm_mapping_file = file.path(
-        project.dir, 
-        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+    ptm_mapping_file = file.path(
+      project.dir, 
+  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
       ),
       K_only = FALSE,
       selected_type = NA
@@ -166,16 +171,21 @@ for (i in samples_to_process[, sample_id]) {
   prefix    <- sample_row$prefix[1]
   data_name <- sample_row$data[1]
 
-  mq_evidence_data <- file.path(pnas2022_data, "evidence", paste0(prefix, "evidence.txt"))
+  mq_evidence_data <- file.path(pnas2022_data, "evidence", paste0(prefix, 
+                                                                "evidence.txt"
+                                                                  ))
+  message("Processing: ", basename(mq_evidence_data))
+  
+  if(file.exists(mq_evidence_data)) {
+  
   sample_info_file <- file.path(
     pnas2022_data, "sample_info",
     paste0("MS_dataset_overview_PXD031221_", data_name, ".csv")
   )
-  output_prefix <- file.path(p2_results_test_dir, paste0("including_SECPEP_", prefix))
+  output_prefix <- file.path(p2_results_test_dir, paste0("including_SECPEP_", 
+                                                         prefix))
 
-  message("Processing sample_id: ", i, " | Evidence: ", basename(mq_evidence_data))
-
-  calculate_stoichiometry(
+ stoic_MSMS_SECEP_2.dt <- calculate_stoichiometry(
     mq_evidence_data = mq_evidence_data,
     sample_info_file = sample_info_file,
     ref_protein_dt   = ref_protein_data,
@@ -185,44 +195,50 @@ for (i in samples_to_process[, sample_id]) {
     selected_type    = NA
   )
  
-   gc() # Run garbage collection to free up unused memory  
-   
+   else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+   }
+ 
+    gc() # Run garbage collection to free up unused memory  
+  }  
 }
 
 
 # Calculate stochiomtery for MULTI-MSMS only
+
+ptm_mapping_file <- file.path(
+  project.dir,
+  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv")
+
 for(i in 1:nrow(all_sample_run_info)) {
 
-  mq_evidence_data = file.path(pnas2022_data,
-                               "evidence",
-                               paste0(all_sample_run_info[i, prefix], "evidence.txt"))
+  mq_evidence_data = file.path(pnas2022_data, "evidence", 
+                               paste0(all_sample_run_info[i, prefix], 
+                                      "evidence.txt"))
+    message("Processing: ", basename(mq_evidence_data))
+
+  sample_info_file = file.path(
+    pnas2022_data,"sample_info",
+        paste0("MS_dataset_overview_PXD031221_",  all_sample_run_info[i, data],
+               ".csv"))
+  if(file.exists(mq_evidence_data)) {
   
-  print(paste0("Processing: ", basename(mq_evidence_data)))
-  
-      # Calculate stochiomtery for MULTI-MSMS 
-    stoic.dt <- calculate_stoichiometry(
-      mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
-        pnas2022_data,
-        "sample_info",
-        paste0(
-          "MS_dataset_overview_PXD031221_",
-          all_sample_run_info[i, data],
-          ".csv"
-        )
-      ),
-      ref_protein_dt = ref_protein_data,
-      output_prefix = file.path(p2_results_dir, all_sample_run_info[i, prefix]),
-      ptm_mapping_file = file.path(
-        project.dir, 
-        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
-      ),
-      K_only = FALSE,
-      selected_type = c("MULTI-MSMS")
-    )
-  
-  gc()
-  
+   stoic_MSMS.dt <- calculate_stoichiometry(
+    mq_evidence_data = mq_evidence_data,
+    sample_info_file = sample_info_file,
+    ref_protein_dt   = ref_protein_data,
+    output_prefix    = output_prefix,
+    ptm_mapping_file = ptm_mapping_file,
+    K_only           = FALSE,
+    selected_type    = c("MULTI-MSMS")
+  )
+   
+     else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+   }
+   
+   gc()
+  }
 }
 
 ```
@@ -243,7 +259,8 @@ di_sample_run_info <- read_excel(
   sheet = "run_setting"
 ) %>% data.table
 
-# Add a new column 'sample_id' that assigns a unique sequential number to each row (1:N), where N is the total number of rows in the data.table
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
 di_sample_run_info[, sample_id := 1:.N]
 
 ```
@@ -251,12 +268,17 @@ di_sample_run_info[, sample_id := 1:.N]
 ```{r calculate_stoichiometry_w_di}
 
 for(i in 1:nrow(di_sample_run_info)) {
+  
+  sample_info_file = file.path(pnas2022_DI_data, "sample_info",
+        paste0("MS_dataset_overview_PXD031221_", di_sample_run_info[i, data],
+          ".csv"))
 
   mq_evidence_data = file.path(pnas2022_DI_data,
                                "evidence",
-                               paste0(di_sample_run_info[i, prefix], "evidence.txt"))
+                               paste0(di_sample_run_info[i, prefix], 
+                                      "evidence.txt"))
   
-  print(paste0("Processing: ", basename(mq_evidence_data)))
+   message("Processing: ", basename(mq_evidence_data))
   
   if (file.exists(mq_evidence_data)) {
     
@@ -269,24 +291,17 @@ for(i in 1:nrow(di_sample_run_info)) {
       "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
     )
     
-    stoic.dt <- calculate_stoichiometry2(
+    stoic_MQ_DI.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
-        pnas2022_DI_data,
-        "sample_info",
-        paste0(
-          "MS_dataset_overview_PXD031221_",
-          di_sample_run_info[i, data],
-          ".csv"
-        )
-      ),
+      sample_info_file = sample_info_file,
       ref_protein_dt = ref_protein_dt,
       ptm_files = ptm_files,
       ptm_names = ptm_names,
-      output_prefix = file.path(p2.res.dir, paste0("DI_", di_sample_run_info[i, prefix])),
+      output_prefix = file.path(p2.res.dir, paste0("DI_", di_sample_run_info[i, 
+                                                                  prefix])),
       ptm_mapping_file = file.path(
         project.dir, 
-        "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
       ),
       K_only = FALSE,
       selected_type = c("MULTI-MSMS")
