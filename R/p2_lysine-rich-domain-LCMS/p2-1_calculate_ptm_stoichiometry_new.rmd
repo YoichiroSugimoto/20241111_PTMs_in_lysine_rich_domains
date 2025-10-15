@@ -251,7 +251,7 @@ ptm_mapping_file <- file.path(
 
 # MSMS + SECEP
 samples_to_process <- MQ_standard_data[data %in% c("data-A", "data-D")]
-MQ_Std_MSMS_SECEP_dir <- file.path(project.dir, "results", "MQ_Std_MSMS_SECEP")
+MQ_Std_MSMS_SECEP_dir <- file.path(project.dir, "results", "p2-analysis-setting","MQ_Std_MSMS_SECEP")
 
 process_stoichiometry(
   MQ_standard_data = samples_to_process,
@@ -263,7 +263,7 @@ process_stoichiometry(
 )
 
 # MSMS only
-MQ_Std_MSMS_dir <- file.path(project.dir, "results", "MQ_Std_MSMS")
+MQ_Std_MSMS_dir <- file.path(project.dir, "results","p2-analysis-setting", "MQ_Std_MSMS")
 
 process_stoichiometry(
   MQ_standard_data = MQ_standard_data,
@@ -276,9 +276,6 @@ process_stoichiometry(
 ```
 
 
-
-
-
 # Calculation of Stoichiometry with diagnostic ion consideration 
 
 ```{r data_directory_w_di}
@@ -286,13 +283,13 @@ process_stoichiometry(
 # Load data into environment
 pnas2022_DI_data <- file.path(
   project.dir,
-  "data/MQ_DI_output/PNAS2022" 
+  "data/MQ_with_DI/PNAS2022" 
 )
 
 # Load sample info data 
 di_sample_run_info <- read_excel(
   file.path(pnas2022_DI_data, "PXD031221_sample_matrix.xlsx"),
-  sheet = "run_setting"
+  sheet = "MQ_with_DI" #Need to check the sample info 
 ) %>% data.table
 
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
@@ -355,6 +352,21 @@ for(i in 1:nrow(di_sample_run_info)) {
 
 ```{r data_directory_w_di_it}
 
+# Load data into environment
+MQ_DI_iterative_data <- file.path(
+  project.dir,
+  "data/MQ_with_DI_iterative" 
+)
+
+# Load sample info data 
+di_it_sample_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI_iterative" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+di_sample_run_info[, sample_id := 1:.N]
 ```
 
 ```{r calculate_stoichiometry_w_di_it}
