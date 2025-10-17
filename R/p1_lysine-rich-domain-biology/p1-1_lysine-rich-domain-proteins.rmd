@@ -61,10 +61,6 @@ dir.create(figures.dir, showWarnings = FALSE)
 
 ```{r import_data, warning=FALSE}
 
-#------------------------------------------------
-# Map UniProt IDs to Gene Symbols and ENSEMBL IDs 
-#------------------------------------------------
-
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
@@ -94,7 +90,11 @@ gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id
 
 # Rename data file and save to directory 
 fwrite(gene.id.dt, file.path(r0.dir, "uniprot-ensembl.csv"))
+```
 
+# Maximum K score and Protein Length
+
+```{r Maximum_K_score_Protein_Length}
 #-----------------------------------
 # Maximum K score and Protein Length
 #-----------------------------------
@@ -118,6 +118,68 @@ max.k.score.dt <- merge(
 
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(r0.dir, "max-k-score-per-protein.csv")) 
+```
+
+# Data Visualization - Maximum K score and Protein Length
+
+```{r Data_Visualization_Max_K_Score_&_Protein_Length}
+
+#---------------------------------------------------------
+# Data Visualization - Maximum K score and Protein Length
+#---------------------------------------------------------
+
+## Plot - The number of proteins per max K score
+
+protein_per_k_score <- ggplot(
+    max.k.score.dt,
+    aes(
+        x = max_k_ratio
+    )
+) +
+    geom_bar() +
+    scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
+  labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
+
+## Plot - Max K ratio vs protein length
+
+max_K_score_proteinlen <- ggplot(
+  max.k.score.dt,
+  aes(
+    y = protein_len,
+    x = factor(max_k_ratio)
+  )
+) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
+  labels(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
+  coord_cartesian(ylim = c(0, 2000))
+
+## Disorderedness
+
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio_group),
+    y = IUPRED2
+  )
+) + 
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
+
+
+## Charge
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio_group),
+    y = windowCharge
+  )
+) + 
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
+
+```
+
+# RNA-Binding proteins
+
+```{r RNA_binding_proteins}
 
 #---------------------------
 # RNA-Binding Proteins (RBP)
@@ -159,43 +221,10 @@ rbp.count.dt <- m.rbp.dt[!is.na(uniprot_id),
 
 rbp.count.dt[, table(identified_RBP)]
 
-```
+#-----------------------------------
+## Comparing Max K score versus RBP
+#-----------------------------------
 
-# Basic statistics
-
-```{r basic_stats}
-
-#----------------------
-# Data Visualization
-#----------------------
-
-## Plot - The number of proteins per max K score
-
-protein_per_k_score <- ggplot(
-    max.k.score.dt,
-    aes(
-        x = max_k_ratio
-    )
-) +
-    geom_bar() +
-    scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
-  labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
-
-## Plot - Max K ratio vs protein length
-
-max_K_score_proteinlen <- ggplot(
-  max.k.score.dt,
-  aes(
-    y = protein_len,
-    x = factor(max_k_ratio)
-  )
-) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
-  labels(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
-  coord_cartesian(ylim = c(0, 2000))
-
-## RNA-Binding proteins 
-
-## Max K score versus RBP 
 # Create dataset containing max K score and RBP count
 rbp.count.dt <- merge(
   max.k.score.dt, rbp.count.dt, by = "uniprot_id"
@@ -214,7 +243,13 @@ rbp.count.dt[, RBP := case_when(
   TRUE ~ "Others") %>% factor(levels = data.set.names)]
 rbp.count.dt[, table(RBP)]
 
-## Plot - Max K score versus RBP
+```
+
+# Data Visualization - RNA-Binding Proteins (Max K score versus RBP)
+
+```{r Data_Visualization_RNA_Binding_Proteins}
+
+# Plot - Max K score versus RBP
 max_K_score_rbp <- ggplot(
   data = rbp.count.dt,
   aes(
@@ -228,12 +263,13 @@ max_K_score_rbp <- ggplot(
 
 ```
 
+
 # Subcellular localisation
 
 ```{r subcellular_localisation_analysis}
 
 #--------------------------------------
-# Subcellular localisation analysis
+# Sub-cellular localisation analysis
 #--------------------------------------
 
 ## Load library
@@ -294,7 +330,14 @@ d.k.score.compartment.dt <- dcast(
 d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
-## Load libraries -  'RColorBrewer' and 'pheatmap'
+```
+
+
+# Data Visualization - Subcellular Localisation
+
+```{r Data_Visualization_Subcellular_Localisation}
+
+# Load libraries -  'RColorBrewer' and 'pheatmap'
 library(RColorBrewer)
 library("pheatmap")
 
