@@ -27,7 +27,7 @@ output:
 #        "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
 #    )
 
-# Create project directory - contains the R scripts, data and result folders
+# Define project directory - contains the R scripts, data and result folders
  project.dir <-
   file.path(
     "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
@@ -93,9 +93,11 @@ MQ_standard_data[, sample_id := 1:.N]
 # Calculation of Stoichiometry without diagnostic ion consideration 
 ```{r calculate_stoichiometry_wo_di_test}
 
-## Stoichiomtery analysis using with MULTI-MSMS combined with 
+## Stoichiomtery analysis using with MULTI-MSMS with 
 # MULTI-SECPEP (secondary peptide) and MULTI-MSMS only
 
+# Automate stoichiometry calculations across MaxQuant datasets (MULTI-MSMS + 
+# MULTI-SECPEP and MULTI-MSMS only)
 process_stoichiometry <- function(MQ_standard_data,
                                   output_dir,
                                   ref_protein_data,
@@ -103,23 +105,31 @@ process_stoichiometry <- function(MQ_standard_data,
                                   selected_type = NA,
                                   prefix_label = "") {
   
+  # Create output directory if it does not already exist 
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   
+  # For each sample_id in the MQ_standard data, calculate the stoichiometry
   for (i in seq_len(nrow(MQ_standard_data))) {
-    prefix    <- MQ_standard_data$prefix[i]
-    MQ_standard_sample <- MQ_standard_data$data[i]
+    prefix    <- MQ_standard_data$prefix[i] # Extract the prefix column
+    MQ_standard_sample <- MQ_standard_data$data[i] # Extract the data column 
     
+    # Define file path to MaxQuant evidence files
     mq_evidence_data <- file.path(pnas2022_data, "evidence", paste0(prefix, "evidence.txt"))
-    message("Processing: ", basename(mq_evidence_data))
+    message("Processing: ", basename(mq_evidence_data)) # Print which sample id is being processed
     
+    # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
     if (file.exists(mq_evidence_data)) {
+      
+      # Define corresponding sample information (metadata) file
       sample_info_file <- file.path(
         pnas2022_data, "sample_info",
         paste0("MS_dataset_overview_PXD031221_", MQ_standard_sample, ".csv")
       )
       
+      # Define output prefix for results
       output_prefix <- file.path(output_dir, paste0(prefix_label, prefix))
       
+      # Run main stoichiometry calculation
       calculate_stoichiometry(
         mq_evidence_data = mq_evidence_data,
         sample_info_file = sample_info_file,
@@ -131,9 +141,10 @@ process_stoichiometry <- function(MQ_standard_data,
       )
       
     } else {
+      # If evidence.txt does not exist, skip the function and print below message
       message("File does not exist: ", mq_evidence_data)
     }
-    
+    # Garbage collection - to free up unused memory 
     gc()
   }
 }
@@ -191,71 +202,149 @@ MQ_DI_it_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_it_run_info[, sample_id := 1:.N]
 
-# Create a 
+# Create file path for results
+MQ_with_DI_iterative_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI_iterative")
+dir.create(MQ_with_DI_iterative_dir, recursive = TRUE)
+
+# Load common PTM mapping file
+ptm_mapping_file <- file.path(
+  project.dir,
+  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+)
 ```
+
+```{r parse_accession_function}
+# Define the parse protein function 
+parse_protein_accession_function_for_iterative = function(x){str_split_fixed(x, pattern = "\\|", n = 3)[, 2]}
+
+```
+
 
 ```{r calculate_stoichiometry_w_di_it}
 
-  for (i in 1:nrow(MQ_DI_it_run_info)){
+# For each sample ID calculate the stiochiomtery
+for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_info
+  
+  # Retrieves the evidence.txt file for each sample ID 
+  mq_evidence_data = file.path(MQ_DI_iterative_data,
+                               MQ_DI_it_run_info[i, data_dir],
+                               paste0("evidence.txt"))
+  
+  # Pastes the sample ID that is processing 
+  print(paste0("Processing: ", basename(mq_evidence_data)))
+  
+  if (file.exists(mq_evidence_data)) { # Checks whether the sample ID has the corresponsing evidence.txt file. If yes, then proceed
     
-    mq_evidence_data = file.path(MQ_DI_iterative_data,
-                                 MQ_DI_it_run_info[i, data_dir],
-                                 paste0("evidence.txt"))
+    ptm_files <- list.files(file.path(
+      MQ_DI_iterative_data, MQ_DI_it_run_info[i, data_dir], "ptm"), 
+      full.names = TRUE)
     
-    print(paste0("Processing: ", basename(mq_evidence_data)))
+    ptm_names <- paste0(
+      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+    )
     
-    if (file.exists(mq_evidence_data)) {
-      
-      ptm_files <- list.files(file.path(
-        MQ_DI_iterative_data, MQ_DI_it_run_info[i, data_dir], "ptm"), 
-        full.names = TRUE)
-      
-      ptm_names <- paste0(
-        "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-      )
-      
-      stoic.dt <- calculate_stoichiometry2(
-        mq_evidence_data = mq_evidence_data,
-        sample_info_file = file.path(
-          MQ_DI_iterative_data,
-          "sample_info",
-          paste0(
-            "MS_dataset_overview_PXD031221_",
-            MQ_DI_it_run_info[i, data],
-            ".csv"
-          )
-        ),
-        ref_protein_dt = ref_protein_dt,
-        ptm_files = ptm_files,
-        ptm_names = ptm_names,
-        output_prefix = file.path(p2.res.dir, paste0("DI_", di_sample_run_info[i, prefix])),
-        ptm_mapping_file = file.path(
-          project.dir, 
-          "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
-        ),
-        K_only = FALSE,
-        selected_type = c("MULTI-MSMS")
-      )
-    } else {
-      print(paste0("File does not exist: ", mq_evidence_data))
-    }
-    
-    gc()
-    
+    stoic.dt <- calculate_stoichiometry2(
+      mq_evidence_data = mq_evidence_data,
+      sample_info_file = file.path(
+        MQ_DI_iterative_data,
+        "sample_info",
+        paste0(
+          "MS_dataset_overview_PXD031221_",
+          MQ_DI_it_run_info[i, data],
+          ".csv"
+        )
+      ),
+      ref_protein_dt = ref_protein_data,
+      ptm_files = ptm_files,
+      ptm_names = ptm_names,
+      output_prefix = file.path(MQ_with_DI_iterative_dir, paste0("DI_", MQ_DI_it_run_info[i, data_dir])),
+      ptm_mapping_file = ptm_mapping_file,
+      K_only = FALSE,
+      selected_type = c("MULTI-MSMS"),
+      parse_protein_accession_function = parse_protein_accession_function_for_iterative
+    )
+  } else {
+    print(paste0("File does not exist: ", mq_evidence_data))
   }
+  
+  gc()
+  
+}
 
 ```
-
-
 
 
 # Calculation of Stoichiometry with diagnostic ion, iterative and additional PTMs 
 
 ```{r data_directory_w_di_it_aPTMs}
+# Load data into environment
+MQ_DI_it_aPTM_data <- file.path(
+  project.dir,
+  "data/MQ_with_additional_ptms_output/pnas2022" 
+)
 
+# Load sample run info data 
+MQ_DI_it_aPTM_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI_iterative_addPTMs" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_it_aPTM_run_info[, sample_id := 1:.N]
+
+# Create file path for results
+MQ_with_DI_it_aPTMs_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI_iterative_addPTMs")
+dir.create(MQ_with_DI_it_aPTMs_dir, recursive = TRUE)
 ```
 
 ```{r alculate_stoichiometry_w_di_it_aPTMs}
+
+for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){
+  
+  mq_evidence_data = file.path(MQ_DI_it_aPTM_data,
+                               MQ_DI_it_aPTM_run_info[i, data_dir],
+                               paste0("evidence.txt"))
+  
+  print(paste0("Processing: ", basename(mq_evidence_data)))
+  
+  if (file.exists(mq_evidence_data)) {
+    
+    ptm_files <- list.files(file.path(
+      MQ_DI_it_aPTM_data, MQ_DI_it_aPTM_run_info[i, data_dir], "ptm"), 
+      full.names = TRUE)
+    
+    ptm_names <- paste0(
+      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+    )
+    
+    stoic.dt <- calculate_stoichiometry2(
+      mq_evidence_data = mq_evidence_data,
+      sample_info_file = file.path(
+        MQ_DI_it_aPTM_data,
+        "sample_info",
+        paste0(
+          "MS_dataset_overview_PXD031221_",
+          MQ_DI_it_aPTM_run_info[i, data],
+          ".csv"
+        )
+      ),
+      ref_protein_dt = ref_protein_data,
+      ptm_files = ptm_files,
+      ptm_names = ptm_names,
+      output_prefix = file.path(MQ_with_DI_it_aPTMs_dir, paste0("DI_", MQ_DI_it_aPTM_run_info[i, data_dir])),
+      ptm_mapping_file = ptm_mapping_file,
+      K_only = FALSE,
+      selected_type = c("MULTI-MSMS"),
+      parse_protein_accession_function = parse_protein_accession_function_for_iterative
+    )
+  } else {
+    print(paste0("File does not exist: ", mq_evidence_data))
+  }
+  
+  gc()
+  
+}
 
 ```
 

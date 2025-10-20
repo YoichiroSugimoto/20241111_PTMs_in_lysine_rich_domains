@@ -22,6 +22,7 @@ This script examines how the use of diagnostic ions improve the analysis of lysi
 #           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
 #       )
 
+# Define project directory - contains R scripts, data and results folders
 project.dir <-
   file.path(
     "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
@@ -36,7 +37,8 @@ renv::restore(file.path(project.dir, "R"))
 
 ```{r set parameters}
 
-temp <-
+# Load all R scripts from the 'functions' folder into the current session
+P2_functions <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
     pattern = "*.R",
@@ -44,9 +46,15 @@ temp <-
   ),
   source)
 
+### Install private packages 
+# Install ptm.stiochiometry package - package installed 24.09.2025
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
+
 
 p2.res.dir <- file.path(project.dir,
                         "results",
@@ -459,6 +467,7 @@ cor.test(
 )
 
 
+# Identify unique PTMs present in new data compared to PNAS2022
 MQ2025_vs_PNAS2022_dt <- merge(
   MQ_DI_it_d.hydroxyK_dt,
   non.duplicated.pnas2022.stoic.dt %>% select(protein_accession, stoichiometry_PNAS2022),
