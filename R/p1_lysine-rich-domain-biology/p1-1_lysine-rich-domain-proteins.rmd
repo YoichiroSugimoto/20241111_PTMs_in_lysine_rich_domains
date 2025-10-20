@@ -148,7 +148,7 @@ ggplot(
 
 
 # Plot - The number of proteins per max K score
-protein_per_k_score <- ggplot(
+ggplot(
     max.k.score.dt,
     aes(
         x = max_k_ratio
@@ -159,14 +159,14 @@ protein_per_k_score <- ggplot(
   labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
 
 # Plot - Max K ratio vs protein length
-max_K_score_proteinlen <- ggplot(
+ggplot(
   max.k.score.dt,
   aes(
     y = protein_len,
     x = factor(max_k_ratio)
   )
 ) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
-  labels(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
+  labs(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
   coord_cartesian(ylim = c(0, 2000))
 
 # Plot - K_score of disordered regions of proteins 
@@ -290,8 +290,8 @@ max_K_score_rbp <- ggplot(
 # Sub-cellular localisation analysis
 #--------------------------------------
 
-
-subcellularvis_package <- install.packages(file.path("/fast/AG_Sugimoto/home/users/pallavi/Software_packages/R/subcellularvis"), repos = NULL, type = "source")
+# Packaged installed 20th Oct 2025
+# install.packages(file.path("/fast/AG_Sugimoto/home/users/pallavi/Software_packages/R/subcellularvis"), repos = NULL, type = "source")
 
 ## Load library
 library("subcellularvis")
@@ -322,33 +322,42 @@ extractCompartment <- function(gene.set, class.name){
   return(comp.out.dt)
 }
 
-# Add column containing values from 0.0 - 0.9 only
+# Add column containing values from 0 - 0.9 only
 max.k.score.dt[, max_k_ratio_group := case_when(
   max_k_ratio >= 0.9 ~ 0.9, # if ≥ 0.9 → set value to 0.9
   TRUE ~ max_k_ratio  #if < 0.9, then retain original max k ratio value
 )]
 
-#Apply the 'extractCompartment' function to each  
+# Apply the 'extractCompartment' function to each subset of protein grouped by
+# max_K_ratio
 k.score.compartment.dt <- mapply(
   extractCompartment,
   gene.set = lapply(
-    seq(0, 9, by = 1) / 10, 
-    function(x){max.k.score.dt[max_k_ratio_group == x, uniprot_id]}
+    seq(0, 9, by = 1) / 10, # create a sequence of 0 to 0.9 
+    function(x){ # For each x, extract the 'uniport_id' belonging to that max_k_ratio_group
+      max.k.score.dt[max_k_ratio_group == x, uniprot_id]}
     ),
-  class.name = as.character(seq(0, 0.9, by = 0.1)),
-  SIMPLIFY = FALSE
-) %>% rbindlist
+  class.name = as.character(seq(0, 0.9, by = 0.1)), # convert and assign class names as strings
+  SIMPLIFY = FALSE # Return list instead of matrix or array
+) %>% rbindlist # combine all lists into a data table
   
+# Calculate the negative log10 of FDR and create a new column called 'mlog10FDR'
 k.score.compartment.dt[, mlog10FDR := -log10(FDR)]
 
-# Convert data table 
+# Convert data table into wide format 
+# rows: 'Compartment'
+# column: 'class_name'
+# values: 'mlog10FDR'
 d.k.score.compartment.dt <- dcast(
   k.score.compartment.dt,
   Compartment ~ factor(class_name),
   value.var = "mlog10FDR"
 )
 
+# convert data table into matrix 
 d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
+
+# Assign Compartment names as rownames of the matrix 
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
 ```
@@ -364,6 +373,7 @@ library("pheatmap")
 
 mat_breaks <- seq(min(d.k.score.compartment.mat), max(d.k.score.compartment.mat), length.out = 40)
 
+# Plot - heatmap of subcellular localisation
 pheatmap(
   d.k.score.compartment.mat,
   cluster_cols = FALSE,
@@ -371,6 +381,7 @@ pheatmap(
   breaks = mat_breaks
 )
 
+# Plot - max_k_score versus −log10(FDR) of nuclear localisation enrichment
 ggplot(
   data = k.score.compartment.dt[Compartment == "Nucleus"],
   aes(
