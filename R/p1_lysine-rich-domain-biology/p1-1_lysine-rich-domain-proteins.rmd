@@ -30,7 +30,7 @@ project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111
 ## Use 'renv::snapshot', if there are updates in the current dependencies 
 # renv::snapshot(file.path(project.dir, "R"))
 
-## Restore packages 
+## Restore packages
 renv::restore(file.path(project.dir, "R"))
 
 ## Check package versions of current loaded library and lockfile 
@@ -48,12 +48,10 @@ temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", 
 ## Define paths to directory
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
-r0.dir <- file.path(results.dir, "p0-data-preprocessing")
-figures.dir <- file.path(project.dir, "p1-1_new_figures")
 
-# Create directory
-dir.create(r0.dir, showWarnings = FALSE)
-dir.create(figures.dir, showWarnings = FALSE)
+#Create p1 results directory
+p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
+dir.create(p1_K_rich_domains, showWarnings = FALSE, recursive = TRUE)
 
 ```
 
@@ -89,7 +87,7 @@ setnames(
 gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id)]
 
 # Rename data file and save to directory 
-fwrite(gene.id.dt, file.path(r0.dir, "uniprot-ensembl.csv"))
+fwrite(gene.id.dt, file.path(results.dir, "p1_K_rich_domains","uniprot-ensembl.csv"))
 ```
 
 # Maximum K score and Protein Length
@@ -117,19 +115,39 @@ max.k.score.dt <- merge(
 )
 
 # Create dataset with max k score 
-fwrite(max.k.score.dt, file.path(r0.dir, "max-k-score-per-protein.csv")) 
+fwrite(max.k.score.dt, file.path(results.dir, "p1_K_rich_domains", "max-k-score-per-protein.csv")) 
 ```
 
-# Data Visualization - Maximum K score and Protein Length
+# Data Visualization - K score, Maximum K score and Protein Length
 
 ```{r Data_Visualization_Max_K_Score_&_Protein_Length}
 
 #---------------------------------------------------------
-# Data Visualization - Maximum K score and Protein Length
+# Data Visualization - K score, Maximum K score and Protein Length
 #---------------------------------------------------------
 
-## Plot - The number of proteins per max K score
+## K_ratio distribution 
+# Count how many proteins have each K_ratio value
+protein.feature.dt[, table(K_ratio)] 
 
+# Create a new column `K_ratio_group` based on the K_ratio
+protein.feature.dt[, K_ratio_group := case_when(
+  K_ratio >= 0.9 ~ 0.9, #If K_ratio is 0.9 or higher, assign value 0.9
+  TRUE ~ K_ratio #If K_ratio is lower than 0.9, then assign original K_ratio value
+)]
+
+# Plot - The number of proteins per K score
+ggplot(
+    protein.feature.dt,
+    aes(
+        x = K_ratio_group
+    )
+) +
+    geom_bar() +
+    scale_x_continuous(breaks=seq(0, 1, 0.1))
+
+
+# Plot - The number of proteins per max K score
 protein_per_k_score <- ggplot(
     max.k.score.dt,
     aes(
@@ -140,8 +158,7 @@ protein_per_k_score <- ggplot(
     scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
   labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
 
-## Plot - Max K ratio vs protein length
-
+# Plot - Max K ratio vs protein length
 max_K_score_proteinlen <- ggplot(
   max.k.score.dt,
   aes(
@@ -152,7 +169,8 @@ max_K_score_proteinlen <- ggplot(
   labels(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
   coord_cartesian(ylim = c(0, 2000))
 
-## Disorderedness
+# Plot - K_score of disordered regions of proteins 
+# This plot indicates K score depending on the level of protein disorderliness
 
 ggplot(
   protein.feature.dt,
@@ -307,7 +325,7 @@ max.k.score.dt[, max_k_ratio_group := case_when(
   TRUE ~ max_k_ratio  #if < 0.9, then retain original max k ratio value
 )]
 
-
+#Apply the 'extractCompartment' function to each  
 k.score.compartment.dt <- mapply(
   extractCompartment,
   gene.set = lapply(
@@ -320,7 +338,7 @@ k.score.compartment.dt <- mapply(
   
 k.score.compartment.dt[, mlog10FDR := -log10(FDR)]
 
-
+# Convert data table 
 d.k.score.compartment.dt <- dcast(
   k.score.compartment.dt,
   Compartment ~ factor(class_name),
