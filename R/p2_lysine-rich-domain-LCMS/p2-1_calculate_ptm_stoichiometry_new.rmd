@@ -144,7 +144,7 @@ process_stoichiometry <- function(MQ_standard_data,
       # If evidence.txt does not exist, skip the function and print below message
       message("File does not exist: ", mq_evidence_data)
     }
-    # Garbage collection - to free up unused memory 
+    # Garbage collection - to free up memory 
     gc()
   }
 }
@@ -230,7 +230,7 @@ parse_protein_accession_function_for_iterative = function(x){str_split_fixed(x, 
 
 ```{r calculate_stoichiometry_w_di_it}
 
-# For each sample ID calculate the stiochiomtery
+# For each sample ID calculate the stoichiomtery
 for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_info
   
   # Retrieves the evidence.txt file for each sample ID 
@@ -241,19 +241,23 @@ for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_inf
   # Pastes the sample ID that is processing 
   print(paste0("Processing: ", basename(mq_evidence_data)))
   
-  if (file.exists(mq_evidence_data)) { # Checks whether the sample ID has the corresponsing evidence.txt file. If yes, then proceed
+  # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
+  if (file.exists(mq_evidence_data)) { 
     
+    # Locate and fetch all PTM site files within the ptm folder
     ptm_files <- list.files(file.path(
       MQ_DI_iterative_data, MQ_DI_it_run_info[i, data_dir], "ptm"), 
       full.names = TRUE)
     
+    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
     ptm_names <- paste0(
       "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
     )
     
+    # Run the stoichiometry calculation 
     stoic.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
+      sample_info_file = file.path( # Corresponding sample info data 
         MQ_DI_iterative_data,
         "sample_info",
         paste0(
@@ -265,16 +269,19 @@ for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_inf
       ref_protein_dt = ref_protein_data,
       ptm_files = ptm_files,
       ptm_names = ptm_names,
-      output_prefix = file.path(MQ_with_DI_iterative_dir, paste0("DI_", MQ_DI_it_run_info[i, data_dir])),
+      output_prefix = file.path(MQ_with_DI_iterative_dir,  # Define output prefix for results
+                                paste0("DI_", MQ_DI_it_run_info[i, data_dir])),
       ptm_mapping_file = ptm_mapping_file,
       K_only = FALSE,
       selected_type = c("MULTI-MSMS"),
       parse_protein_accession_function = parse_protein_accession_function_for_iterative
     )
+     # If evidence.txt does not exist, skip the function and print below message
   } else {
     print(paste0("File does not exist: ", mq_evidence_data))
   }
   
+   # Garbage collection - to free up memory 
   gc()
   
 }
@@ -308,24 +315,30 @@ dir.create(MQ_with_DI_it_aPTMs_dir, recursive = TRUE)
 
 ```{r alculate_stoichiometry_w_di_it_aPTMs}
 
-for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){
+# For each sample ID calculate the stiochiomtery
+for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){ # Takes each row from the MQ_DI_it_aPTM_run_info
   
+  # Retrieves the evidence.txt file for each sample ID 
   mq_evidence_data = file.path(MQ_DI_it_aPTM_data,
                                MQ_DI_it_aPTM_run_info[i, data_dir],
                                paste0("evidence.txt"))
-  
+  # Pastes the sample ID that is processing 
   print(paste0("Processing: ", basename(mq_evidence_data)))
   
+   # Checks whether the sample ID has the corresponsing evidence.txt file. If yes, then proceed
   if (file.exists(mq_evidence_data)) {
     
+    # Locate and fetch all PTM site files within the ptm folder
     ptm_files <- list.files(file.path(
       MQ_DI_it_aPTM_data, MQ_DI_it_aPTM_run_info[i, data_dir], "ptm"), 
       full.names = TRUE)
     
+    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
     ptm_names <- paste0(
       "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
     )
     
+    # Run the stoichiometry calculation
     stoic.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
       sample_info_file = file.path(
@@ -346,10 +359,11 @@ for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){
       selected_type = c("MULTI-MSMS"),
       parse_protein_accession_function = parse_protein_accession_function_for_iterative
     )
-  } else {
+  } else { # If evidence.txt does not exist, skip the function and print below message
     print(paste0("File does not exist: ", mq_evidence_data))
   }
   
+  # Garbage collection - to free up memory
   gc()
   
 }
