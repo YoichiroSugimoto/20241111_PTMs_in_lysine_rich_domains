@@ -290,6 +290,9 @@ max_K_score_rbp <- ggplot(
 # Sub-cellular localisation analysis
 #--------------------------------------
 
+
+subcellularvis_package <- install.packages(file.path("/fast/AG_Sugimoto/home/users/pallavi/Software_packages/R/subcellularvis"), repos = NULL, type = "source")
+
 ## Load library
 library("subcellularvis")
 

@@ -12,7 +12,7 @@ output:
      toc_depth: 2
 ---
 
-This script identify diagnosic ions to identify confident hydroxylation sites.
+This script identify diagnostic ions to identify confident hydroxylation sites.
 
 # Environment setup
 
