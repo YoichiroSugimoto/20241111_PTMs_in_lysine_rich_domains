@@ -150,16 +150,21 @@ process_stoichiometry <- function(MQ_standard_data,
 }
 
 
-# Common PTM mapping file
+# Define file path common PTM mapping file
 ptm_mapping_file <- file.path(
   project.dir,
   "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
 )
 
-# MSMS + SECEP
+## MSMS + SECEP
+
+# Subset data-A and data-D from MQ_standard_data
 samples_to_process <- MQ_standard_data[data %in% c("data-A", "data-D")]
+
+# Define output directory for MSMS + SECPEP results
 MQ_Std_MSMS_SECEP_dir <- file.path(project.dir, "results", "p2-analysis-setting","MQ_Std_MSMS_SECEP")
 
+# Run stoichiometry processing for MSMS + SECPEP
 process_stoichiometry(
   MQ_standard_data = samples_to_process,
   output_dir       = MQ_Std_MSMS_SECEP_dir,
@@ -169,9 +174,12 @@ process_stoichiometry(
   prefix_label     = "including_SECPEP_"
 )
 
-# MSMS only
+##MSMS only
+
+# Define output directory for MSMS-only results
 MQ_Std_MSMS_dir <- file.path(project.dir, "results","p2-analysis-setting", "MQ_Std_MSMS")
 
+# Run stoichiometry processing for MSMS-only
 process_stoichiometry(
   MQ_standard_data = MQ_standard_data,
   output_dir       = MQ_Std_MSMS_dir,
