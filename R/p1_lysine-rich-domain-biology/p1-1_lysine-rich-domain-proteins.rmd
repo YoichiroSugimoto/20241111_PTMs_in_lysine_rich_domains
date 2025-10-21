@@ -182,7 +182,7 @@ ggplot(
   geom_boxplot(fill = "steelblue", outlier.shape = NA)
 
 
-## Charge
+# Plot - Protein charge versus K_ratio_group
 ggplot(
   protein.feature.dt,
   aes(
@@ -197,7 +197,7 @@ ggplot(
 
 # RNA-Binding proteins
 
-```{r RNA_binding_proteins}
+```{r RNA_binding_proteins, warning=FALSE}
 
 #---------------------------
 # RNA-Binding Proteins (RBP)
