@@ -111,7 +111,7 @@ MQ_DI_it_run_info[, sample_id := 1:.N]
 read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   # Read csv file with defined file path,  
   dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
-  dt[, condition := gsub("_$", "", prefix)]
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
   return(dt)
 }
 
@@ -254,10 +254,10 @@ ggplot(
 
 MQ_std_stoic_dt <- lapply(
   MQ_std_sample_run_info[
-    data != "data-D" & 
-      grepl("_trp_", prefix) &
-      grepl("m7_v7_(def|mCC)", prefix) & 
-      !is.na(prefix), prefix
+    data != "data-D" & # do not consider data-D
+      grepl("_trp_", prefix) & # fetch data prefix with 'trp'
+      grepl("m7_v7_(def|mCC)", prefix) & # fetch data prefix with 'm7_v7_(def or mCC)'
+      !is.na(prefix), prefix # filters rows with prefix values
   ],
   read_stoic_data,
   pre_prefix = "",
