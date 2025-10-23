@@ -307,13 +307,6 @@ MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"]
 
 MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)]
 
-# Identify the number of hydroxylated sites in MQ_DI_it data 
-
-MQ_DI_ <- pnas2022.stoic.dt[, .(protein_accession, aa_pos, curated_oxK_site)] %>%
-  {.[order(curated_oxK_site, decreasing = TRUE)][!duplicated(paste(protein_accession, aa_pos))]}
-
-
-MQ_DI_it_d.hydroxyK_dt[, .(protein_accession, aa_pos, )]
 
 #Plot before JMJD6 value filtered 
 ggplot(
