@@ -42,6 +42,7 @@ output:
 
 
 # Install,load essential functions and libraries
+
 ```{r load_essential_functions_current_session}
 
 ## Load all R scripts from the 'functions' folder into the current session
@@ -59,7 +60,7 @@ library("readxl")
 
 # Import data 
 
-```{r import_data}
+```{r import_data, warning=FALSE}
 
 # Import human protein reference data from specified file path 
 ref_protein_data <- import_reference_fasta(file.path
@@ -70,6 +71,7 @@ ref_protein_data <- import_reference_fasta(file.path
 
 
 # Calculation of Stoichiometry without diagnostic ion consideration 
+
 ```{r data_directory_wo_di}
 
 # Load data into environment
@@ -91,7 +93,8 @@ MQ_standard_data[, sample_id := 1:.N]
 ```
 
 # Calculation of Stoichiometry without diagnostic ion consideration 
-```{r calculate_stoichiometry_wo_di_test}
+
+```{r calculate_stoichiometry_wo_di}
 
 ## Stoichiomtery analysis using with MULTI-MSMS with 
 # MULTI-SECPEP (secondary peptide) and MULTI-MSMS only
@@ -375,6 +378,6 @@ for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){ # Takes each row from the MQ_DI_it_aP
 
 ```{r sessionInfo}
 
-## sessioninfo::session_info()
+sessioninfo::session_info()
 
 ```

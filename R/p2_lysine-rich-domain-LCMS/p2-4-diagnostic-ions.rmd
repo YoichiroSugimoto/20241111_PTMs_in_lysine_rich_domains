@@ -55,20 +55,26 @@ library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
 
-
-p2.res.dir <- file.path(project.dir,
+# Create and define path to result directory 
+p2_results_dir <- file.path(project.dir,
                         "results",
-                        "p2-analysis-setting")
+                        "p2_DI_comparisons")
+dir.create(file.path(project.dir,
+                        "results",
+                        "p2_DI_comparisons"), showWarnings = FALSE, recursive = TRUE)
 
 
 ```
 
 # Import basic data
 
-```{r import_basic_data}
+```{r import_basic_data, warning=FALSE}
 
+# Define path to data directory
 data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
 
+# Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(
   file.path(
     "/fast/AG_Sugimoto/reference/uniprot/human",
@@ -76,11 +82,14 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
+# Load sample run info data (MQ Standard)
 MQ_std_sample_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
   sheet = "MQ_standard"
 ) %>% data.table
 
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
 MQ_std_sample_run_info[, sample_id := 1:.N]
 
 # Load sample run info data (DI + iterative)
@@ -96,11 +105,12 @@ MQ_DI_it_run_info[, sample_id := 1:.N]
 
 # Definition of functions
 
-
 ```{r definition_of_functions}
 
+# Define function - 'read_stoic_data'
 read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
-  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv")))
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
   dt[, condition := gsub("_$", "", prefix)]
   return(dt)
 }
@@ -150,9 +160,10 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
     !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype))
   ]
   
+  # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
   d.hydroxyK_dt <- dcast(
     hydroxyK_dt,
-    protein_accession + gene_name + aa_pos ~ genotype,
+    protein_accession + gene_name + aa_pos ~ genotype, # values in genotype become seperate columns
     value.var = "stoichiometry"
   )
   
@@ -165,24 +176,30 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
 
 ```{r hydroyxlation_sites_PNAS}
 
+# Load PNAS stoichiometry data
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
 setnames(
   pnas2022.stoic.dt, 
   old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
   new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
 )
 
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
 pnas2022.stoic.dt <- merge(
-  ref_protein_dt[, .(protein_accession, gene_name)],
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
   pnas2022.stoic.dt,
-  by = "protein_accession"
+  by = "protein_accession" #combine both data.table by protein accession ID
 )
 
+## Add columns to pnas2022.stoic.dt metadata
+# new columns: accession_position, ptm, sample_name 
 pnas2022.stoic.dt[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos),
-  ptm = "[Oxidation (K)]",
-  sample_name = gsub("HeLa_", "HeLa", sample_name) %>%
-    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)}
+  accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
+  ptm = "[Oxidation (K)]", 
+  sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} # Take response from previous line and change accordingly 
 )]
 
 # PNAS paper reported 153 sites
@@ -234,7 +251,7 @@ MQ_std_stoic_dt <- lapply(
   ],
   read_stoic_data,
   pre_prefix = "",
-  dir_path = file.path(p2.res.dir, "MQ_Std_MSMS")
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 ) %>% rbindlist
 
 MQ_std_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_std_stoic_dt)
@@ -260,7 +277,7 @@ MQ_DI_it_stoic_dt <- lapply(
   read_stoic_data,
   pre_prefix = "DI_",
   post_fix = "_DI",
-  dir_path = file.path(p2.res.dir, "MQ_DI_iterative")
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_iterative")
 ) %>% rbindlist
 
 MQ_DI_it_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_it_stoic_dt)
@@ -296,7 +313,7 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
-#Plot - filtering JMJD6 to >0.1 and presence of disgnostic ions 
+#Plot - filtering JMJD6 to >0.1 and presence of diagnostic ions 
 ggplot(
   data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
   aes(
