@@ -203,9 +203,12 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 # PNAS paper reported 153 sites
+# Create a data table with protein_accession, aa_pos, curated_oxK_site columns from metadata 
+# order the curated oxK sites in descending order and remove duplicated rows from 
 pnas2022_curated_hydroxylysine_dt <- pnas2022.stoic.dt[, .(protein_accession, aa_pos, curated_oxK_site)] %>%
   {.[order(curated_oxK_site, decreasing = TRUE)][!duplicated(paste(protein_accession, aa_pos))]}
 
+# Subset curated_oxK_site and count number of TURE or FALSE oxK_sites
 pnas2022_curated_hydroxylysine_dt[, table(curated_oxK_site)]
 
 
