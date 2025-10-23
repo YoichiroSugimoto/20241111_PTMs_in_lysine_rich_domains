@@ -118,6 +118,7 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
   wt_ko_dt <- all_stoic_dt
   
+  # 
   wt_ko_dt[, `:=`(
     genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)"),
     pos_id = paste0(protein_accession, "_", aa_pos),
@@ -213,12 +214,14 @@ pnas2022_curated_hydroxylysine_dt[, table(curated_oxK_site)]
 
 
 # Contrast non hydroxylated and hydroxylated lysines
+# Take only the HeLa samples with JQ1 or J6 peptide pull-down
 d.pnas.hydroxyK_dt <- contrast_hydroxylation_by_genotype(
   pnas2022.stoic.dt[
     grepl("HeLa", sample_name) & (grepl("JQ1", sample_name) | grepl("J6pep", sample_name))
   ]
 )
 
+# Retain only samples with stoichiometry values of JMJD6 and WT greater than 0 
 d.pnas.hydroxyK_dt <- d.pnas.hydroxyK_dt[JMJD6KO != 0 | WT != 0]
 
 d.pnas.hydroxyK_dt <- merge(
@@ -227,6 +230,7 @@ d.pnas.hydroxyK_dt <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
+# Plot - Scatterplot of hydroxylations sites indentified in the PNAS2022 paper
 ggplot(
   data = d.pnas.hydroxyK_dt[order(curated_oxK_site)],
   aes(
@@ -285,7 +289,7 @@ MQ_DI_it_stoic_dt <- lapply(
 
 MQ_DI_it_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_it_stoic_dt)
 
-DI_ifno <- MQ_DI_it_stoic_dt[
+DI_info <- MQ_DI_it_stoic_dt[
   , .(protein_accession, aa_pos, diagnostic_peak)
   ][
     order(protein_accession, aa_pos, -diagnostic_peak)
@@ -293,7 +297,7 @@ DI_ifno <- MQ_DI_it_stoic_dt[
       !duplicated(paste(protein_accession, aa_pos))
     ]
 
-MQ_DI_it_d.hydroxyK_dt <- merge(MQ_DI_it_d.hydroxyK_dt, DI_ifno, by = c("protein_accession", "aa_pos"))
+MQ_DI_it_d.hydroxyK_dt <- merge(MQ_DI_it_d.hydroxyK_dt, DI_info, by = c("protein_accession", "aa_pos"))
 
 MQ_DI_it_d.hydroxyK_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+"
@@ -303,6 +307,13 @@ MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"]
 
 MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)]
 
+# Identify the number of hydroxylated sites in MQ_DI_it data 
+
+MQ_DI_ <- pnas2022.stoic.dt[, .(protein_accession, aa_pos, curated_oxK_site)] %>%
+  {.[order(curated_oxK_site, decreasing = TRUE)][!duplicated(paste(protein_accession, aa_pos))]}
+
+
+MQ_DI_it_d.hydroxyK_dt[, .(protein_accession, aa_pos, )]
 
 #Plot before JMJD6 value filtered 
 ggplot(
