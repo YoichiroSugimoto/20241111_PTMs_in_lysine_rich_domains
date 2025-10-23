@@ -115,20 +115,21 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   return(dt)
 }
 
+# This function 
 contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
   wt_ko_dt <- all_stoic_dt
   
-  # 
+  # Add new columns into metadata
   wt_ko_dt[, `:=`(
-    genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)"),
-    pos_id = paste0(protein_accession, "_", aa_pos),
+    genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)"), # new column - Genotype, extract WT or JMJD6KO from sample_name column
+    pos_id = paste0(protein_accession, "_", aa_pos), 
     sample_pos_id = paste0(sample_name, "_", protein_accession, "_", aa_pos)
   )]
   
   # Identify position with at least one oxidation event
   oxidation_ids <- wt_ko_dt[
-    grepl("[Oxidation (K)]", ptm, fixed = TRUE),
-    unique(pos_id)
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE), # checks for oxidation event
+    unique(pos_id) # Returns unique pos_id with oxidation event
   ]
   oxidation_sample_ids <- wt_ko_dt[
     grepl("[Oxidation (K)]", ptm, fixed = TRUE),
@@ -153,18 +154,20 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
     no_hydroxyK_dt
   )
   
+  # Filter psm mapped greater than 2 for higher confidence 
   hydroxyK_dt <- hydroxyK_dt[
     sum_psm_mapped_per_position > 2
   ]
   
+  # Sort stoichiometry column from highest to lowest
   hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
-    !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype))
+    !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype)) # Remove duplicate rows
   ]
   
   # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
   d.hydroxyK_dt <- dcast(
     hydroxyK_dt,
-    protein_accession + gene_name + aa_pos ~ genotype, # values in genotype become seperate columns
+    protein_accession + gene_name + aa_pos ~ genotype, # values in genotype become into separate columns (WT & JMJD6KO)
     value.var = "stoichiometry"
   )
   
