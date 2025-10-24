@@ -115,7 +115,7 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   return(dt)
 }
 
-# This function 
+## This function creates a data table with stoichiomtery values of WT and JMJD6KO samples for each gene_name
 contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
   wt_ko_dt <- all_stoic_dt
   
@@ -141,14 +141,14 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
   no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
     {.[!sample_pos_id %in% oxidation_sample_ids]} # If hydroxylation data exist, this is not necessary
   
-  ## Set stoichiometry and PSM count to zero for these positions and update the PTM label
+  # Set stoichiometry and PSM count to zero for these positions and update the PTM label
   no_hydroxyK_dt[, `:=`(
     sum_psm_mapped = 0,
     stoichiometry = 0,
     ptm = "[Oxidation (K)]"
   )]
   
-  ## Combine oxidation data from both original and the newly flagged unmodified K data
+  # Combine oxidation data from both original and the newly flagged unmodified K data
   hydroxyK_dt <- rbind(
     wt_ko_dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
     no_hydroxyK_dt
@@ -233,7 +233,7 @@ d.pnas.hydroxyK_dt <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
-# Plot - Scatterplot of hydroxylations sites indentified in the PNAS2022 paper
+# Plot - Scatterplot of hydroxylation sites identified in the PNAS2022 paper
 ggplot(
   data = d.pnas.hydroxyK_dt[order(curated_oxK_site)],
   aes(
@@ -252,6 +252,8 @@ ggplot(
 
 ```{r hydroyxlation_sites}
 
+## Read stoichiometry data for MQ_standard 
+# Results taken from calculating stoichiometry 
 MQ_std_stoic_dt <- lapply(
   MQ_std_sample_run_info[
     data != "data-D" & # do not consider data-D
@@ -264,8 +266,10 @@ MQ_std_stoic_dt <- lapply(
   dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 ) %>% rbindlist
 
+# Apply 'contrast_hydroxylation_by_genotype' function to create data table with stoichiometry data for WT and JMJD6KO per gene_name 
 MQ_std_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_std_stoic_dt)
 
+# Plot - Scatter plot of hydroxylation events in MQ_standard
 ggplot(
   data = MQ_std_d.hydroxyK_dt,
   aes(
