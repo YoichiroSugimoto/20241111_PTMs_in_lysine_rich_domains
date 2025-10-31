@@ -321,7 +321,7 @@ MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"] #filter data with diagnostic peak
 MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)] # only includes data WT values
 
 
-#Plot before JMJD6 value filtered 
+# Plot - WT versus JMJD6KO with presence of diagnostic ions
 ggplot(
   data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
   aes(
@@ -333,8 +333,8 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
-#Plot - filtering JMJD6 to >0.1 and presence of diagnostic ions
-# This plot identifies lysine hydroxylations events in the absence of JMJD6a
+# Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
+# This plot identifies lysine hydroxylations events in the absence of JMJD6
 ggplot(
   data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
   aes(
@@ -357,17 +357,19 @@ MQ_DI_it_stoic_dt[gene_name == "CHD3" & aa_pos == 111]
 
 ```{r comparison_nonDI_and_DI_data, fig.width = 5, fig.height = 5}
 
-MQ_DI_it_d.hydroxyK_dt[, `:=`(
-  hydroxylation_site_class = case_when(
-    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A",
-    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B",
-    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C",
-    TRUE ~ "others"
+# Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values
+MQ_DI_it_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
+  hydroxylation_site_class = case_when( 
+    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A", # low in JMJD6KO and high in WT, then classify as class_A
+    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B", # low in WT and high in JMJD6KO, then classify as class_B
+    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C", # present in JMJD6KO and WT, then classify as class_C
+    TRUE ~ "others" # values that equal to 0 and missing values, classify as "others"
   )
 )]
 
+#Plot - Bar chart of hydroxylation site based on JMJD6KO and WT stoichiometry values
 ggplot(
-  MQ_DI_it_d.hydroxyK_dt[hydroxylation_site_class != "others"],
+  MQ_DI_it_d.hydroxyK_dt[hydroxylation_site_class != "others"], # exclude "others" category 
   aes(
     x = hydroxylation_site_class,
     fill = is_diagnostic_peak
@@ -376,12 +378,15 @@ ggplot(
   geom_bar() +
   scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 
+
+# Count the total hydroxylation site per class with diagnostic peak 
 MQ_DI_it_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
                    addmargins]
-
+# Load protein feature data 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
-setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos")) # change column names 
 
+# Merge data tables by protein_accession and aa_pos
 feature_MQ_DI_it_hydroxyK_dt <- merge(
   MQ_DI_it_d.hydroxyK_dt,
   protein.feature.dt,
