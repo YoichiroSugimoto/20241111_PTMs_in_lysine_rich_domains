@@ -281,7 +281,6 @@ ggplot(
 
 ```
 
-
 # Analyse hydroxylation sites with DI and iterations data
 
 ```{r analyse_hydroxylation_sites_DI_iterations}
@@ -354,7 +353,6 @@ MQ_DI_it_stoic_dt[gene_name == "CHD3" & aa_pos == 111]
 
 # Comparison of data without and with DI consideration
 
-
 ```{r comparison_nonDI_and_DI_data, fig.width = 5, fig.height = 5}
 
 # Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values
@@ -395,6 +393,8 @@ feature_MQ_DI_it_hydroxyK_dt <- merge(
 
 ```
 
+# Comparison of hydroxylation site class vs methionine presence with diagnostic peak 
+
 ```{r methionine_cont}
 
 # Create column on the presence of M in the sequence  
@@ -432,8 +432,6 @@ ggplot(
 
 # Comparison with previous PNAS 2022 paper
 
-## 
-
 ```{r pnas2022_comparison}
 
 # Define file path to load 'long_K_stiochiometry_data'  
@@ -455,7 +453,6 @@ MQ_DI_it_d.hydroxyK_dt[, `:=`(
     pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
 )]
 
-
 # Convert the data table into table and sum the number of diagnostic peak and curated oxK sites
 MQ_DI_it_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
 
@@ -470,39 +467,44 @@ j6_target_protein <- MQ_DI_it_d.hydroxyK_dt[
 ][!duplicated(protein_accession)][, .(protein_accession, gene_name)] # remove duplicated protein_accession values (keep first occurrence), select and return columns 'protein_accession', 'gene_name'
 
 # Create a new column 'known_target'
-j6_target_protein[, `:=`(
-  known_target = protein_accession %in% pnas2022.stoic.dt[curated_oxK_site == TRUE, protein_accession]
-)] 
+j6_target_protein[, `:=`( # check if protein_accession in j6_target_protein exists in pnas2022.stoic.dt filtered data 
+  known_target = protein_accession %in% pnas2022.stoic.dt[curated_oxK_site == TRUE, protein_accession] 
+)] # filter rows where curated_oxK_site is TRUE, extract protein_accession column based on curated_oxK_site 
 
+# Create table showing number of TRUE and FALSE values in known_target
 j6_target_protein[, table(known_target)]
+
+# Return all rows where 'known_target' is FALSE
 j6_target_protein[known_target == FALSE]
 
 
-## Correlation
+## Correlation between pnas2022 stoic and new stoic data  
 non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
-  grepl("HeLa", data_source) &
+  grepl("HeLa", data_source) & # extract sample rows using HeLa cell line 
   # (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
-    (curated_oxK_site == TRUE) &
-    total_n_feature_K > 2
+    (curated_oxK_site == TRUE) & # keep only rows where curated_oxK_site is TRUE
+    total_n_feature_K > 2 # filter rows where total_n_feature_K is greater than 2
 ][
   order(
     #data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep"),
-    curated_oxK_site == TRUE,
-    oxK_ratio,
-    decreasing = TRUE
+    curated_oxK_site == TRUE, # sort first by 'curated_oxK_site'
+    oxK_ratio, # sort by oxK_ratio
+    decreasing = TRUE # arrange oxK_ratio in descending order (from largest to smallest)
   )][
-    !duplicated(accession_position)
+    !duplicated(accession_position) # remove duplicated accession_position, (keep first occurrence value only)
 ]
 
+# Create a new column 'stoichiometry_PNAS2022' and assign it the values of 'oxK_ratio'
 non.duplicated.pnas2022.stoic.dt[, stoichiometry_PNAS2022 := oxK_ratio]
 
+# Merge new stoic and pnas2022 by 'protein_accession' and 'aa_pos'
 d.pnas2022.hydroxyK_DI_dt <- merge(
   MQ_DI_it_d.hydroxyK_dt,
   non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
   by = c("protein_accession", "aa_pos")
 )
 
-# Plot - Scatterplot 
+# Plot - Scatterplot of pnas2022 stoichiometry versus new stoichiometry data 
 ggplot(
   d.pnas2022.hydroxyK_DI_dt,
   aes(
@@ -516,6 +518,7 @@ ggplot(
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+# Correlation test between pnas2022 stoic and new stoic data 
 d.pnas2022.hydroxyK_DI_dt %$%
 cor.test(
   stoichiometry_PNAS2022, WT
