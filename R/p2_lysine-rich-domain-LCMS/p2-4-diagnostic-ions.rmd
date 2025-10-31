@@ -397,22 +397,26 @@ feature_MQ_DI_it_hydroxyK_dt <- merge(
 
 ```{r methionine_cont}
 
-feature_MQ_DI_it_hydroxyK_dt[, `:=`(
+# Create column on the presence of M in the sequence  
+feature_MQ_DI_it_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
   met_within_2 = case_when(
-    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes",
-    nchar(Window) == 11 ~ "No",
-    TRUE ~ "edge"
+    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
+    nchar(Window) == 11 ~ "No", # if M is not in the sequence, then No 
+    TRUE ~ "edge" # if M is in the sequence but not in the middle, then edge
   )
 )]
 
+# Filter column 'met_within_2', where the window sequence has a positive diagnostic ion and
+# M in the middle of the sequence
 feature_MQ_DI_it_hydroxyK_dt[
   met_within_2 == "Yes" & is_diagnostic_peak == TRUE
 ]
 
+# Plot - Bar chart of hydroxylation site class vs methionine presence with diagnostic peak 
 ggplot(
   feature_MQ_DI_it_hydroxyK_dt[
     met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
-  ],
+  ], # filter data columns
   aes(
     x = hydroxylation_site_class,
     fill = met_within_2
