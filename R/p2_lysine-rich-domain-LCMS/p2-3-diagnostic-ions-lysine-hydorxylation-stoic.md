@@ -1,7 +1,7 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto
-11 March, 2025
+03 November, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -9,7 +9,7 @@ Yoichiro Sugimoto
   hydroxylations](#identify-useful-diagnostic-ions-to-identify-lysine-hydroxylations)
 - [Session information](#session-information)
 
-This script identify diagnosic ions to identify confident hydroxylation
+This script identify diagnostic ions to identify confident hydroxylation
 sites.
 
 # Environment setup
@@ -19,9 +19,10 @@ sites.
 #           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
 #       )
 
+# Define project directory - contains R scripts, data and results folders
 project.dir <-
   file.path(
-    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
@@ -29,42 +30,18 @@ project.dir <-
 renv::restore(file.path(project.dir, "R"))
 ```
 
-    ## The following package(s) will be updated:
+    ## The following required system packages are not installed:
+    ## - pandoc  [required by knitr, rmarkdown]
+    ## The R packages depending on these system packages may fail to install.
     ## 
-    ## # https://bioconductor.org/packages/3.18/bioc --------------------------------
-    ## - AnnotationDbi      [1.64.1 -> 1.64.1]
-    ## - Biobase            [2.62.0 -> 2.62.0]
-    ## - BiocGenerics       [0.48.1 -> 0.48.1]
-    ## - BiocVersion        [3.18.1 -> 3.18.1]
-    ## - Biostrings         [2.70.3 -> 2.70.3]
-    ## - GenomeInfoDb       [1.38.8 -> 1.38.8]
-    ## - IRanges            [2.36.0 -> 2.36.0]
-    ## - KEGGREST           [1.42.0 -> 1.42.0]
-    ## - S4Vectors          [0.40.2 -> 0.40.2]
-    ## - XVector            [0.42.0 -> 0.42.0]
-    ## - zlibbioc           [1.48.2 -> 1.48.2]
+    ## An administrator can install these packages with:
+    ## - sudo apt install pandoc
     ## 
-    ## # https://bioconductor.org/packages/3.18/data/annotation ---------------------
-    ## - GenomeInfoDbData   [1.2.11 -> 1.2.11]
-    ## - org.Hs.eg.db       [3.18.0 -> 3.18.0]
-    ## 
-    ## # Installing packages --------------------------------------------------------
-    ## - Installing BiocVersion ...                    OK [copied from cache]
-    ## - Installing BiocGenerics ...                   OK [copied from cache]
-    ## - Installing Biobase ...                        OK [copied from cache]
-    ## - Installing S4Vectors ...                      OK [copied from cache]
-    ## - Installing IRanges ...                        OK [copied from cache]
-    ## - Installing zlibbioc ...                       OK [copied from cache]
-    ## - Installing XVector ...                        OK [copied from cache]
-    ## - Installing GenomeInfoDbData ...               OK [copied from cache]
-    ## - Installing GenomeInfoDb ...                   OK [copied from cache]
-    ## - Installing Biostrings ...                     OK [copied from cache]
-    ## - Installing KEGGREST ...                       OK [copied from cache]
-    ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.47s]
+    ## - The library is already synchronized with the lockfile.
 
 ``` r
-temp <-
+# Load all R scripts from the 'functions' folder into the current session
+P2_functions <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
     pattern = "*.R",
@@ -93,12 +70,26 @@ temp <-
 
     ## Loading required package: BiocGenerics
 
+    ## Loading required package: generics
+
+    ## 
+    ## Attaching package: 'generics'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     explain
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    ##     setequal, union
+
     ## 
     ## Attaching package: 'BiocGenerics'
 
-    ## The following objects are masked from 'package:dplyr':
+    ## The following object is masked from 'package:dplyr':
     ## 
-    ##     combine, intersect, setdiff, union
+    ##     combine
 
     ## The following objects are masked from 'package:stats':
     ## 
@@ -108,10 +99,10 @@ temp <-
     ## 
     ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
     ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    ##     Position, rank, rbind, Reduce, rownames, sapply, setdiff, sort,
-    ##     table, tapply, union, unique, unsplit, which.max, which.min
+    ##     get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    ##     rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
+    ##     unsplit, which.max, which.min
 
     ## Loading required package: S4Vectors
 
@@ -161,6 +152,16 @@ temp <-
     ##     strsplit
 
 ``` r
+### Install private packages 
+# Install ptm.stiochiometry package - package installed 
+install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+```
+
+    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
+    ## (as 'lib' is unspecified)
+
+``` r
+# Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
 library("janitor")
 ```
@@ -175,18 +176,24 @@ library("janitor")
 ``` r
 library("ptm.stoichiometry")
 
-p2.res.dir <- file.path(project.dir,
+# Create and define path to result directory 
+p2_results_dir <- file.path(project.dir,
                         "results",
-                        "p2-analysis-setting")
+                        "p2_diagnostic_ions")
+dir.create(file.path(project.dir,
+                        "results",
+                        "p2_diagnostic_ions"), showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Import basic data
 
 ``` r
+# Define path to data directory
 data.dir <- file.path(project.dir, "data")
 
+# Load diagnostic ion data
 diagnostic_ion_data <- file.path(
-  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
+  data.dir, "FP_diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
 ) %>% 
   fread %>%
   clean_names
@@ -195,21 +202,25 @@ diagnostic_ion_data <- file.path(
     ## Warning in fread(.): Discarded single-line footer: <<COMPLETE>>
 
 ``` r
+# Load Fragpipe psm data 
 fragpipe_psm <- file.path(
-  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
+  data.dir, "FP_diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
 ) %>%
   fread %>%
   clean_names
 
+# Load PNAS2022 MQ standard data
 pnas2022_data <- file.path(
   data.dir,
-  "MQ_output/PNAS2022" 
+  "MQ_standard/PNAS2022" 
 )
 
+# Load Data A sample info from data directory 
 dataA_sample_info <- fread(file.path(
   pnas2022_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
 ))
 
+# Import human protein reference data
 ref_protein_dt <- import_reference_fasta(
   file.path(
     "/fast/AG_Sugimoto/reference/uniprot/human",
@@ -221,37 +232,43 @@ ref_protein_dt <- import_reference_fasta(
 # Identify useful diagnostic ions to identify lysine hydroxylations
 
 ``` r
+# Merge 'diagnostic_ion_data' and 'fragpipe_psm' data by column 'spectrum'
 diagnostic_ion_data <- merge(
   fragpipe_psm[, .(spectrum, protein_id, gene, protein_start, protein_end)], 
   diagnostic_ion_data, 
   by = "spectrum"
 )
 
+# Create new column 'file_name' from column 'spectrum'  
 diagnostic_ion_data[, `:=`(
-  file_name = str_split_fixed(spectrum, "\\.", n = 2)[, 1]
-)]
+  file_name = str_split_fixed(spectrum, "\\.", n = 2)[, 1] # split 'spectrum' by the first '.', take the part before it 
+)] 
 
+# Merge 'dataA_sample_info' and 'diagnostic_ion_data' by column 'file_name'
 diagnostic_ion_data <- merge(
   dataA_sample_info,
   diagnostic_ion_data,
   by = "file_name"
 )
 
+# Retrieve hydroxylation info for BRD4
 brd4_hydroxylation_site_di <- diagnostic_ion_data[
   gene == "BRD4" & (555 >= protein_start & 535 <= protein_end)
 ]
 
+# Reshape data table from wide to long format 
 m.brd4_hydroxylation_site_di <- melt(
   brd4_hydroxylation_site_di,
-  measure.vars = grep("intensity$",colnames(brd4_hydroxylation_site_di), value = TRUE),
-  value.name = "intensity"
+  measure.vars = grep("intensity$",colnames(brd4_hydroxylation_site_di), value = TRUE), # get column names whose names end with "intensity" 
+  value.name = "intensity" # new column - "intensity" 
 )
 
+# Add columns 'monoisotopic_mass', 'diagnostic_ion' and 'genotype'
 m.brd4_hydroxylation_site_di[, `:=`(
-  monoisotopic_mass = variable %>%
-    str_replace_all("ox_", "") %>%
-    str_replace_all("_intensity", "") %>%
-    str_replace_all("_", ".") %>%
+  monoisotopic_mass = variable %>% # take values from column 'variable'
+    str_replace_all("ox_", "") %>% # remove the prefix "ox_"
+    str_replace_all("_intensity", "") %>% # remove the suffix "_intensity"
+    str_replace_all("_", ".") %>% # replace remaining underscores with dots
     factor(levels = c(
       "101.1079", #Lysine   K           immonium ion    C5 H13 N2 +
       "100.0762", #Hydroxylation (K)    K   O   15.9949 diagnostic ion  C5 H10 N O+
@@ -263,14 +280,16 @@ m.brd4_hydroxylation_site_di[, `:=`(
       "156.1025", #Hydroxylation-Propionylation (K) K   C3 H4 O2    72.02112937 diagnostic ion  C8 H14 N1 O2+
       "173.1290" #Hydroxylation-Propionylation (K)  K   C3 H4 O2    72.02112937 immonium ion    C8 H17 O2 N2 +
       )),
-  diagnostic_ion = intensity > 0,
+  diagnostic_ion = intensity > 0, 
   genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
 )]
 
 
+# Load libraries
 library("ggbeeswarm")
 library("khroma")
 
+# Plot - Quasirandom plot of monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di,
   aes(
@@ -287,6 +306,7 @@ ggplot(
 ![](p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/figure-gfm/identify_diagnostic_ions-1.png)<!-- -->
 
 ``` r
+# Plot - Violin plot of monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di,
   aes(
@@ -303,20 +323,22 @@ ggplot(
 ![](p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/figure-gfm/identify_diagnostic_ions-2.png)<!-- -->
 
 ``` r
-selected.ms <- c("100.0762", "82.0657", "156.1025")
+selected.ms <- c("100.0762", "82.0657", "138.0919", "156.1025")
 
+# Count the number of PSMs for each selected monoisotopic mass 
 psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
   monoisotopic_mass, genotype, diagnostic_ion
 )]
 
+# Perform Fisher's test for each selected monoisotopic mass 
 for(mi.ms in selected.ms){
   print(mi.ms)
   
-  psm.count.by.di[monoisotopic_mass == mi.ms] %>%
-    dcast(genotype ~ diagnostic_ion, value.var = "N") %>%
-    setnafill(cols = c("FALSE", "TRUE"), fill = 0)  %>%
-    {as.matrix(.[, c("FALSE", "TRUE"), with = FALSE])} %>%
-    fisher.test %>% print
+  psm.count.by.di[monoisotopic_mass == mi.ms] %>% # subsets psm counts for current mi.ms 
+    dcast(genotype ~ diagnostic_ion, value.var = "N") %>% # convert long to wide format data table
+    setnafill(cols = c("FALSE", "TRUE"), fill = 0)  %>% # Fill NA values as 0 
+    {as.matrix(.[, c("FALSE", "TRUE"), with = FALSE])} %>% # convert into data matrix 
+    fisher.test %>% print # perform Fisher's test and print results 
 }
 ```
 
@@ -346,6 +368,19 @@ for(mi.ms in selected.ms){
     ## odds ratio 
     ##          0 
     ## 
+    ## [1] "138.0919"
+    ## 
+    ##  Fisher's Exact Test for Count Data
+    ## 
+    ## data:  .
+    ## p-value = 1
+    ## alternative hypothesis: true odds ratio is not equal to 1
+    ## 95 percent confidence interval:
+    ##  0.07117751 7.49055293
+    ## sample estimates:
+    ## odds ratio 
+    ##  0.8551277 
+    ## 
     ## [1] "156.1025"
     ## 
     ##  Fisher's Exact Test for Count Data
@@ -360,6 +395,7 @@ for(mi.ms in selected.ms){
     ## 0.006489756
 
 ``` r
+# Plot - Violin plot of selected monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
   aes(
@@ -376,6 +412,7 @@ ggplot(
 ![](p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/figure-gfm/plot_with_only_diagnostic_ions-1.png)<!-- -->
 
 ``` r
+# Plot - Bar chart of proportion of PSMs with diagnostic ion 
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
   aes(
@@ -401,84 +438,81 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.3.2 (2023-10-31)
-    ##  os       Ubuntu 22.04.3 LTS
+    ##  version  R version 4.5.1 (2025-06-13)
+    ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
     ##  language (EN)
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-11
-    ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
+    ##  date     2025-11-03
+    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
-    ##  beeswarm            0.4.0      2021-06-01 [1] CRAN (R 4.3.2)
-    ##  BiocGenerics      * 0.48.1     2023-11-01 [1] Bioconductor
-    ##  BiocManager         1.30.25    2024-08-28 [1] CRAN (R 4.3.2)
-    ##  Biostrings        * 2.70.3     2024-03-13 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  bitops              1.0-9      2024-10-03 [1] CRAN (R 4.3.2)
-    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.3.2)
-    ##  cli                 3.6.3      2024-06-21 [1] CRAN (R 4.3.2)
-    ##  colorspace          2.1-1      2024-07-26 [1] CRAN (R 4.3.2)
-    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.3.2)
-    ##  data.table        * 1.15.4     2024-03-30 [1] CRAN (R 4.3.2)
-    ##  digest              0.6.36     2024-06-23 [1] CRAN (R 4.3.2)
-    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.3.2)
-    ##  evaluate            0.24.0     2024-06-10 [1] CRAN (R 4.3.2)
-    ##  fansi               1.0.6      2023-12-08 [1] CRAN (R 4.3.2)
-    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.3.2)
-    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.3.2)
-    ##  generics            0.1.3      2022-07-05 [1] CRAN (R 4.3.2)
-    ##  GenomeInfoDb      * 1.38.8     2024-03-15 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  GenomeInfoDbData    1.2.11     2024-11-18 [1] Bioconductor
-    ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.3.2)
-    ##  ggplot2           * 3.5.1      2024-04-23 [1] CRAN (R 4.3.2)
-    ##  glue                1.7.0      2024-01-09 [1] CRAN (R 4.3.2)
-    ##  gtable              0.3.5      2024-04-22 [1] CRAN (R 4.3.2)
-    ##  highr               0.11       2024-05-26 [1] CRAN (R 4.3.2)
-    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.3.2)
-    ##  IRanges           * 2.36.0     2023-10-24 [1] Bioconductor
-    ##  janitor           * 2.2.0      2023-02-02 [1] CRAN (R 4.3.2)
-    ##  khroma            * 1.14.0     2024-08-26 [1] CRAN (R 4.3.2)
-    ##  knitr             * 1.48       2024-07-07 [1] CRAN (R 4.3.2)
-    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.3.2)
-    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.3.2)
-    ##  lubridate           1.9.3      2023-09-27 [1] CRAN (R 4.3.2)
-    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.3.2)
-    ##  munsell             0.5.1      2024-04-01 [1] CRAN (R 4.3.2)
-    ##  pillar              1.9.0      2023-03-22 [1] CRAN (R 4.3.2)
-    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.3.2)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-03-03 [1] local
-    ##  R6                  2.5.1      2021-08-19 [1] CRAN (R 4.3.2)
-    ##  RCurl               1.98-1.16  2024-07-11 [1] CRAN (R 4.3.2)
-    ##  readxl            * 1.4.3      2023-07-06 [1] CRAN (R 4.3.2)
-    ##  renv                1.0.7      2024-04-11 [1] CRAN (R 4.3.2)
-    ##  rlang               1.1.4      2024-06-04 [1] CRAN (R 4.3.2)
-    ##  rmarkdown           2.27       2024-05-17 [1] CRAN (R 4.3.2)
-    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.3.2)
-    ##  S4Vectors         * 0.40.2     2023-11-23 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  scales              1.3.0      2023-11-28 [1] CRAN (R 4.3.2)
-    ##  sessioninfo         1.2.2      2021-12-06 [1] CRAN (R 4.3.2)
-    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.3.2)
-    ##  stringi             1.8.4      2024-05-06 [1] CRAN (R 4.3.2)
-    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.3.2)
-    ##  tibble              3.2.1      2023-03-20 [1] CRAN (R 4.3.2)
-    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.3.2)
-    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.3.2)
-    ##  utf8                1.2.4      2023-10-22 [1] CRAN (R 4.3.2)
-    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.3.2)
-    ##  vipor               0.4.7      2023-12-18 [1] CRAN (R 4.3.2)
-    ##  withr               3.0.1      2024-07-31 [1] CRAN (R 4.3.2)
-    ##  xfun                0.46       2024-07-18 [1] CRAN (R 4.3.2)
-    ##  XVector           * 0.42.0     2023-10-24 [1] Bioconductor
-    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.3.2)
-    ##  zlibbioc            1.48.2     2024-03-13 [1] Bioconductor 3.18 (R 4.3.2)
+    ##  beeswarm            0.4.0      2021-06-01 [1] CRAN (R 4.5.1)
+    ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
+    ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.5.1)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.5.1)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.5.1)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.5.1)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
+    ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
+    ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
+    ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.5.1)
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
+    ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
+    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-03 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
+    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
+    ##  renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.1)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
+    ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.5.1)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.5.1)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
+    ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
+    ##  vipor               0.4.7      2023-12-18 [1] CRAN (R 4.5.1)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
+    ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
     ## 
-    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.3
+    ##  [1] /home/pkesava/R/x86_64-pc-linux-gnu-library/4.5
     ##  [2] /usr/local/lib/R/site-library
     ##  [3] /usr/lib/R/site-library
     ##  [4] /usr/lib/R/library
+    ##  * ── Packages attached to the search path.
     ## 
     ## ──────────────────────────────────────────────────────────────────────────────

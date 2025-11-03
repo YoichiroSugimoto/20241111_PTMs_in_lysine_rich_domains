@@ -76,19 +76,19 @@ data.dir <- file.path(project.dir, "data")
 
 # Load diagnostic ion data
 diagnostic_ion_data <- file.path(
-  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
+  data.dir, "FP_diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
 ) %>% 
   fread %>%
   clean_names
 
 # Load Fragpipe psm data 
 fragpipe_psm <- file.path(
-  data.dir, "diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
+  data.dir, "FP_diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
 ) %>%
   fread %>%
   clean_names
 
-# Load PNAS2022 MQ Standard data
+# Load PNAS2022 MQ standard data
 pnas2022_data <- file.path(
   data.dir,
   "MQ_standard/PNAS2022" 
