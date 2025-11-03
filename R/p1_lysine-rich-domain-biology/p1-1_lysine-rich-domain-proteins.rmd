@@ -156,7 +156,7 @@ ggplot(
 ) +
     geom_bar() +
     scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
-  labs(x = "max_k_ratio", y = "number of protein_count", title = "Number of proteins per max K score")
+  labs(x = "max_k_ratio", y = "number of protein_count")
 
 # Plot - Max K ratio vs protein length
 ggplot(
@@ -166,7 +166,7 @@ ggplot(
     x = factor(max_k_ratio)
   )
 ) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
-  labs(x = "max_K_ratio", y = "protein_length", title = "Max K ratio vs protein length") +
+  labs(x = "max_K_ratio", y = "protein_length") +
   coord_cartesian(ylim = c(0, 2000))
 
 # Plot - K_score of disordered regions of proteins 
@@ -268,7 +268,7 @@ rbp.count.dt[, table(RBP)]
 ```{r Data_Visualization_RNA_Binding_Proteins}
 
 # Plot - Max K score versus RBP
-max_K_score_rbp <- ggplot(
+ ggplot(
   data = rbp.count.dt,
   aes(
     x = RBP,
