@@ -22,9 +22,10 @@ This script identify diagnostic ions to identify confident hydroxylation sites.
 #           "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R"
 #       )
 
+# Define project directory - contains R scripts, data and results folders
 project.dir <-
   file.path(
-    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
@@ -36,7 +37,8 @@ renv::restore(file.path(project.dir, "R"))
 
 ```{r set parameters}
 
-temp <-
+# Load all R scripts from the 'functions' folder into the current session
+P2_functions <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
     pattern = "*.R",
@@ -44,13 +46,23 @@ temp <-
   ),
   source)
 
+### Install private packages 
+# Install ptm.stiochiometry package - package installed 
+install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
 
-p2.res.dir <- file.path(project.dir,
+# Create and define path to result directory 
+p2_results_dir <- file.path(project.dir,
                         "results",
-                        "p2-analysis-setting")
+                        "p2_diagnostic_ions")
+dir.create(file.path(project.dir,
+                        "results",
+                        "p2_diagnostic_ions"), showWarnings = FALSE, recursive = TRUE)
+
 
 
 ```
@@ -59,29 +71,35 @@ p2.res.dir <- file.path(project.dir,
 
 ```{r import_basic_data}
 
+# Define path to data directory
 data.dir <- file.path(project.dir, "data")
 
+# Load diagnostic ion data
 diagnostic_ion_data <- file.path(
   data.dir, "diagnostic_ion_search/fragpipe_dataset-A/dataset01.diagnosticIons.tsv" 
 ) %>% 
   fread %>%
   clean_names
 
+# Load Fragpipe psm data 
 fragpipe_psm <- file.path(
   data.dir, "diagnostic_ion_search/fragpipe_dataset-A/psm.tsv"
 ) %>%
   fread %>%
   clean_names
 
+# Load PNAS2022 MQ Standard data
 pnas2022_data <- file.path(
   data.dir,
-  "MQ_output/PNAS2022" 
+  "MQ_standard/PNAS2022" 
 )
 
+# Load Data A sample info from data directory 
 dataA_sample_info <- fread(file.path(
   pnas2022_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
 ))
 
+# Import human protein reference data
 ref_protein_dt <- import_reference_fasta(
   file.path(
     "/fast/AG_Sugimoto/reference/uniprot/human",
@@ -97,38 +115,43 @@ ref_protein_dt <- import_reference_fasta(
 
 ```{r identify_diagnostic_ions}
 
-
+# Merge 'diagnostic_ion_data' and 'fragpipe_psm' data by column 'spectrum'
 diagnostic_ion_data <- merge(
   fragpipe_psm[, .(spectrum, protein_id, gene, protein_start, protein_end)], 
   diagnostic_ion_data, 
   by = "spectrum"
 )
 
+# Create new column 'file_name' from column 'spectrum'  
 diagnostic_ion_data[, `:=`(
-  file_name = str_split_fixed(spectrum, "\\.", n = 2)[, 1]
-)]
+  file_name = str_split_fixed(spectrum, "\\.", n = 2)[, 1] # split 'spectrum' by the first '.', take the part before it 
+)] 
 
+# Merge 'dataA_sample_info' and 'diagnostic_ion_data' by column 'file_name'
 diagnostic_ion_data <- merge(
   dataA_sample_info,
   diagnostic_ion_data,
   by = "file_name"
 )
 
+# Retrieve hydroxylation info for BRD4
 brd4_hydroxylation_site_di <- diagnostic_ion_data[
   gene == "BRD4" & (555 >= protein_start & 535 <= protein_end)
 ]
 
+# Reshape data table from wide to long format 
 m.brd4_hydroxylation_site_di <- melt(
   brd4_hydroxylation_site_di,
-  measure.vars = grep("intensity$",colnames(brd4_hydroxylation_site_di), value = TRUE),
-  value.name = "intensity"
+  measure.vars = grep("intensity$",colnames(brd4_hydroxylation_site_di), value = TRUE), # get column names whose names end with "intensity" 
+  value.name = "intensity" # new column - "intensity" 
 )
 
+# Add columns 'monoisotopic_mass', 'diagnostic_ion' and 'genotype'
 m.brd4_hydroxylation_site_di[, `:=`(
-  monoisotopic_mass = variable %>%
-    str_replace_all("ox_", "") %>%
-    str_replace_all("_intensity", "") %>%
-    str_replace_all("_", ".") %>%
+  monoisotopic_mass = variable %>% # take values from column 'variable'
+    str_replace_all("ox_", "") %>% # remove the prefix "ox_"
+    str_replace_all("_intensity", "") %>% # remove the suffix "_intensity"
+    str_replace_all("_", ".") %>% # replace remaining underscores with dots
     factor(levels = c(
       "101.1079", #Lysine	K			immonium ion	C5 H13 N2 +
       "100.0762", #Hydroxylation (K)	K	O	15.9949	diagnostic ion	C5 H10 N O+
@@ -140,14 +163,16 @@ m.brd4_hydroxylation_site_di[, `:=`(
       "156.1025", #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	diagnostic ion	C8 H14 N1 O2+
       "173.1290" #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	immonium ion	C8 H17 O2 N2 +
       )),
-  diagnostic_ion = intensity > 0,
+  diagnostic_ion = intensity > 0, 
   genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
 )]
 
 
+# Load libraries
 library("ggbeeswarm")
 library("khroma")
 
+# Plot - Quasirandom plot of monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di,
   aes(
@@ -160,6 +185,7 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   scale_color_bright()
 
+# Plot - Violin plot of monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di,
   aes(
@@ -177,22 +203,25 @@ ggplot(
 
 ```{r plot_with_only_diagnostic_ions, fig.width = 6, fig.height = 4}
 
-selected.ms <- c("100.0762", "82.0657", "156.1025")
+selected.ms <- c("100.0762", "82.0657", "138.0919", "156.1025")
 
+# Count the number of PSMs for each selected monoisotopic mass 
 psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
   monoisotopic_mass, genotype, diagnostic_ion
 )]
 
+# Perform Fisher's test for each selected monoisotopic mass 
 for(mi.ms in selected.ms){
   print(mi.ms)
   
-  psm.count.by.di[monoisotopic_mass == mi.ms] %>%
-    dcast(genotype ~ diagnostic_ion, value.var = "N") %>%
-    setnafill(cols = c("FALSE", "TRUE"), fill = 0)  %>%
-    {as.matrix(.[, c("FALSE", "TRUE"), with = FALSE])} %>%
-    fisher.test %>% print
+  psm.count.by.di[monoisotopic_mass == mi.ms] %>% # subsets psm counts for current mi.ms 
+    dcast(genotype ~ diagnostic_ion, value.var = "N") %>% # convert long to wide format data table
+    setnafill(cols = c("FALSE", "TRUE"), fill = 0)  %>% # Fill NA values as 0 
+    {as.matrix(.[, c("FALSE", "TRUE"), with = FALSE])} %>% # convert into data matrix 
+    fisher.test %>% print # perform Fisher's test and print results 
 }
 
+# Plot - Violin plot of selected monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
   aes(
@@ -205,6 +234,7 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   scale_fill_bright()
 
+# Plot - Bar chart of proportion of PSMs with diagnostic ion 
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
   aes(

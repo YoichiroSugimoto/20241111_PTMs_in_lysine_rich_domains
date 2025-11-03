@@ -24,7 +24,7 @@ This script calculates the stoichiometry of PTMs.
 
 project.dir <-
   file.path(
-    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
@@ -44,7 +44,7 @@ temp <-
   ),
   source)
 
-# install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 library("readxl")
 
 p2.res.dir <- file.path(project.dir,
