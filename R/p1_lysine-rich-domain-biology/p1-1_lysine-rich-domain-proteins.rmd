@@ -31,10 +31,10 @@ project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111
 # renv::snapshot(file.path(project.dir, "R"))
 
 ## Restore packages
-renv::restore(file.path(project.dir, "R"))
+#renv::restore(file.path(project.dir, "R"))
 
 ## Check package versions of current loaded library and lockfile 
-renv::status
+#renv::status
 
 ## Load all R scripts from the 'functions' folder into the current session
 temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
@@ -116,6 +116,26 @@ max.k.score.dt <- merge(
 
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(results.dir, "p1_K_rich_domains", "max-k-score-per-protein.csv")) 
+
+
+## Median K score of all region in human proteome
+# Import human protein reference data from specified file path 
+ref_protein_data <- import_reference_fasta(file.path
+("/fast/AG_Sugimoto/reference/uniprot/human", 
+  "UP000005640_9606.fasta")) 
+
+all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
+  if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
+    return(NA_real_)
+  k_count <- str_count(seq, "K") # counts number of K in each sequence
+  len <- nchar(seq) # counts the number of amino acid in sequence
+  (k_count/len)*10 # compute K per 10 residues
+})
+
+# median K score
+median_k_ratio <- median(all_protein_K_ratio, na.rm = TRUE)
+print(median_k_ratio)
+
 ```
 
 # Data Visualization - K score, Maximum K score and Protein Length
@@ -394,6 +414,119 @@ ggplot(
   ylab("-log10(FDR) of nuclear localisation enrichment") +
   xlab("Maximum K score of protein")
 
+```
+
+# Enrichment of lysine-rich domains by functional protein classes
+
+```{r functional_classes}
+
+library("mgcv")
+library("subcellularvis")
+
+comp.out <- compartmentData(
+    max.k.score.dt[, uniprot_id],
+    id_type = "UNIPROT",
+    aspect = c("Whole cell"),
+    organism = c("Human"),
+    annotationSource =c("Gene Ontology") #c("Human Protein Atlas")
+  )
+
+localisation_coef = function(i){
+  localised_genes <- comp.out$enrichment[i, "Genes"] %>% {strsplit(., split = ",", fixed = TRUE)[[1]]}
+  max.k.score.dt[, loc := uniprot_id %in% localised_genes]
+  len.gam <- gam(max_k_ratio ~ s(protein_len) + loc, data = max.k.score.dt, method = "REML")
+  
+  dt <- data.table(
+    functional_type = "localisation", 
+    subtype = comp.out$enrichment[, "Compartment"][i],
+    coef = summary(len.gam)$p.coeff["locTRUE"],
+    se = summary(len.gam)$se["locTRUE"],
+    p_value = summary(len.gam)$p.pv["locTRUE"],
+    n = length(localised_genes)
+  )
+  
+  return(dt)
+}
+
+localisation_dt <- lapply(1:length(comp.out$enrichment[, "Compartment"]), localisation_coef) %>%
+  rbindlist
+
+# Molecular condensates
+cd_code <- fread(file.path(data.dir, "20241113_cd-code.csv"))
+
+condensates_coef <- function(i){  
+  condensate_genes <- cd_code[i, Proteins] %>% {strsplit(., split = "\t", fixed = TRUE)[[1]]}
+  max.k.score.dt[, loc := uniprot_id %in% condensate_genes]
+  len.gam <- gam(max_k_ratio ~ s(protein_len) + loc, data = max.k.score.dt, method = "REML")
+  
+  dt <- data.table(
+    functional_type = "condensates", 
+    subtype = cd_code[i, Name],
+    coef = summary(len.gam)$p.coeff["locTRUE"],
+    se = summary(len.gam)$se["locTRUE"],
+    p_value = summary(len.gam)$p.pv["locTRUE"],
+    n = length(condensate_genes)
+  )
+  
+  return(dt)
+}
+
+condensate_dt <- lapply(1:nrow(cd_code), condensates_coef) %>%
+  rbindlist
+
+condensate_dt <- condensate_dt[order(p_value)][1:5]
+
+# histone
+max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
+len.gam <- gam(max_k_ratio ~ s(protein_len) + histone_protein, data = max.k.score.dt, method = "REML")
+  
+histone_dt <- data.table(
+  functional_type = "localisation", 
+  subtype = "Histone",
+  coef = summary(len.gam)$p.coeff["histone_proteinTRUE"],
+  se = summary(len.gam)$se["histone_proteinTRUE"],
+  p_value = summary(len.gam)$p.pv["histone_proteinTRUE"],
+  n = nrow(max.k.score.dt[histone_protein == TRUE])
+)
+
+# Merge all three data
+functional_class_summary <- rbindlist(list(
+  localisation_dt, histone_dt, condensate_dt
+))
+
+functional_class_summary <- functional_class_summary[order(-functional_type, -coef)]
+functional_class_summary[, `:=`(
+  functional_type = factor(functional_type, levels = c("localisation", "condensates")),
+  subtype = factor(subtype, levels = subtype)
+)]
+
+functional_class_summary
+
+ggplot(
+  data = functional_class_summary,
+  aes(
+    x = subtype,
+    y = coef
+  )) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_point() +
+  geom_errorbar(aes(
+    ymin = coef - se, ymax = coef + se, width = 0.3
+  )) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  facet_grid(~ functional_type, scales = "free", space = "free")
+
+ggplot(
+  data = max.k.score.dt,
+  aes(
+    x = factor(max_k_ratio),
+    y = protein_len,
+    fill = histone_protein
+  )
+) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(preserve = "single")) +
+  scale_fill_bright() +
+  coord_cartesian(ylim = c(0, 2500))
 ```
 
 
