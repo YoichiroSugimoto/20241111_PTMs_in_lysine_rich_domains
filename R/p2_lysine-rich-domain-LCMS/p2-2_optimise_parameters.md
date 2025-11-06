@@ -1,7 +1,7 @@
 2-2. Optimise MQ parameters
 ================
-Yoichiro Sugimoto
-11 March, 2025
+Yoichiro Sugimoto and Pallavi Kesavan
+04 November, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -30,7 +30,7 @@ This script calculates the stoichiometry of PTMs.
 
 project.dir <-
   file.path(
-    "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains"
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
@@ -38,41 +38,17 @@ project.dir <-
 renv::restore(file.path(project.dir, "R"))
 ```
 
-    ## The following package(s) will be updated:
+    ## The following required system packages are not installed:
+    ## - pandoc  [required by knitr, rmarkdown]
+    ## The R packages depending on these system packages may fail to install.
     ## 
-    ## # https://bioconductor.org/packages/3.18/bioc --------------------------------
-    ## - AnnotationDbi      [1.64.1 -> 1.64.1]
-    ## - Biobase            [2.62.0 -> 2.62.0]
-    ## - BiocGenerics       [0.48.1 -> 0.48.1]
-    ## - BiocVersion        [3.18.1 -> 3.18.1]
-    ## - Biostrings         [2.70.3 -> 2.70.3]
-    ## - GenomeInfoDb       [1.38.8 -> 1.38.8]
-    ## - IRanges            [2.36.0 -> 2.36.0]
-    ## - KEGGREST           [1.42.0 -> 1.42.0]
-    ## - S4Vectors          [0.40.2 -> 0.40.2]
-    ## - XVector            [0.42.0 -> 0.42.0]
-    ## - zlibbioc           [1.48.2 -> 1.48.2]
+    ## An administrator can install these packages with:
+    ## - sudo apt install pandoc
     ## 
-    ## # https://bioconductor.org/packages/3.18/data/annotation ---------------------
-    ## - GenomeInfoDbData   [1.2.11 -> 1.2.11]
-    ## - org.Hs.eg.db       [3.18.0 -> 3.18.0]
-    ## 
-    ## # Installing packages --------------------------------------------------------
-    ## - Installing BiocVersion ...                    OK [copied from cache]
-    ## - Installing BiocGenerics ...                   OK [copied from cache]
-    ## - Installing Biobase ...                        OK [copied from cache]
-    ## - Installing S4Vectors ...                      OK [copied from cache]
-    ## - Installing IRanges ...                        OK [copied from cache]
-    ## - Installing zlibbioc ...                       OK [copied from cache]
-    ## - Installing XVector ...                        OK [copied from cache]
-    ## - Installing GenomeInfoDbData ...               OK [copied from cache]
-    ## - Installing GenomeInfoDb ...                   OK [copied from cache]
-    ## - Installing Biostrings ...                     OK [copied from cache]
-    ## - Installing KEGGREST ...                       OK [copied from cache]
-    ## - Installing AnnotationDbi ...                  OK [copied from cache]
-    ## - Installing org.Hs.eg.db ...                   OK [copied from cache in 0.72s]
+    ## - The library is already synchronized with the lockfile.
 
 ``` r
+## Load all R scripts from the 'functions' folder into the current session
 temp <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
@@ -102,12 +78,26 @@ temp <-
 
     ## Loading required package: BiocGenerics
 
+    ## Loading required package: generics
+
+    ## 
+    ## Attaching package: 'generics'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     explain
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    ##     setequal, union
+
     ## 
     ## Attaching package: 'BiocGenerics'
 
-    ## The following objects are masked from 'package:dplyr':
+    ## The following object is masked from 'package:dplyr':
     ## 
-    ##     combine, intersect, setdiff, union
+    ##     combine
 
     ## The following objects are masked from 'package:stats':
     ## 
@@ -117,10 +107,10 @@ temp <-
     ## 
     ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
     ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    ##     Position, rank, rbind, Reduce, rownames, sapply, setdiff, sort,
-    ##     table, tapply, union, unique, unsplit, which.max, which.min
+    ##     get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    ##     rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
+    ##     unsplit, which.max, which.min
 
     ## Loading required package: S4Vectors
 
@@ -170,36 +160,49 @@ temp <-
     ##     strsplit
 
 ``` r
-# install.packages("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry", repos = NULL, type = "source")
+## Install private packages 
+# Install ptm.stiochiometry package
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries - ptm.stiochiometry and readxl
+library(ptm.stoichiometry)
 library("readxl")
 
-p2.res.dir <- file.path(project.dir,
+# Define path to result directory 
+p2_results_dir <- file.path(project.dir,
                         "results",
-                        "p2-analysis-setting")
+                        "p2_analysis_setting")
 ```
 
 # Import basic data
 
 ``` r
+# Define path for data directory
+data.dir <- file.path(project.dir, "data")
+
+# Define file path for PNAS2022 data 
 pnas2022_data <- file.path(
   project.dir,
-  "data/MQ_output/PNAS2022" 
+  "data/PNAS2022" 
 )
 
+# Load sample run info using defined file path
 all_sample_run_info <- read_excel(
-  file.path(pnas2022_data, "PXD031221_sample_matrix.xlsx"),
-  sheet = "run_setting"
+  file.path(data.dir, "analysis_setting", "PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_standard"
 ) %>% data.table
 
-data.dir <- file.path(project.dir, "data")
+# Define path for protein feature data
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
+# Change column names
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
 ```
 
 # MS/MS count by different setting
 
 ``` r
+# Define "read_evidence" function 
 read_evidence <- function(prefix, dir_path){
   input.file <- file.path(
     dir_path, 
@@ -214,17 +217,19 @@ read_evidence <- function(prefix, dir_path){
   return(dt)
 }
 
-evidence.dt <- lapply(
-  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix],
+# Apply the function 'read_evidence' to each selected 'prefix' value
+evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
+  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
   ) %>% rbindlist
 
+
 data.count.dt <- evidence.dt[, list(
-  total_peptide_count = .N,
-  total_msms_count = sum(psm_mapped),
-  total_intensity = sum(peak_intensity) 
-), by = list(file_name, sample_name, condition, type)]
+  total_peptide_count = .N, # Count total number of rows (peptides)
+  total_msms_count = sum(psm_mapped), # Sum of 'psm_mapped'
+  total_intensity = sum(peak_intensity) # Sum of 'peak_intensity'
+), by = list(file_name, sample_name, condition, type)] 
 
 data.count.dt[, `:=`(
   propionylation = case_when(
@@ -270,6 +275,7 @@ rel_count_stat.dt[, `:=`(
   type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP"))
 )]
 
+
 ggplot(
   rel_count_stat.dt,
   aes(
@@ -311,7 +317,7 @@ read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
 all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
   ) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(
@@ -384,7 +390,7 @@ all_stoic_pos.dt <- lapply(
       !is.na(prefix), prefix
   ],
   read_stoic_data,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
 ) %>% rbindlist
 
 all_stoic_pos.dt[, `:=`(
@@ -510,7 +516,7 @@ all_runtime.dt <- lapply(
       !is.na(prefix), prefix
   ],
   read_runtime_data,
-  dir_path = file.path(data.dir, "MQ_output/PNAS2022/runtime")
+  dir_path = file.path(data.dir, "MQ_standard/PNAS2022/runtime")
 ) %>% rbindlist
 
 job_names <- all_runtime.dt[, unique(job)]
@@ -557,6 +563,11 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   ylab("Run time [min]")
 ```
+
+    ## Warning in fortify(data, ...): Arguments in `...` must be used.
+    ## ✖ Problematic argument:
+    ## • color = NA
+    ## ℹ Did you misspell an argument name?
 
 ![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
 
@@ -877,82 +888,79 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.3.2 (2023-10-31)
-    ##  os       Ubuntu 22.04.3 LTS
+    ##  version  R version 4.5.1 (2025-06-13)
+    ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
     ##  language (EN)
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-03-11
-    ##  pandoc   3.1.1 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
+    ##  date     2025-11-04
+    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
-    ##  package          * version   date (UTC) lib source
-    ##  BiocGenerics     * 0.48.1    2023-11-01 [1] Bioconductor
-    ##  BiocManager        1.30.25   2024-08-28 [1] CRAN (R 4.3.2)
-    ##  Biostrings       * 2.70.3    2024-03-13 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  bitops             1.0-9     2024-10-03 [1] CRAN (R 4.3.2)
-    ##  cellranger         1.1.0     2016-07-27 [1] CRAN (R 4.3.2)
-    ##  cli                3.6.3     2024-06-21 [1] CRAN (R 4.3.2)
-    ##  colorspace         2.1-1     2024-07-26 [1] CRAN (R 4.3.2)
-    ##  crayon             1.5.3     2024-06-20 [1] CRAN (R 4.3.2)
-    ##  data.table       * 1.15.4    2024-03-30 [1] CRAN (R 4.3.2)
-    ##  digest             0.6.36    2024-06-23 [1] CRAN (R 4.3.2)
-    ##  dplyr            * 1.1.4     2023-11-17 [1] CRAN (R 4.3.2)
-    ##  evaluate           0.24.0    2024-06-10 [1] CRAN (R 4.3.2)
-    ##  fansi              1.0.6     2023-12-08 [1] CRAN (R 4.3.2)
-    ##  farver             2.1.2     2024-05-13 [1] CRAN (R 4.3.2)
-    ##  fastmap            1.2.0     2024-05-15 [1] CRAN (R 4.3.2)
-    ##  generics           0.1.3     2022-07-05 [1] CRAN (R 4.3.2)
-    ##  GenomeInfoDb     * 1.38.8    2024-03-15 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  GenomeInfoDbData   1.2.11    2024-11-18 [1] Bioconductor
-    ##  ggplot2          * 3.5.1     2024-04-23 [1] CRAN (R 4.3.2)
-    ##  glue               1.7.0     2024-01-09 [1] CRAN (R 4.3.2)
-    ##  gtable             0.3.5     2024-04-22 [1] CRAN (R 4.3.2)
-    ##  highr              0.11      2024-05-26 [1] CRAN (R 4.3.2)
-    ##  htmltools          0.5.8.1   2024-04-04 [1] CRAN (R 4.3.2)
-    ##  IRanges          * 2.36.0    2023-10-24 [1] Bioconductor
-    ##  janitor            2.2.0     2023-02-02 [1] CRAN (R 4.3.2)
-    ##  khroma           * 1.14.0    2024-08-26 [1] CRAN (R 4.3.2)
-    ##  knitr            * 1.48      2024-07-07 [1] CRAN (R 4.3.2)
-    ##  labeling           0.4.3     2023-08-29 [1] CRAN (R 4.3.2)
-    ##  lifecycle          1.0.4     2023-11-07 [1] CRAN (R 4.3.2)
-    ##  lubridate          1.9.3     2023-09-27 [1] CRAN (R 4.3.2)
-    ##  magrittr         * 2.0.3     2022-03-30 [1] CRAN (R 4.3.2)
-    ##  munsell            0.5.1     2024-04-01 [1] CRAN (R 4.3.2)
-    ##  patchwork        * 1.3.0     2024-09-16 [1] CRAN (R 4.3.2)
-    ##  pillar             1.9.0     2023-03-22 [1] CRAN (R 4.3.2)
-    ##  pkgconfig          2.0.3     2019-09-22 [1] CRAN (R 4.3.2)
-    ##  R6                 2.5.1     2021-08-19 [1] CRAN (R 4.3.2)
-    ##  RColorBrewer     * 1.1-3     2022-04-03 [1] CRAN (R 4.3.2)
-    ##  RCurl              1.98-1.16 2024-07-11 [1] CRAN (R 4.3.2)
-    ##  readxl           * 1.4.3     2023-07-06 [1] CRAN (R 4.3.2)
-    ##  renv               1.0.7     2024-04-11 [1] CRAN (R 4.3.2)
-    ##  rlang              1.1.4     2024-06-04 [1] CRAN (R 4.3.2)
-    ##  rmarkdown          2.27      2024-05-17 [1] CRAN (R 4.3.2)
-    ##  rstudioapi         0.17.1    2024-10-22 [1] CRAN (R 4.3.2)
-    ##  S4Vectors        * 0.40.2    2023-11-23 [1] Bioconductor 3.18 (R 4.3.2)
-    ##  scales             1.3.0     2023-11-28 [1] CRAN (R 4.3.2)
-    ##  sessioninfo        1.2.2     2021-12-06 [1] CRAN (R 4.3.2)
-    ##  snakecase          0.11.1    2023-08-27 [1] CRAN (R 4.3.2)
-    ##  stringi            1.8.4     2024-05-06 [1] CRAN (R 4.3.2)
-    ##  stringr          * 1.5.1     2023-11-14 [1] CRAN (R 4.3.2)
-    ##  tibble             3.2.1     2023-03-20 [1] CRAN (R 4.3.2)
-    ##  tidyselect         1.2.1     2024-03-11 [1] CRAN (R 4.3.2)
-    ##  timechange         0.3.0     2024-01-18 [1] CRAN (R 4.3.2)
-    ##  utf8               1.2.4     2023-10-22 [1] CRAN (R 4.3.2)
-    ##  vctrs              0.6.5     2023-12-01 [1] CRAN (R 4.3.2)
-    ##  withr              3.0.1     2024-07-31 [1] CRAN (R 4.3.2)
-    ##  xfun               0.46      2024-07-18 [1] CRAN (R 4.3.2)
-    ##  XVector          * 0.42.0    2023-10-24 [1] Bioconductor
-    ##  yaml               2.3.10    2024-07-26 [1] CRAN (R 4.3.2)
-    ##  zlibbioc           1.48.2    2024-03-13 [1] Bioconductor 3.18 (R 4.3.2)
+    ##  package           * version    date (UTC) lib source
+    ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
+    ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.5.1)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.5.1)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.5.1)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.5.1)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
+    ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
+    ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
+    ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
+    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
+    ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.5.1)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-03 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
+    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
+    ##  renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.1)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
+    ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.5.1)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.5.1)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
+    ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
+    ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
     ## 
-    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.3
+    ##  [1] /home/pkesava/R/x86_64-pc-linux-gnu-library/4.5
     ##  [2] /usr/local/lib/R/site-library
     ##  [3] /usr/lib/R/site-library
     ##  [4] /usr/lib/R/library
+    ##  * ── Packages attached to the search path.
     ## 
     ## ──────────────────────────────────────────────────────────────────────────────

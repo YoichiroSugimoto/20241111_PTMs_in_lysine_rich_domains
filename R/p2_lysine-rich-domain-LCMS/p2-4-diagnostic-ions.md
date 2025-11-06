@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto
-03 November, 2025
+04 November, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -182,14 +182,6 @@ library("janitor")
 
 ``` r
 library("ptm.stoichiometry")
-
-# Create and define path to result directory 
-p2_results_dir <- file.path(project.dir,
-                        "results",
-                        "p2_DI_comparisons")
-dir.create(file.path(project.dir,
-                        "results",
-                        "p2_DI_comparisons"), showWarnings = FALSE, recursive = TRUE)
 ```
 
 # Import basic data
@@ -896,49 +888,41 @@ cor.test(
 
 ``` r
 # Identify unique PTMs present in new data compared to PNAS2022
-MQ2025_vs_PNAS2022_dt <- merge(
-  MQ_DI_it_d.hydroxyK_dt,
-  non.duplicated.pnas2022.stoic.dt %>% select(protein_accession, stoichiometry_PNAS2022),
-  by = c("protein_accession")
-)
+#MQ2025_vs_PNAS2022_dt <- merge(
+#  MQ_DI_it_d.hydroxyK_dt,
+#  non.duplicated.pnas2022.stoic.dt %>% select(protein_accession, stoichiometry_PNAS2022),
+#  by = c("protein_accession")
+#)
 
 
-MQ2025_vs_PNAS2022_dt <- MQ2025_vs_PNAS2022_dt %>%
-  mutate(
-    point_type = case_when(
-      !is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "common",
-      !is.na(WT) & is_diagnostic_peak == TRUE ~ "WT_only_DI",
-      !is.na(WT) & (is.na(stoichiometry_PNAS2022) | is_diagnostic_peak == FALSE) ~ "unique_WT",
-      is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "unique_PNAS2022"
-    )
-  )
+#MQ2025_vs_PNAS2022_dt <- MQ2025_vs_PNAS2022_dt %>%
+#  mutate(
+ #   point_type = case_when(
+  #    !is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "common",
+  #    !is.na(WT) & is_diagnostic_peak == TRUE ~ "WT_only_DI",
+   #   !is.na(WT) & (is.na(stoichiometry_PNAS2022) | is_diagnostic_peak == FALSE) ~ "unique_WT",
+   #   is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "unique_PNAS2022"
+  #  )
+  #)
 
-ggplot(MQ2025_vs_PNAS2022_dt, aes(x = stoichiometry_PNAS2022, y = WT, color = point_type)) +
-  geom_point(size = 3) +
-  geom_text(aes(label = gene_name), vjust = -0.5, hjust = 0.5) +
-  scale_color_manual(
-    values = c(
-      "common" = "black",
-      "WT_only_DI" = "red",
-      "unique_WT" = "orange",
-      "unique_PNAS" = "blue"
-    )
-  ) +
-  theme_minimal() +
-  labs(
-    x = "stoichiometry_PNAS2022",
-    y = "stoichiometry_WT_2025",
-    color = "Protein type"
-  )
+#ggplot(MQ2025_vs_PNAS2022_dt, aes(x = stoichiometry_PNAS2022, y = WT, color = point_type)) +
+#  geom_point(size = 3) +
+#  geom_text(aes(label = gene_name), vjust = -0.5, hjust = 0.5) +
+#  scale_color_manual(
+   # values = c(
+  #    "common" = "black",
+   #   "WT_only_DI" = "red",
+   #   "unique_WT" = "orange",
+   #   "unique_PNAS" = "blue"
+  #  )
+ # ) +
+#  theme_minimal() +
+#  labs(
+ #   x = "stoichiometry_PNAS2022",
+ #   y = "stoichiometry_WT_2025",
+ #   color = "Protein type"
+#  )
 ```
-
-    ## Warning: Removed 50 rows containing missing values or values outside the scale range
-    ## (`geom_point()`).
-
-    ## Warning: Removed 50 rows containing missing values or values outside the scale range
-    ## (`geom_text()`).
-
-![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison-2.png)<!-- -->
 
 # Session information
 
@@ -956,7 +940,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-03
+    ##  date     2025-11-04
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -993,7 +977,7 @@ sessioninfo::session_info()
     ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-09-24 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-03 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)

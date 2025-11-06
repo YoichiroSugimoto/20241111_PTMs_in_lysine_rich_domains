@@ -1,6 +1,6 @@
 ---
 title: "2-2. Optimise MQ parameters"
-author: "Yoichiro Sugimoto"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
   %\VignetteIndexEntry{Bioconductor style for PDF documents}
@@ -35,7 +35,7 @@ renv::restore(file.path(project.dir, "R"))
 
 
 ```{r set parameters}
-
+## Load all R scripts from the 'functions' folder into the current session
 temp <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
@@ -44,13 +44,19 @@ temp <-
   ),
   source)
 
-# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+## Install private packages 
+# Install ptm.stiochiometry package
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries - ptm.stiochiometry and readxl
+library(ptm.stoichiometry)
 library("readxl")
 
-p2.res.dir <- file.path(project.dir,
+# Define path to result directory 
+p2_results_dir <- file.path(project.dir,
                         "results",
-                        "p2-analysis-setting")
-
+                        "p2_analysis_setting")
 
 ```
 
@@ -58,19 +64,25 @@ p2.res.dir <- file.path(project.dir,
 
 ```{r import_basic_data}
 
+# Define path for data directory
+data.dir <- file.path(project.dir, "data")
+
+# Define file path for PNAS2022 data 
 pnas2022_data <- file.path(
   project.dir,
-  "data/MQ_output/PNAS2022" 
+  "data/PNAS2022" 
 )
 
+# Load sample run info using defined file path
 all_sample_run_info <- read_excel(
-  file.path(pnas2022_data, "PXD031221_sample_matrix.xlsx"),
-  sheet = "run_setting"
+  file.path(data.dir, "analysis_setting", "PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_standard"
 ) %>% data.table
 
-data.dir <- file.path(project.dir, "data")
+# Define path for protein feature data
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
+# Change column names
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
 
 ```
@@ -78,9 +90,9 @@ setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein
 
 # MS/MS count by different setting
 
-
 ```{r MS_MS_count}
 
+# Define "read_evidence" function 
 read_evidence <- function(prefix, dir_path){
   input.file <- file.path(
     dir_path, 
@@ -95,17 +107,19 @@ read_evidence <- function(prefix, dir_path){
   return(dt)
 }
 
-evidence.dt <- lapply(
-  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix],
+# Apply the function 'read_evidence' to each selected 'prefix' value
+evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
+  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
   ) %>% rbindlist
 
+
 data.count.dt <- evidence.dt[, list(
-  total_peptide_count = .N,
-  total_msms_count = sum(psm_mapped),
-  total_intensity = sum(peak_intensity) 
-), by = list(file_name, sample_name, condition, type)]
+  total_peptide_count = .N, # Count total number of rows (peptides)
+  total_msms_count = sum(psm_mapped), # Sum of 'psm_mapped'
+  total_intensity = sum(peak_intensity) # Sum of 'peak_intensity'
+), by = list(file_name, sample_name, condition, type)] 
 
 data.count.dt[, `:=`(
   propionylation = case_when(
@@ -151,6 +165,7 @@ rel_count_stat.dt[, `:=`(
   type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP"))
 )]
 
+
 ggplot(
   rel_count_stat.dt,
   aes(
@@ -178,7 +193,6 @@ The results indicate that the setting with 7 miscleavage and 7 variable modifica
 
 # QC by the position of propionylated lysines
 
-
 ```{r QC_by_propionylated_lysine_position}
 
 read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
@@ -190,7 +204,7 @@ read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
 all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
   ) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(
@@ -251,7 +265,7 @@ all_stoic_pos.dt <- lapply(
       !is.na(prefix), prefix
   ],
   read_stoic_data,
-  dir_path = p2.res.dir
+  dir_path = p2_results_dir
 ) %>% rbindlist
 
 all_stoic_pos.dt[, `:=`(
@@ -367,7 +381,7 @@ all_runtime.dt <- lapply(
       !is.na(prefix), prefix
   ],
   read_runtime_data,
-  dir_path = file.path(data.dir, "MQ_output/PNAS2022/runtime")
+  dir_path = file.path(data.dir, "MQ_standard/PNAS2022/runtime")
 ) %>% rbindlist
 
 job_names <- all_runtime.dt[, unique(job)]
