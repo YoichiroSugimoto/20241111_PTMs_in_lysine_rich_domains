@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-# This script calculates the 
+# This script calculates the stiochiomtery using MaxQuant data  
 
 # Environment setup
 
@@ -48,8 +48,8 @@ output:
 ## Load all R scripts from the 'functions' folder into the current session
 temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
 
-## Install private packages 
-# Install ptm.stiochiometry package - package installed 24.09.2025
+## Install private package 
+# Install ptm.stiochiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries - ptm.stiochiometry and readxl
@@ -58,7 +58,7 @@ library("readxl")
 
 ```
 
-# Import data 
+# Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -117,8 +117,13 @@ process_stoichiometry <- function(MQ_standard_data,
     MQ_standard_sample <- MQ_standard_data$data[i] # Extract the data column 
     
     # Define file path to MaxQuant evidence files
-    mq_evidence_data <- file.path(pnas2022_data, "evidence", paste0(prefix, "evidence.txt"))
-    message("Processing: ", basename(mq_evidence_data)) # Print which sample id is being processed
+    mq_evidence_data <- file.path(pnas2022_data, 
+                                  "evidence", 
+                                  paste0(prefix, "evidence.txt"))
+    
+    # Print which sample id is being processed
+    message("Processing: ", basename(mq_evidence_data)) 
+    
     
     # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
     if (file.exists(mq_evidence_data)) {
@@ -201,7 +206,7 @@ process_stoichiometry(
 # Load data into environment
 MQ_DI_data <- file.path(
   project.dir,
-  "data/MQ_with_DI" 
+  "data/MQ_with_DI/PNAS2022" 
 )
 
 # Load sample run info data 
@@ -216,7 +221,7 @@ MQ_DI_run_info[, sample_id := 1:.N]
 
 # Create file path for results
 MQ_with_DI_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI")
-dir.create(MQ_with_DI_dir, recursive = TRUE)
+#dir.create(MQ_with_DI_dir, recursive = TRUE)
 
 # Load common PTM mapping file
 ptm_mapping_file <- file.path(
@@ -227,9 +232,18 @@ ptm_mapping_file <- file.path(
 
 
 ```{r}
+# Define the parse protein function 
+parse_protein_accession_MQ = function(x){str_split_fixed(x, pattern = "\\|", n = 3)[, 2]}
+```
+
+
+```{r calculate_stoichiometry_w_di}
+
 # For each sample ID calculate the stoichiomtery
-for (i in 1:nrow(MQ_DI_run_info)){ # Takes each row from the MQ_DI_run_info
+for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_info
   
+  prefix <- MQ_DI_run_info$prefix[i]
+
   # Retrieves the evidence.txt file for each sample ID 
   mq_evidence_data = file.path(MQ_DI_data,
                                "evidence",
@@ -243,7 +257,8 @@ for (i in 1:nrow(MQ_DI_run_info)){ # Takes each row from the MQ_DI_run_info
     
     # Locate and fetch all PTM site files within the ptm folder
     ptm_files <- list.files(file.path(
-      MQ_DI_data, MQ_DI_run_info[i, data_dir], "ptm"), 
+      MQ_DI_data, "ptm",
+      paste0(MQ_DI_run_info[i, prefix], "ptm")), 
       full.names = TRUE)
     
     # Generate PTM names based on file names, add brackets and remove "Sites.txt"
@@ -266,12 +281,11 @@ for (i in 1:nrow(MQ_DI_run_info)){ # Takes each row from the MQ_DI_run_info
       ref_protein_dt = ref_protein_data,
       ptm_files = ptm_files,
       ptm_names = ptm_names,
-      output_prefix = file.path(MQ_with_DI_iterative_dir,  # Define output prefix for results
-                                paste0("DI_", MQ_DI_it_run_info[i, data_dir])),
+      output_prefix = file.path(MQ_with_DI_dir,  # Define output prefix for results
+                                paste0("DI_", MQ_DI_run_info[i, prefix])),
       ptm_mapping_file = ptm_mapping_file,
       K_only = FALSE,
       selected_type = c("MULTI-MSMS"),
-      parse_protein_accession_function = parse_protein_accession_function_for_iterative
     )
      # If evidence.txt does not exist, skip the function and print below message
   } else {
@@ -282,6 +296,7 @@ for (i in 1:nrow(MQ_DI_run_info)){ # Takes each row from the MQ_DI_run_info
   gc()
   
 }
+
 ```
 
 
@@ -314,12 +329,6 @@ ptm_mapping_file <- file.path(
   project.dir,
   "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
 )
-```
-
-```{r parse_accession_function}
-# Define the parse protein function 
-parse_protein_accession_function_for_iterative = function(x){str_split_fixed(x, pattern = "\\|", n = 3)[, 2]}
-
 ```
 
 
