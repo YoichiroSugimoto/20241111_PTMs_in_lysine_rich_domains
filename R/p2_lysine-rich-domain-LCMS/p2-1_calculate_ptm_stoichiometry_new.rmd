@@ -249,7 +249,6 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
                                "evidence",
                                paste0(prefix, "evidence.txt"))
   
-  # Pastes the sample ID that is processing 
   print(paste0("Processing: ", basename(mq_evidence_data)))
   
   # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
@@ -292,7 +291,7 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
     print(paste0("File does not exist: ", mq_evidence_data))
   }
   
-   # Garbage collection - to free up memory 
+  
   gc()
   
 }
