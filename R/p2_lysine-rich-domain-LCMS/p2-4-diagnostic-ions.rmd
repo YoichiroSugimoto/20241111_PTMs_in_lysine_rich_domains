@@ -287,7 +287,7 @@ ggplot(
 
 ## Read stoichiometry data for MQ_DI_it
 MQ_DI_stoic_dt <- lapply(
-  MQ_DI_run_info[, data_dir],
+  MQ_DI_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_", 
   post_fix = "_DI",
@@ -297,7 +297,7 @@ MQ_DI_stoic_dt <- lapply(
 # Generate data table with stoichiometry values for WT and JMJD6KO 
 MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_stoic_dt)
 
-# Generate data table with WT and JMJD6KO with diagnostic ions
+# Generate data table with WT and JMJD6KO with diagnostic peaks
 DI_info <- MQ_DI_stoic_dt[
   , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
   ][
@@ -312,16 +312,23 @@ MQ_DI_d.hydroxyK_dt <- merge(MQ_DI_d.hydroxyK_dt, DI_info, by = c("protein_acces
 
 #Filter data table with presence of diagnostic_peak and WT stoichiometry values
 MQ_DI_d.hydroxyK_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" # create a new column 'is_diagnostic_peak', keep rows where diagnostic peak is "+"
+  is_diagnostic_peak = diagnostic_peak == "+" 
 )]
-
-MQ_DI_d.hydroxyK_dt[diagnostic_peak == "+"] #filter data with diagnostic peak = "+"
 
 MQ_DI_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)] # only includes data WT values
 
+
+# PNAS paper reported 153 sites
+nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))]) # count rows with hydroxylations with unique accession_position
+
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][, .N, by = genotype]
+
+
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+
 # Plot - WT versus JMJD6KO with presence of diagnostic ions
 ggplot(
-  data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
+  data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
   aes(
     x = JMJD6KO,
     y = WT,
@@ -334,14 +341,14 @@ ggplot(
 # Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
 # This plot identifies lysine hydroxylations events in the absence of JMJD6
 ggplot(
-  data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
+  data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
   aes(
     x = JMJD6KO,
     y = WT,
     color = is_diagnostic_peak
   )
 ) + geom_point() +
-  ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA))) +
+  ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA)), max.overlaps = 50) +
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
