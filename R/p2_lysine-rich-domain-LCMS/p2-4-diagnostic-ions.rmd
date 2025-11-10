@@ -616,27 +616,36 @@ cor.test(
 
 ##MQ_DI
 # Count the number of hydroxylations total in MQ_DI
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N]
-
-test_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, aa_pos))]
-
-# create data table with hydroxylated sites only
-MQ_DI_total_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))]
-
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N]
 
 # Count the number of hydroxylations in WT versus JMJD6KO
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+
+# create data table with hydroxylated sites only
+MQ_DI_total_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))]
+
 
 ##MQ_DI_it
 # Count the number of hydroxylations in  MQ_DI_it
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N]
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N]
 
 # Count the number of hydroxylations in  MQ_DI_it
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+
+# create data table with hydroxylated sites only
+MQ_DI_it_total_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))]
+
+# Hydroxylations sites identified in PNAS2022 - 153 sites
+PNAS2022_total_count <- pnas2022.stoic.dt[
+   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+ ][
+   order(curated_oxK_site, decreasing = TRUE)
+  ][
+   !duplicated(paste(protein_accession, aa_pos))
+ ]
 
 
-
-hxdroxy_comparisions <- merge()
+hxdroxy_comparisions <- 
 
 
 library(VennDiagram)
@@ -647,11 +656,6 @@ venn.diagram(x = list(PNAS2022_total_count, MQ_DI_total_count, MQ_DI_it_total_co
              output = TRUE
              )
 
-KDM5A
-1495
-
-H1-2
-137
 
 ```
 
