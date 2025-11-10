@@ -246,6 +246,27 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
+# Count the number of hydroxylations in new workflow
+pnas2022.stoic.dt[
+  curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+][
+  order(curated_oxK_site, decreasing = TRUE)
+  ][
+  !duplicated(paste(protein_accession, aa_pos))
+][
+  , .N, by = sample_name
+]
+
+pnas2022.stoic.dt[
+  curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+][
+  order(curated_oxK_site, decreasing = TRUE)
+  ][
+  !duplicated(paste(protein_accession, aa_pos))
+][
+  , .N, by = screen
+]
+
 ```
 
 
@@ -321,11 +342,6 @@ MQ_DI_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N,
 # PNAS paper reported 153 sites
 nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))]) # count rows with hydroxylations with unique accession_position
 
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][, .N, by = genotype]
-
-
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
-
 # Plot - WT versus JMJD6KO with presence of diagnostic ions
 ggplot(
   data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
@@ -351,6 +367,10 @@ ggplot(
   ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA)), max.overlaps = 50) +
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+
+
+# Count the number of hydroxylations in new workflow
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
 
 ```
 
@@ -421,6 +441,9 @@ ggplot(
 
 #CHD3 outlier 
 MQ_DI_it_stoic_dt[gene_name == "CHD3" & aa_pos == 111]
+
+# Count the number of hydroxylations in new workflow
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
 
 ```
 
@@ -509,7 +532,9 @@ ggplot(
 
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
-setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos")) #change the column names
+
+#change the column names
+setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos")) 
 
 # Create new column 'accession_position'
 pnas2022.stoic.dt[, `:=`(
@@ -518,6 +543,10 @@ pnas2022.stoic.dt[, `:=`(
 
 # PNAS paper reported 153 sites
 nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))]) # count rows with hydroxylations with unique accession_position
+
+pnas2022.stoic.dt[curated_oxK_site == TRUE][][!duplicated(paste(accession_position))]
+
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
 
 # Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
 MQ_DI_it_d.hydroxyK_dt[, `:=`( 
