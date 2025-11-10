@@ -207,7 +207,6 @@ pnas2022.stoic.dt[, `:=`(
     {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} # Take response from previous line and change accordingly 
 )]
 
-# PNAS paper reported 153 sites
 # Create a data table with protein_accession, aa_pos, curated_oxK_site columns from metadata 
 # order the curated oxK sites in descending order and remove duplicated rows from 
 pnas2022_curated_hydroxylysine_dt <- pnas2022.stoic.dt[, .(protein_accession, aa_pos, curated_oxK_site)] %>%
@@ -246,26 +245,16 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
-# Count the number of hydroxylations in new workflow
-pnas2022.stoic.dt[
-  curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
-][
-  order(curated_oxK_site, decreasing = TRUE)
+# Hydroxylations sites identified in PNAS2022 - 153 sites
+PNAS2022_total_count <- pnas2022.stoic.dt[
+   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+ ][
+   order(curated_oxK_site, decreasing = TRUE)
   ][
-  !duplicated(paste(protein_accession, aa_pos))
-][
-  , .N, by = sample_name
-]
-
-pnas2022.stoic.dt[
-  curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
-][
-  order(curated_oxK_site, decreasing = TRUE)
-  ][
-  !duplicated(paste(protein_accession, aa_pos))
-][
-  , .N, by = screen
-]
+   !duplicated(paste(protein_accession, aa_pos))
+ ][
+   , .N
+ ]
 
 ```
 
@@ -304,7 +293,7 @@ ggplot(
 ```
 # Analyse hydroxylation sites with DI 
 
-```{r analyse_hydroxylation_sites_DI}
+```{r hydroxylation_sites_DI}
 
 ## Read stoichiometry data for MQ_DI_it
 MQ_DI_stoic_dt <- lapply(
@@ -338,10 +327,6 @@ MQ_DI_d.hydroxyK_dt[, `:=`(
 
 MQ_DI_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)] # only includes data WT values
 
-
-# PNAS paper reported 153 sites
-nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))]) # count rows with hydroxylations with unique accession_position
-
 # Plot - WT versus JMJD6KO with presence of diagnostic ions
 ggplot(
   data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
@@ -354,6 +339,9 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
+```
+
+```{r hydroxylation_sites_DI_JMJD6KO}
 # Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
 # This plot identifies lysine hydroxylations events in the absence of JMJD6
 ggplot(
@@ -368,15 +356,13 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
-
-# Count the number of hydroxylations in new workflow
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
-
 ```
+
+
 
 # Analyse hydroxylation sites with DI and iterations data
 
-```{r analyse_hydroxylation_sites_DI_iterations}
+```{r hydroxylation_sites_DI_iterations}
 
 ## Read stoichiometry data for MQ_DI_it
 MQ_DI_it_stoic_dt <- lapply(
@@ -425,6 +411,10 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
+```
+
+```{r hydroxylation_sites_DI_iterations_JMJD6KO}
+
 # Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
 # This plot identifies lysine hydroxylations events in the absence of JMJD6
 ggplot(
@@ -438,14 +428,8 @@ ggplot(
   ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA))) +
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
-
-#CHD3 outlier 
-MQ_DI_it_stoic_dt[gene_name == "CHD3" & aa_pos == 111]
-
-# Count the number of hydroxylations in new workflow
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
-
 ```
+
 
 # Comparison of data without and with DI consideration
 
@@ -626,45 +610,50 @@ cor.test(
   stoichiometry_PNAS2022, WT
 )
 
-
-# Identify unique PTMs present in new data compared to PNAS2022
-#MQ2025_vs_PNAS2022_dt <- merge(
-#  MQ_DI_it_d.hydroxyK_dt,
-#  non.duplicated.pnas2022.stoic.dt %>% select(protein_accession, stoichiometry_PNAS2022),
-#  by = c("protein_accession")
-#)
-
-
-#MQ2025_vs_PNAS2022_dt <- MQ2025_vs_PNAS2022_dt %>%
-#  mutate(
- #   point_type = case_when(
-  #    !is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "common",
-  #    !is.na(WT) & is_diagnostic_peak == TRUE ~ "WT_only_DI",
-   #   !is.na(WT) & (is.na(stoichiometry_PNAS2022) | is_diagnostic_peak == FALSE) ~ "unique_WT",
-   #   is.na(WT) & !is.na(stoichiometry_PNAS2022) ~ "unique_PNAS2022"
-  #  )
-  #)
-
-#ggplot(MQ2025_vs_PNAS2022_dt, aes(x = stoichiometry_PNAS2022, y = WT, color = point_type)) +
-#  geom_point(size = 3) +
-#  geom_text(aes(label = gene_name), vjust = -0.5, hjust = 0.5) +
-#  scale_color_manual(
-   # values = c(
-  #    "common" = "black",
-   #   "WT_only_DI" = "red",
-   #   "unique_WT" = "orange",
-   #   "unique_PNAS" = "blue"
-  #  )
- # ) +
-#  theme_minimal() +
-#  labs(
- #   x = "stoichiometry_PNAS2022",
- #   y = "stoichiometry_WT_2025",
- #   color = "Protein type"
-#  )
-
 ```
 
+```{r Venn_diagram_PNAS2022_MQ_DI_MQ_DI_it}
+
+##MQ_DI
+# Count the number of hydroxylations total in MQ_DI
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N]
+
+test_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, aa_pos))]
+
+# create data table with hydroxylated sites only
+MQ_DI_total_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))]
+
+
+# Count the number of hydroxylations in WT versus JMJD6KO
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+
+##MQ_DI_it
+# Count the number of hydroxylations in  MQ_DI_it
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N]
+
+# Count the number of hydroxylations in  MQ_DI_it
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+
+
+
+hxdroxy_comparisions <- merge()
+
+
+library(VennDiagram)
+
+venn.diagram(x = list(PNAS2022_total_count, MQ_DI_total_count, MQ_DI_it_total_count),
+             category.names = c("PNAS2022", "MQ_DI", "MQ_DI_it"),
+             filename = 'Hydroxylation_sites_comparison.png',
+             output = TRUE
+             )
+
+KDM5A
+1495
+
+H1-2
+137
+
+```
 
 
 # Session information
