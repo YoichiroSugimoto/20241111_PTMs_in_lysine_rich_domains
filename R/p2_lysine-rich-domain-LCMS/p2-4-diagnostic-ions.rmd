@@ -215,6 +215,26 @@ pnas2022_curated_hydroxylysine_dt <- pnas2022.stoic.dt[, .(protein_accession, aa
 # Subset curated_oxK_site and count number of TURE or FALSE oxK_sites
 pnas2022_curated_hydroxylysine_dt[, table(curated_oxK_site)]
 
+# Hydroxylations sites identified in PNAS2022 - 153 sites
+pnas2022.stoic.dt[
+   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+ ][
+   order(curated_oxK_site, decreasing = TRUE)
+  ][
+   !duplicated(paste(protein_accession, aa_pos))
+ ][
+   , .N
+ ]
+
+pnas2022.stoic.dt[
+   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+ ][
+   order(curated_oxK_site, decreasing = TRUE)
+  ][
+   !duplicated(paste(protein_accession, gene_name))
+ ][
+   , .N
+ ]
 
 # Contrast non hydroxylated and hydroxylated lysines
 # Take only the HeLa samples with JQ1 or J6 peptide pull-down
@@ -244,17 +264,6 @@ ggplot(
 ) + geom_point() +
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
-
-# Hydroxylations sites identified in PNAS2022 - 153 sites
-pnas2022.stoic.dt[
-   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
- ][
-   order(curated_oxK_site, decreasing = TRUE)
-  ][
-   !duplicated(paste(protein_accession, aa_pos))
- ][
-   , .N
- ]
 
 ```
 
@@ -358,8 +367,6 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
 
 ```
-
-
 
 # Analyse hydroxylation sites with DI and iterations data
 
@@ -612,42 +619,62 @@ cor.test(
 
 ```{r Venn_diagram_PNAS2022_MQ_DI_MQ_DI_it}
 
-##MQ_DI
-# Count the total number of hydroxylations in MQ_DI
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N]
+## MQ_DI
+# Count the total number of hydroxylations in MQ_DI (aa_pos)
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
-# Count the number of hydroxylations in MQ_DI by genotype 
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
-
-# create data table with hydroxylated sites only
-MQ_DI_total_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))]
+# create data table with hydroxylated sites 
+MQ_DI_site_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Add new column to data table 
-MQ_DI_total_count[, `:=`(
+MQ_DI_site_count[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )
 ]
 
-##MQ_DI_it
-# Count the total number of hydroxylations in  MQ_DI_it
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N]
+# Count the total number of hydroxylations in MQ_DI (gene_name)
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
-# Count the number of hydroxylations in  MQ_DI_it by genotype
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))][, .N, by = genotype]
+# create data table with hydroxylated proteins
+MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-# create data table with hydroxylated sites only
-MQ_DI_it_total_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, genotype))]
+# Add new column to data table 
+MQ_DI_protein_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
+## MQ_DI_it
+# Count the total number of hydroxylations in  MQ_DI_it (aa_pos)
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
+
+# create data table with hydroxylated sites
+MQ_DI_it_site_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+
+# Add new column to data table 
+MQ_DI_it_site_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
+
+# Count the total number of hydroxylations in  MQ_DI_it (gene_name)
+MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
+
+# create data table with hydroxylated proteins
+MQ_DI_it_protein_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
 # Add new column to data table
-MQ_DI_it_total_count[, `:=`(
+MQ_DI_it_protein_count[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )
 ]
+
 
 ## PNAS2022
 # Create data table with hydroxylated sites only
 # Note: this data set already contains the accession_protien column 
-PNAS2022_total_count <- pnas2022.stoic.dt[
+PNAS2022_site_count <- pnas2022.stoic.dt[
    curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
  ][
    order(curated_oxK_site, decreasing = TRUE)
@@ -665,7 +692,7 @@ install.packages("ggVennDiagram")
 library(ggVennDiagram)
 library(ggplot2)
 
-# Extract the protein accession vectors 
+# Extract the accession position vectors 
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_total_count[, accession_position]),
   MQ_DI_sites = as.vector(MQ_DI_total_count[, accession_position]),
