@@ -471,9 +471,9 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
 ```
 
-# 2.4.8 Comparison of hydroxylation site class vs methionine presence with diagnostic peak 
+# 2.4.8 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
 
-```{r methionine_cont}
+```{r methionine_cont_MQ_DI}
 
 # Load protein feature data 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -486,24 +486,8 @@ feature_MQ_DI_hydroxyK_dt <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
-# Merge data tables by protein_accession and aa_pos (MQ_DI_it)
-feature_MQ_DI_it_hydroxyK_dt <- merge(
-  MQ_DI_it_d.hydroxyK_dt,
-  protein.feature.dt,
-  by = c("protein_accession", "aa_pos")
-)
-
 # Create column on the presence of M in the sequence (MQ_DI) 
 feature_MQ_DI_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
-  met_within_2 = case_when(
-    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
-    nchar(Window) == 11 ~ "No", # if M is not in the sequence, then No 
-    TRUE ~ "edge" # if M is in the sequence but not in the middle, then edge
-  )
-)]
-
-# Create column on the presence of M in the sequence (MQ_DI_it)
-feature_MQ_DI_it_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
   met_within_2 = case_when(
     nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
     nchar(Window) == 11 ~ "No", # if M is not in the sequence, then No 
@@ -530,11 +514,50 @@ ggplot(
   geom_bar() +
   scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
 
+```
 
+# 2.4.9 Comparison of hydroxylation site class (MQ_DI_it) vs methionine presence with diagnostic peak 
+
+```{r methionine_cont_MQ_DI_it}
+
+# Merge data tables by protein_accession and aa_pos (MQ_DI_it)
+feature_MQ_DI_it_hydroxyK_dt <- merge(
+  MQ_DI_it_d.hydroxyK_dt,
+  protein.feature.dt,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Create column on the presence of M in the sequence (MQ_DI_it)
+feature_MQ_DI_it_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
+  met_within_2 = case_when(
+    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
+    nchar(Window) == 11 ~ "No", # if M is not in the sequence, then No 
+    TRUE ~ "edge" # if M is in the sequence but not in the middle, then edge
+  )
+)]
+
+# Filter column 'met_within_2', where the window sequence has a positive diagnostic ion and
+# M in the middle of the sequence
+feature_MQ_DI_it_hydroxyK_dt[
+  met_within_2 == "Yes" & is_diagnostic_peak == TRUE
+]
+
+# Plot - Bar chart of hydroxylation site class vs methionine presence with diagnostic peak 
+ggplot(
+  feature_MQ_DI_it_hydroxyK_dt[
+    met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
+  ], # filter data columns
+  aes(
+    x = hydroxylation_site_class,
+    fill = met_within_2
+  )
+) +
+  geom_bar() +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
 
 ```
 
-# 2.4.9 Comparison with previous PNAS 2022 paper
+# 2.4.10 Comparison with previous PNAS 2022 paper
 
 ```{r pnas2022_comparison}
 
@@ -659,8 +682,7 @@ cor.test(
 
 ```
 
-
-# 2.4.10 Number of hydroxylation sites identified in PNAS2022 and new workflow
+# 2.4.11 Number of hydroxylation sites identified in PNAS2022 and new workflow
 
 ```{r Venn_diagram_PNAS2022_MQ_DI_MQ_DI_it}
 
@@ -702,7 +724,6 @@ MQ_DI_it_site_count[, `:=`(
 )
 ]
 
-
 # Count the total number of hydroxylations in  MQ_DI_it (gene_name)
 MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
@@ -714,7 +735,6 @@ MQ_DI_it_protein_count[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )
 ]
-
 
 ## PNAS2022
 # Create data table with hydroxylated sites only
