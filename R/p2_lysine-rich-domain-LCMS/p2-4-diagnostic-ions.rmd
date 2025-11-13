@@ -434,6 +434,16 @@ ggplot(
 ```{r comparison_nonDI_and_DI_data, fig.width = 5, fig.height = 5}
 
 # Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values
+MQ_DI_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
+  hydroxylation_site_class = case_when( 
+    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A", # low in JMJD6KO and high in WT, then classify as class_A
+    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B", # low in WT and high in JMJD6KO, then classify as class_B
+    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C", # present in JMJD6KO and WT, then classify as class_C
+    TRUE ~ "others" # values that equal to 0 and missing values, classify as "others"
+  )
+)]
+
+# Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values (MQ_DI_it)
 MQ_DI_it_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
   hydroxylation_site_class = case_when( 
     JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A", # low in JMJD6KO and high in WT, then classify as class_A
@@ -445,7 +455,7 @@ MQ_DI_it_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
 
 #Plot - Bar chart of hydroxylation site based on JMJD6KO and WT stoichiometry values
 ggplot(
-  MQ_DI_it_d.hydroxyK_dt[hydroxylation_site_class != "others"], # exclude "others" category 
+  MQ_DI_d.hydroxyK_dt[hydroxylation_site_class != "others"], # exclude "others" category 
   aes(
     x = hydroxylation_site_class,
     fill = is_diagnostic_peak
@@ -456,7 +466,7 @@ ggplot(
 
 
 # Count the total hydroxylation site per class with diagnostic peak 
-MQ_DI_it_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
+MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
                    addmargins]
 
 ```
@@ -469,14 +479,30 @@ MQ_DI_it_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos")) # change column names 
 
-# Merge data tables by protein_accession and aa_pos
+# Merge data tables by protein_accession and aa_pos (MQ_DI)
+feature_MQ_DI_hydroxyK_dt <- merge(
+  MQ_DI_d.hydroxyK_dt,
+  protein.feature.dt,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Merge data tables by protein_accession and aa_pos (MQ_DI_it)
 feature_MQ_DI_it_hydroxyK_dt <- merge(
   MQ_DI_it_d.hydroxyK_dt,
   protein.feature.dt,
   by = c("protein_accession", "aa_pos")
 )
 
-# Create column on the presence of M in the sequence  
+# Create column on the presence of M in the sequence (MQ_DI) 
+feature_MQ_DI_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
+  met_within_2 = case_when(
+    nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
+    nchar(Window) == 11 ~ "No", # if M is not in the sequence, then No 
+    TRUE ~ "edge" # if M is in the sequence but not in the middle, then edge
+  )
+)]
+
+# Create column on the presence of M in the sequence (MQ_DI_it)
 feature_MQ_DI_it_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
   met_within_2 = case_when(
     nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes", # if M is in the middle, Yes
@@ -487,13 +513,13 @@ feature_MQ_DI_it_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
 
 # Filter column 'met_within_2', where the window sequence has a positive diagnostic ion and
 # M in the middle of the sequence
-feature_MQ_DI_it_hydroxyK_dt[
+feature_MQ_DI_hydroxyK_dt[
   met_within_2 == "Yes" & is_diagnostic_peak == TRUE
 ]
 
 # Plot - Bar chart of hydroxylation site class vs methionine presence with diagnostic peak 
 ggplot(
-  feature_MQ_DI_it_hydroxyK_dt[
+  feature_MQ_DI_hydroxyK_dt[
     met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
   ], # filter data columns
   aes(
@@ -502,7 +528,6 @@ ggplot(
   )
 ) +
   geom_bar() +
-  facet_grid(~ is_diagnostic_peak) +
   scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
 
 
