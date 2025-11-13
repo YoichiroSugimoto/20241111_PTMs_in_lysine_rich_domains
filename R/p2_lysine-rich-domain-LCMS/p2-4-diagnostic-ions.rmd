@@ -565,7 +565,7 @@ ggplot(
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
 #change the column names
-setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos")) 
+setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position", "residue"), new = c("protein_accession", "aa_pos", "aa")) 
 
 # Create new column 'accession_position'
 pnas2022.stoic.dt[, `:=`(
@@ -744,11 +744,32 @@ MQ_DI_it_protein_count[, `:=`(
 #-----------
 ## PNAS2022
 #-----------
+# Define file path to load 'long_K_stiochiometry_data'  
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022.stoic.dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022.stoic.dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022.stoic.dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+# Create new column 'accession_position'
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos) # paste protein_accession and aa_pos together '_'
+)]
 
 # Create data table with hydroxylated sites only
-# Note: this data set already contains the accession_protien column 
+# Note: this data set already contains the accession_protein column 
 PNAS2022_site_count <- pnas2022.stoic.dt[
-   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+   curated_oxK_site == TRUE & aa == "K"
  ][
    order(curated_oxK_site, decreasing = TRUE)
   ][
@@ -756,7 +777,7 @@ PNAS2022_site_count <- pnas2022.stoic.dt[
  ]
 
 PNAS2022_protein_count <- pnas2022.stoic.dt[
-   curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+   curated_oxK_site == TRUE & aa == "K"
  ][
    order(curated_oxK_site, decreasing = TRUE)
   ][

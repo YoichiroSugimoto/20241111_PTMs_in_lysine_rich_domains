@@ -41,7 +41,7 @@ output:
 ```
 
 
-# Install,load essential functions and libraries
+# 2.1.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -58,7 +58,7 @@ library("readxl")
 
 ```
 
-# Import human protein reference data 
+# 2.1.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -70,7 +70,7 @@ ref_protein_data <- import_reference_fasta(file.path
 ```
 
 
-# Calculation of Stoichiometry without diagnostic ion consideration 
+# 2.1.3 Calculation of Stoichiometry without diagnostic ion consideration 
 
 ```{r data_directory_wo_di}
 
@@ -91,8 +91,6 @@ MQ_standard_data <- read_excel(
 MQ_standard_data[, sample_id := 1:.N]
 
 ```
-
-# Calculation of Stoichiometry without diagnostic ion consideration 
 
 ```{r calculate_stoichiometry_wo_di}
 
@@ -199,7 +197,7 @@ process_stoichiometry(
 ```
 
 
-# Calculation of Stiochiometry with diagnostic ions
+# 2.1.4 Calculation of Stiochiometry with diagnostic ions
 
 ```{r data_directory_w_di}
 
@@ -299,7 +297,7 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
 ```
 
 
-# Calculation of Stoichiometry with diagnostic ion and iterative 
+# 2.1.5 Calculation of Stoichiometry with diagnostic ion and iterative 
 
 ```{r data_directory_w_di_it}
 
@@ -392,7 +390,7 @@ for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_inf
 ```
 
 
-# Calculation of Stoichiometry with diagnostic ion, iterative and additional PTMs 
+# 2.1.6 Calculation of Stoichiometry with diagnostic ion, iterative and additional PTMs 
 
 ```{r data_directory_w_di_it_aPTMs}
 # Load data into environment
@@ -470,6 +468,12 @@ for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){ # Takes each row from the MQ_DI_it_aP
   gc()
   
 }
+
+```
+
+# 2.1.7 Comparison - PNAS2022 versus new workflow for PSM coverage and stiochiometry
+
+```{r }
 
 ```
 
