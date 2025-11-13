@@ -682,11 +682,13 @@ cor.test(
 
 ```
 
-# 2.4.11 Number of hydroxylation sites identified in PNAS2022 and new workflow
+# 2.4.11 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
 
-```{r Venn_diagram_PNAS2022_MQ_DI_MQ_DI_it}
-
+```{r Venn_diagram_hyoxy_sites}
+#-----------
 ## MQ_DI
+#-----------
+
 # Count the total number of hydroxylations in MQ_DI (aa_pos)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
@@ -711,7 +713,10 @@ MQ_DI_protein_count[, `:=`(
 )
 ]
 
+#------------
 ## MQ_DI_it
+#------------
+
 # Count the total number of hydroxylations in  MQ_DI_it (aa_pos)
 MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 
@@ -736,7 +741,10 @@ MQ_DI_it_protein_count[, `:=`(
 )
 ]
 
+#-----------
 ## PNAS2022
+#-----------
+
 # Create data table with hydroxylated sites only
 # Note: this data set already contains the accession_protien column 
 PNAS2022_site_count <- pnas2022.stoic.dt[
@@ -755,14 +763,14 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
    !duplicated(paste(protein_accession, gene_name))
  ]
 
-# Plot - Venn Diagram of comparing hydroxyöated sites between PNAS2022, MQ_DI and MQ_DI_it
+# Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
 
 # Install package "ggVennDiagram"
-#install.packages("ggVennDiagram")
+install.packages("ggVennDiagram")
 
 # load libraries
-#library(ggVennDiagram)
-#library(ggplot2)
+library(ggVennDiagram)
+library(ggplot2)
 
 # Extract the accession position vectors 
 vennlist <-  list(
@@ -778,6 +786,11 @@ ggVennDiagram(vennlist,
   theme_void()+
   scale_fill_gradient(low = "white", high = "skyblue") +  # optional coloring
   ggtitle("Hydroxylated sites overlap")
+
+```
+
+
+```{r Venn_diagram_hyoxy_proteins}
 
 # Plot - Venn Diagram of comparing hydroxylated proteins between PNAS2022, MQ_DI and MQ_DI_it
 
