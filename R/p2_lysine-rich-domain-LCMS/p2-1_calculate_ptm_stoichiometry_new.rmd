@@ -475,6 +475,50 @@ for (i in 1:nrow(MQ_DI_it_aPTM_run_info)){ # Takes each row from the MQ_DI_it_aP
 
 ```{r }
 
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+setnames(
+  pnas2022.stoic.dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name")
+)
+
+pnas2022.stoic.dt[, `:=`(
+  sum_psm_mapped = total_n_feature_K + total_n_feature_oxK
+)]
+
+pnas2022.stoic.dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)],
+  pnas2022.stoic.dt,
+  by = "protein_accession"
+)
+
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos),
+  ptm = "[Oxidation (K)]",
+  sample_name = gsub("HeLa_", "HeLa", sample_name) %>%
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)}
+)]
+
+# PNAS2022 - BRD4 WT
+plot_ptm_stoichiometry(
+  pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+plot_psm_coverage(
+  pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+# Load MQ_DI stoichiometry data (m7_v7)
+MQ_DI_stoic_dt <- fread(file.path(project.dir, "results",  "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_PTM_stoichiometry.csv"))
+
+# MQ_DI - BRD4 WT
+plot_ptm_stoichiometry(
+  MQ_DI_stoic_dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+plot_psm_coverage(
+  MQ_DI_stoic_dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+
+
 ```
 
 
