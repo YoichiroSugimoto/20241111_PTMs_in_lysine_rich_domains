@@ -102,6 +102,16 @@ MQ_DI_it_run_info <- read_excel(
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_it_run_info[, sample_id := 1:.N]
+
+# Load sample run info data (MQ DI + additional ptms)
+MQ_DI_aptm_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI_addPTMs" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_aptm_run_info[, sample_id := 1:.N]
 ```
 
 # 2.4.2 Definition of functions
@@ -810,7 +820,6 @@ ggVennDiagram(vennlist,
 
 ```
 
-
 ```{r Venn_diagram_hyoxy_proteins}
 
 # Plot - Venn Diagram of comparing hydroxylated proteins between PNAS2022, MQ_DI and MQ_DI_it
@@ -832,6 +841,38 @@ ggVennDiagram(vennlist,
 
 ```
 
+# 2.4.12 Analyse serine, threonine and tyrosine phosphorylation sites with DI data
+
+```{r Additional_PTMs}
+
+## Read stoichiometry data for MQ_DI_it
+MQ_aptm_stoic_dt <- lapply(
+  MQ_DI_aptm_run_info[, data_dir],
+  read_stoic_data,
+  pre_prefix = "DI_", 
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_addPTMs")
+) %>% rbindlist
+
+# Generate data table with stoichiometry values for WT and JMJD6KO 
+MQ_aptm_stoic_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_aptm_stoic_dt)
+
+# Generate data table with WT and JMJD6KO with diagnostic ions
+DI_info <- MQ_aptm_stoic_dt[
+  , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
+  ][
+    order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
+    ][                                              
+      !duplicated(paste(protein_accession, aa_pos)) # Keep only the first row for each unique protein and amino acid position,
+# removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
+    ]
+
+# merge the modified data table 'DI_info' with the metadata 'MQ_DI_aptm_stoic_d.hydroxyK_dt'
+MQ_aptm_stoic_d.hydroxyK_dt <- merge(MQ_aptm_stoic_d.hydroxyK_dt, DI_info, by = c("protein_accession", "aa_pos"))
+
+
+
+```
 
 # Session information
 
