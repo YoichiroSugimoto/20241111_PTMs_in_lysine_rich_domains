@@ -41,9 +41,10 @@ temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", 
 
 ```
 
-# Set up environment
 
-```{r set parameters}
+# 1.1 Import data
+
+```{r import_data, warning=FALSE}
 
 ## Define paths to directory
 data.dir <- file.path(project.dir, "data")
@@ -52,12 +53,6 @@ results.dir <- file.path(project.dir, "results")
 #Create p1 results directory
 p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
 dir.create(p1_K_rich_domains, showWarnings = FALSE, recursive = TRUE)
-
-```
-
-# Import data
-
-```{r import_data, warning=FALSE}
 
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -90,7 +85,7 @@ gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id
 fwrite(gene.id.dt, file.path(results.dir, "p1_K_rich_domains","uniprot-ensembl.csv"))
 ```
 
-# Maximum K score and Protein Length
+# 1.2 Maximum K score and Protein Length
 
 ```{r Maximum_K_score_Protein_Length}
 #-----------------------------------
@@ -215,7 +210,7 @@ ggplot(
 
 ```
 
-# RNA-Binding proteins
+# 1.3 RNA-Binding proteins
 
 ```{r RNA_binding_proteins, warning=FALSE}
 
@@ -302,7 +297,7 @@ rbp.count.dt[, table(RBP)]
 ```
 
 
-# Subcellular localisation
+# 1.4 Subcellular localisation
 
 ```{r subcellular_localisation_analysis}
 
@@ -416,7 +411,7 @@ ggplot(
 
 ```
 
-# Enrichment of lysine-rich domains by functional protein classes
+# 1.5 Enrichment of lysine-rich domains by functional protein classes
 
 ```{r functional_classes}
 
@@ -527,6 +522,129 @@ ggplot(
   geom_boxplot(outlier.shape = NA, position = position_dodge(preserve = "single")) +
   scale_fill_bright() +
   coord_cartesian(ylim = c(0, 2500))
+```
+
+
+```{r histone_versus_max_K_score}
+library("RColorBrewer")
+
+install.packages("ggpubr")
+library("ggpubr")
+
+# Filter the K scores for histones 1-4
+histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
+
+median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
+print(median_k_ratio)
+
+range_max_k <- histone_protein_dt[, range(max_k_ratio, na.rm = TRUE)]
+print(range_max_k)
+
+H1_dt <- histone_protein_dt[grepl("^H1", gene_name)]
+H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
+H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
+H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
+H4_dt <- histone_protein_dt[grepl("^H4", gene_name)]
+
+# Plot - Histones 
+P1_H1 <- ggplot(
+  data = H1_dt,
+  mapping = aes(
+    x = gene_name,
+    y = max_k_ratio,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8)) +
+  ggtitle("") + 
+  xlab("") + 
+  ylab("")
+
+
+# Plot - Histones 
+P2_H2A <- ggplot(
+  data = H2A_dt,
+  mapping = aes(
+    x = gene_name,
+    y = max_k_ratio,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8)) +
+  ggtitle("") + 
+  xlab("") + 
+  ylab("")
+
+
+P3_H2B <- ggplot(
+  data = H2B_dt,
+  mapping = aes(
+    x = gene_name,
+    y = max_k_ratio,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8)) +
+  ggtitle("") + 
+  xlab("") + 
+  ylab("")
+
+P4_H3 <- ggplot(
+  data = H3_dt,
+  mapping = aes(
+    x = gene_name,
+    y = max_k_ratio,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8)) +
+  ggtitle("") + 
+  xlab("") + 
+  ylab("")
+
+P5_H4 <- ggplot(
+  data = H4_dt,
+  mapping = aes(
+    x = gene_name,
+    y = max_k_ratio,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8)) +
+  ggtitle("") + 
+  xlab("") + 
+  ylab("")
+
+
+combined <- ggarrange(
+  P1_H1, P2_H2A, P3_H2B, P4_H3, P5_H4,
+  ncol = 2, nrow = 3,
+  labels = c("H1","H2A", "H2B", "H3", "H4"),
+  label.x = 0.0,          
+  label.y = 1,  
+  hjust = -0.5, 
+  vjust = 1,
+  heights = 1,
+  font.label = list(size = 8, face = "bold")
+)
+
+annotate_figure(
+  combined,
+  left   = text_grob("Max K Score", rot = 90, size = 10),
+  bottom = text_grob("Histone", size = 10)
+)
+
+
 ```
 
 
