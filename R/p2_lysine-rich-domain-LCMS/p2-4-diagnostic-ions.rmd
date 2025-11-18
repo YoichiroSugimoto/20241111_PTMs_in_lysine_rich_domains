@@ -305,7 +305,7 @@ ggplot(
 
 ```{r hydroxylation_sites_DI}
 
-## Read stoichiometry data for MQ_DI_it
+## Read stoichiometry data for MQ_DI
 MQ_DI_stoic_dt <- lapply(
   MQ_DI_run_info[, prefix],
   read_stoic_data,
@@ -869,8 +869,6 @@ DI_info <- MQ_aptm_stoic_dt[
 
 # merge the modified data table 'DI_info' with the metadata 'MQ_DI_aptm_stoic_d.hydroxyK_dt'
 MQ_aptm_stoic_d.hydroxyK_dt <- merge(MQ_aptm_stoic_d.hydroxyK_dt, DI_info, by = c("protein_accession", "aa_pos"))
-
-
 
 ```
 

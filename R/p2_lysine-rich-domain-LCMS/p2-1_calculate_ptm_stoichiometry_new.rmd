@@ -67,6 +67,13 @@ ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
   "UP000005640_9606.fasta")) 
 
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
 ```
 
 
@@ -557,10 +564,22 @@ for (i in 1:nrow(MQ_DI_aPTM_run_info)){ # Takes each row from the MQ_DI_aPTM_run
 
 ```
 
+# # 2.1.7 Comparison - PNAS2022 versus new workflow for PSM coverage and stoichiometry
 
-# 2.1.7 Comparison - PNAS2022 versus new workflow for PSM coverage and stiochiometry
+```{r define_functions}
 
-```{r }
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  return(dt)
+}
+
+
+```
+
+```{r comparison_PNAS2022_new_PSM_Stoic}
 
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
@@ -575,7 +594,7 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 pnas2022.stoic.dt <- merge(
-  ref_protein_dt[, .(protein_accession, gene_name)],
+  ref_protein_data[, .(protein_accession, gene_name)],
   pnas2022.stoic.dt,
   by = "protein_accession"
 )
@@ -594,13 +613,36 @@ plot_ptm_stoichiometry(
 plot_psm_coverage(
   pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
-# Load MQ_DI stoichiometry data (m7_v7)
-MQ_DI_stoic_dt <- fread(file.path(project.dir, "results",  "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_PTM_stoichiometry.csv"))
+
+# Load sample run info data (MQ DI)
+MQ_DI_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_run_info[, sample_id := 1:.N]
+
+
+## Read stoichiometry data for MQ_DI
+MQ_DI_stoic_dt <- lapply(
+  MQ_DI_run_info[, prefix],
+  read_stoic_data,
+  pre_prefix = "DI_", 
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+) %>% rbindlist
 
 # MQ_DI - BRD4 WT
 plot_ptm_stoichiometry(
-  MQ_DI_stoic_dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
+# MQ_DI - BRD4 JMJD6KO
+plot_ptm_stoichiometry(
+  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+# MQ_DI PSM 
 plot_psm_coverage(
   MQ_DI_stoic_dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 

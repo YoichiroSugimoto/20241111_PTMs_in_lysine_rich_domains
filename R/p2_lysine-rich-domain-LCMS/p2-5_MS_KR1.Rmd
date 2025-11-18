@@ -48,9 +48,10 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 # Install ptm.stiochiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry and readxl
-library(ptm.stoichiometry)
+# Load Libraries
 library("readxl")
+library("janitor")
+library("ptm.stoichiometry")
 
 ```
 
@@ -69,6 +70,11 @@ ref_protein_dt <- import_reference_fasta(file.path
 # 2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia 
 
 ```{r data_directory_w_di_it_aPTMs}
+
+# Define path to data directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
 # Load data into environment
 MS_KR1_data <- file.path(
   project.dir,
@@ -132,6 +138,95 @@ ptm_mapping_file <- file.path(
   # Garbage collection - to free up memory
   gc()
   
+
+```
+
+
+```{r hydroxylation_hypoxia_vs_normoxia}
+
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  return(dt)
+}
+
+## Read stoichiometry data for MS_KR1 data 
+MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+MS_KR1_stoic_dt[, `:=`(
+  Oxygen_levels = fcase(
+    grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
+    grepl("^HeLaiJMJD6_noDox_N_NA", sample_name), "Normoxia_JMJD6KO",
+    grepl("^HeLaiJMJD6_Dox_01O224h_N2h", sample_name), "Hypoxia_reox_2h",
+    grepl("^HeLaiJMJD6_Dox_01O224h_N4h", sample_name), "Hypoxia_reox_4h", 
+    grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
+    grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
+    default = NA_character_
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h"))
+)]
+
+MS_KR1_stoic_dt[, `:=`(
+  sample_name =  
+    factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
+)]
+
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt, accession = "O60885", plot_range = NA, all.protein.bs, sample_colors = NA
+  )
+
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA
+  ) + 
+  
+
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt, accession = "P25440", plot_range = c(540, 580), all.protein.bs, sample_colors = NA
+  )
+
+
+MS_KR1_stoic_dt[diagnostic_peak == "+"]
+
+
+# Plot 
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 537],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 ```
 
