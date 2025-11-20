@@ -58,6 +58,14 @@ library("readxl")
 
 ```
 
+```{r data_directories}
+
+# Define path to data directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
+```
+
 # 2.1.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
@@ -572,14 +580,13 @@ for (i in 1:nrow(MQ_DI_aPTM_run_info)){ # Takes each row from the MQ_DI_aPTM_run
 read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   # Read csv file with defined file path,  
   dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
-  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
   return(dt)
 }
 
-
 ```
 
-```{r comparison_PNAS2022_new_PSM_Stoic}
+```{r comparison_PNAS2022_PTM_PSM}
 
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
@@ -606,13 +613,45 @@ pnas2022.stoic.dt[, `:=`(
     {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)}
 )]
 
-# PNAS2022 - BRD4 WT
-plot_ptm_stoichiometry(
+
+# PNAS2022 - BRD4 WT -PSM
+PNAS2022_PSM_WT <-plot_psm_coverage(
   pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
-plot_psm_coverage(
+PNAS2022_PSM_WT <- PNAS2022_PSM_WT$coverage_plot_g
+
+# PNAS2022 - BRD4 WT -PTM
+PNAS2022_PTM_WT <- plot_ptm_stoichiometry(
   pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
+# PNAS2022 - BRD4 JMJD6KO -PSM
+PNAS2022_PSM_JMJD6KO <- plot_psm_coverage(
+  pnas2022.stoic.dt[sample_name == "HeLaJMJD6KO_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+PNAS2022_PSM_JMJD6KO <- PNAS2022_PSM_JMJD6KO$coverage_plot_g
+
+# PNAS2022 - BRD4 JMJD6KO - PTM 
+PNAS2022_PTM_JMJD6KO <- plot_ptm_stoichiometry(
+  pnas2022.stoic.dt[sample_name == "HeLaJMJD6KO_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+ggarrange(
+PNAS2022_PSM_WT, PNAS2022_PTM_WT,
+  ncol = 1, nrow = 2,
+align = "hv", 
+legend = "none"
+)
+
+ggarrange(
+PNAS2022_PSM_JMJD6KO, PNAS2022_PTM_JMJD6KO,
+  ncol = 1, nrow = 2,
+align = "hv", 
+legend = "none"
+)
+
+```
+
+
+```{r comparison_MQ_DI_PTM_PSM}
 
 # Load sample run info data (MQ DI)
 MQ_DI_run_info <- read_excel(
@@ -624,7 +663,6 @@ MQ_DI_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_run_info[, sample_id := 1:.N]
 
-
 ## Read stoichiometry data for MQ_DI
 MQ_DI_stoic_dt <- lapply(
   MQ_DI_run_info[, prefix],
@@ -634,19 +672,43 @@ MQ_DI_stoic_dt <- lapply(
   dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
 ) %>% rbindlist
 
-# MQ_DI - BRD4 WT
-plot_ptm_stoichiometry(
+
+# MQ_DI - BRD4 WT - PSM 
+MQ_PSM_WT <- plot_psm_coverage(
   MQ_DI_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
-# MQ_DI - BRD4 JMJD6KO
-plot_ptm_stoichiometry(
+MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
+
+# MQ_DI - BRD4 WT - PTM 
+MQ_PTM_WT <- plot_ptm_stoichiometry(
+  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+ggarrange(
+MQ_PSM_WT, MQ_PTM_WT,
+  ncol = 1, nrow = 2,
+align = "hv", 
+legend = "none"
+)
+
+# MQ_DI - BRD4 JMJD6KO - PSM 
+MQ_PSM_JMJD6KO <-plot_psm_coverage(
   MQ_DI_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
-# MQ_DI PSM 
-plot_psm_coverage(
-  MQ_DI_stoic_dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+MQ_PSM_JMJD6KO <- MQ_PSM_JMJD6KO$coverage_plot_g
+
+# MQ_DI - BRD4 JMJD6KO - PTM
+MQ_PTM_JMJD6KO <- plot_ptm_stoichiometry(
+  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+ggarrange(
+MQ_PSM_JMJD6KO, MQ_PTM_JMJD6KO,
+  ncol = 1, nrow = 2,
+align = "hv", 
+legend = "none"
+)
 
 ```
+
 
 
 # Session information
