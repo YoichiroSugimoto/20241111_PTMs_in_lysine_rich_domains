@@ -37,12 +37,10 @@ project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111
 #renv::status
 
 ## Load all R scripts from the 'functions' folder into the current session
-temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
 
 # Load PTM stiochiometry functions
 library("ptm.stoichiometry")
-
-
 ```
 
 
@@ -116,13 +114,12 @@ max.k.score.dt <- merge(
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(results.dir, "p1_K_rich_domains", "max-k-score-per-protein.csv")) 
 
-
-## Median K score of all region in human proteome
 # Import human protein reference data from specified file path 
 ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
   "UP000005640_9606.fasta")) 
 
+# Median K score of all region in human proteome
 all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
   if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
     return(NA_real_)
@@ -532,10 +529,11 @@ ggplot(
 ```{r histone_versus_max_K_score}
 library("RColorBrewer")
 
-install.packages("ggpubr")
+#install.packages("ggpubr")
 library("ggpubr")
 
 # Filter the K scores for histones 1-4
+max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
 histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
 
 median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
@@ -653,16 +651,17 @@ annotate_figure(
 ```{r k_score_per_position}
 
 ggplot(
-  protein.feature.dt[grepl("Q16695", Accession)],
+  protein.feature.dt[grepl("P62805", Accession)],
   aes(
-    x =position,
+    x = position,
     y = K_ratio_score
   )
 ) +
-  geom_area() +
-  geom_ribbon(aes(xmin = 0 , xmax = 79), fill = "red", alpha = 0.1)
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) +
+  geom_ribbon(aes(xmin = 0 , xmax = 28), fill = "red", alpha = 0.1)
 
 ```
+
 
 
 # Session information
