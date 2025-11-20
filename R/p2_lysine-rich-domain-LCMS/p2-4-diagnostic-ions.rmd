@@ -327,7 +327,7 @@ DI_info <- MQ_DI_stoic_dt[
 # removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
     ]
 
-# merge the modified data table 'DI_info' with the metadata 'MQ_DI_it_d.hydroxyK_dt'
+# merge the modified data table 'DI_info' with the metadata 'MQ_DI_d.hydroxyK_dt'
 MQ_DI_d.hydroxyK_dt <- merge(MQ_DI_d.hydroxyK_dt, DI_info, by = c("protein_accession", "aa_pos"))
 
 #Filter data table with presence of diagnostic_peak and WT stoichiometry values
@@ -511,7 +511,28 @@ feature_MQ_DI_hydroxyK_dt[
   met_within_2 == "Yes" & is_diagnostic_peak == TRUE
 ]
 
-# Plot - Bar chart of hydroxylation site class vs methionine presence with diagnostic peak 
+feature_data <- feature_MQ_DI_hydroxyK_dt[
+  met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
+]
+
+# Create a new table with two groups
+feature_data_plot <- rbind(
+  dt_base[, .(hydroxylation_site_class, met_within_2, group = "All")],
+  dt_base[is_diagnostic_peak == TRUE, .(hydroxylation_site_class, met_within_2, group = "Diagnostic peak")] 
+)
+
+# Plot - new 
+ggplot(dt_plot, aes(x = hydroxylation_site_class, fill = met_within_2)) +
+  geom_bar() +
+  facet_wrap(~group) +  
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
+  labs(
+    x = "Hydroxylation Site Class",
+    y = "Count",
+    fill = "Met within 2"
+  )
+
+# old Plot - Bar chart of hydroxylation site class vs methionine presence with diagnostic peak 
 ggplot(
   feature_MQ_DI_hydroxyK_dt[
     met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
@@ -522,7 +543,8 @@ ggplot(
   )
 ) +
   geom_bar() +
-  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB"))
+  facet_grid(~ is_diagnostic_peak) +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) 
 
 ```
 
