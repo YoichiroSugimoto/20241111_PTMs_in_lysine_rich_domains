@@ -722,7 +722,7 @@ cor.test(
 #-----------
 
 # Count the total number of hydroxylations in MQ_DI (aa_pos)
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
+MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 
 # create data table with hydroxylated sites 
 MQ_DI_site_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
@@ -739,39 +739,6 @@ MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][orde
 # create data table with hydroxylated proteins
 MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-# Add new column to data table 
-MQ_DI_protein_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
-
-#------------
-## MQ_DI_it
-#------------
-
-# Count the total number of hydroxylations in  MQ_DI_it (aa_pos)
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
-
-# create data table with hydroxylated sites
-MQ_DI_it_site_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
-
-# Add new column to data table 
-MQ_DI_it_site_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
-
-# Count the total number of hydroxylations in  MQ_DI_it (gene_name)
-MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
-
-# create data table with hydroxylated proteins
-MQ_DI_it_protein_count <- MQ_DI_it_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
-
-# Add new column to data table
-MQ_DI_it_protein_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
 
 #-----------
 ## PNAS2022
@@ -819,17 +786,18 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 # Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
 
 # Install package "ggVennDiagram"
-install.packages("ggVennDiagram")
+#install.packages("ggVennDiagram")
+install.packages("eulerr")
 
 # load libraries
 library(ggVennDiagram)
 library(ggplot2)
+library(eulerr)
 
 # Extract the accession position vectors 
 vennlist <-  list(
-  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]),
-  MQ_DI_it_sites = as.vector(MQ_DI_it_site_count[, accession_position])
+  PNAS2022_sites = as.vector(PNAS2022_site_count[, "accession_position"]),
+  MQ_DI_sites = as.vector(MQ_DI_site_count[, "accession_position"]),
 )
 
 # Generate Venn diagram
@@ -839,6 +807,15 @@ ggVennDiagram(vennlist,
   theme_void()+
   scale_fill_gradient(low = "white", high = "skyblue") +  # optional coloring
   ggtitle("Hydroxylated sites overlap")
+
+venn_size_based <- euler(vennlist)
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = c("skyblue", "lightgreen"), alpha = 0.5),
+     labels = TRUE,
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap")
 
 ```
 
