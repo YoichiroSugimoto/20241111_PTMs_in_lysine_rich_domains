@@ -431,7 +431,7 @@ ptm_mapping_file <- file.path(
 )
 ```
 
-```{r alculate_stoichiometry_w_di_aPTMs}
+```{r calculate_stoichiometry_w_di_aPTMs}
 
 # For each sample ID calculate the stiochiomtery
 for (i in 1:nrow(MQ_DI_aPTM_run_info)){ # Takes each row from the MQ_DI_aPTM_run_info
@@ -468,7 +468,7 @@ for (i in 1:nrow(MQ_DI_aPTM_run_info)){ # Takes each row from the MQ_DI_aPTM_run
           ".csv"
         )
       ),
-      ref_protein_dt = ref_protein_dt,
+      ref_protein_dt = ref_protein_data,
       ptm_files = ptm_files,
       ptm_names = ptm_names,
       output_prefix = file.path(MQ_with_DI_aPTMs_dir, paste0("DI_", MQ_DI_aPTM_run_info[i, data_dir])),
