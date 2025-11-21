@@ -505,24 +505,18 @@ feature_MQ_DI_hydroxyK_dt[, `:=`( #create a new column 'met_within_2'
   )
 )]
 
-# Filter column 'met_within_2', where the window sequence has a positive diagnostic ion and
-# M in the middle of the sequence
-feature_MQ_DI_hydroxyK_dt[
-  met_within_2 == "Yes" & is_diagnostic_peak == TRUE
-]
-
+# Filter feature data 
 feature_data <- feature_MQ_DI_hydroxyK_dt[
   met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
 ]
 
-# Create a new table with two groups
 feature_data_plot <- rbind(
-  dt_base[, .(hydroxylation_site_class, met_within_2, group = "All")],
-  dt_base[is_diagnostic_peak == TRUE, .(hydroxylation_site_class, met_within_2, group = "Diagnostic peak")] 
+  feature_data[, .(hydroxylation_site_class, met_within_2, group = "All")],
+  feature_data[is_diagnostic_peak == TRUE, .(hydroxylation_site_class, met_within_2, group = "Diagnostic peak")] 
 )
 
 # Plot - new 
-ggplot(dt_plot, aes(x = hydroxylation_site_class, fill = met_within_2)) +
+ggplot(feature_data_plot, aes(x = hydroxylation_site_class, fill = met_within_2)) +
   geom_bar() +
   facet_wrap(~group) +  
   scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
@@ -536,7 +530,7 @@ ggplot(dt_plot, aes(x = hydroxylation_site_class, fill = met_within_2)) +
 ggplot(
   feature_MQ_DI_hydroxyK_dt[
     met_within_2 != "edge" & hydroxylation_site_class != "others" & CenterResidue == "K"
-  ], # filter data columns
+  ],
   aes(
     x = hydroxylation_site_class,
     fill = met_within_2
@@ -545,6 +539,8 @@ ggplot(
   geom_bar() +
   facet_grid(~ is_diagnostic_peak) +
   scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) 
+
+
 
 ```
 
@@ -733,6 +729,15 @@ MQ_DI_site_count[, `:=`(
 )
 ]
 
+# MQ_DI including all hydroxylations 
+MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+
+# Add new column to data table 
+MQ_all_hoxy_site_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
 # Count the total number of hydroxylations in MQ_DI (gene_name)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
@@ -765,6 +770,14 @@ pnas2022.stoic.dt[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos) # paste protein_accession and aa_pos together '_'
 )]
 
+# Remove duplicated protein and aa_pos - FRG1 gene 
+# Note: in the PNAS2022 paper, during protein assignment, 3 aa sequences were assigned to two different proteins by MaxQuant, which resulted 3 duplicated hydroxylated sites. In order to have a fair comparison, the 3 duplicated sites have been removed from PNAS2022 data. 
+
+pnas2022.stoic.dt <- pnas2022.stoic.dt[
+    protein_accession != "Q14331" &
+    !(aa_pos %in% c(27, 29, 30))
+]
+
 # Create data table with hydroxylated sites only
 # Note: this data set already contains the accession_protein column 
 PNAS2022_site_count <- pnas2022.stoic.dt[
@@ -786,18 +799,20 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 # Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
 
 # Install package "ggVennDiagram"
-#install.packages("ggVennDiagram")
-install.packages("eulerr")
+# install.packages("ggVennDiagram")
+# install.packages("eulerr")
 
 # load libraries
 library(ggVennDiagram)
 library(ggplot2)
 library(eulerr)
+library(RColorBrewer)
 
 # Extract the accession position vectors 
 vennlist <-  list(
-  PNAS2022_sites = as.vector(PNAS2022_site_count[, "accession_position"]),
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, "accession_position"]),
+  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
+  MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
+  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]) 
 )
 
 # Generate Venn diagram
@@ -808,14 +823,26 @@ ggVennDiagram(vennlist,
   scale_fill_gradient(low = "white", high = "skyblue") +  # optional coloring
   ggtitle("Hydroxylated sites overlap")
 
+
+# Changing the circle size based on the number in the circle
 venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(3, "Set2")
 
 # Plot the diagram
 plot(venn_size_based,
-     fills = list(fill = c("skyblue", "lightgreen"), alpha = 0.5),
-     labels = TRUE,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
      quantities = TRUE,
      main = "Hydroxylated Sites Overlap")
+
+
+# Duplicated sites check PNAS 
+MQ_all_hoxy_site_count[protein_accession == "Q14331" & aa_pos %in% c(27, 29, 30)]
+MQ_all_hoxy_site_count[protein_accession == "Q9UQ35" & aa_pos %in% c(241, 243, 244)]
+
+# for venn diagramm, exclude FRG1 sites postion 27, 29 and 30 from PNAS 
+
 
 ```
 
