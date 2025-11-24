@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-14 November, 2025
+24 November, 2025
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -147,9 +147,20 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 # Install ptm.stiochiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry and readxl
-library(ptm.stoichiometry)
+# Load Libraries
 library("readxl")
+library("janitor")
+```
+
+    ## 
+    ## Attaching package: 'janitor'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     chisq.test, fisher.test
+
+``` r
+library("ptm.stoichiometry")
 ```
 
 # 2.5.2 Import human protein reference data
@@ -164,6 +175,10 @@ ref_protein_dt <- import_reference_fasta(file.path
 # 2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia
 
 ``` r
+# Define path to data directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
 # Load data into environment
 MS_KR1_data <- file.path(
   project.dir,
@@ -237,8 +252,118 @@ ptm_mapping_file <- file.path(
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4291729 229.3    8170888 436.4  8170888 436.4
-    ## Vcells 21521267 164.2   62365728 475.9 62324028 475.5
+    ## Ncells  4296377 229.5    8171660 436.5  8171660 436.5
+    ## Vcells 21529659 164.3   64859297 494.9 64859263 494.9
+
+``` r
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  return(dt)
+}
+
+## Read stoichiometry data for MS_KR1 data 
+MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+MS_KR1_stoic_dt[, `:=`(
+  Oxygen_levels = fcase(
+    grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
+    grepl("^HeLaiJMJD6_noDox_N_NA", sample_name), "Normoxia_JMJD6KO",
+    grepl("^HeLaiJMJD6_Dox_01O224h_N2h", sample_name), "Hypoxia_reox_2h",
+    grepl("^HeLaiJMJD6_Dox_01O224h_N4h", sample_name), "Hypoxia_reox_4h", 
+    grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
+    grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
+    default = NA_character_
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h"))
+)]
+
+MS_KR1_stoic_dt[, `:=`(
+  sample_name =  
+    factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
+)]
+
+
+# BRD4 
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
+  )
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-1.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-2.png)<!-- -->
+
+``` r
+# BRD3
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "Q15059", plot_range = c(483, 533), all.protein.bs, sample_colors = NA
+  )
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-3.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-4.png)<!-- -->
+
+``` r
+# BRD2
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
+  )
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-5.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-6.png)<!-- -->
+
+``` r
+MS_KR1_stoic_dt[, stoic_bin := case_when(
+  stoichiometry < 0.10 ~ "low",
+  between(stoichiometry, 0.10, 0.50) ~ "middle",
+  stoichiometry > 0.50 ~ "high"
+)]
+
+
+# Plot 
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    color = gene_name
+  )
+) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-7.png)<!-- -->
+
+``` r
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+  )
+) +
+  geom_col(fill = "steelblue") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-8.png)<!-- -->
 
 # Session information
 
@@ -256,7 +381,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-14
+    ##  date     2025-11-24
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -284,13 +409,15 @@ sessioninfo::session_info()
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
     ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
     ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
-    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
+    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
     ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
     ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
     ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
     ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
     ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
     ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
+    ##  patchwork           1.3.2      2025-08-25 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
     ##  ptm.stoichiometry * 0.0.0.9000 2025-11-07 [1] local
