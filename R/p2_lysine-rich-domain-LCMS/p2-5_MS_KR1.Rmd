@@ -69,7 +69,7 @@ ref_protein_dt <- import_reference_fasta(file.path
 
 # 2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia 
 
-```{r data_directory_w_di_it_aPTMs}
+```{r data_directory_MS_KR_1}
 
 # Define path to data directory
 data.dir <- file.path(project.dir, "data")
@@ -93,7 +93,7 @@ ptm_mapping_file <- file.path(
 ```
 
 
-```{r alculate_stoichiometry_MS_KR_1}
+```{r calculate_stoichiometry_MS_KR_1}
   
     # Define file path to MaxQuant evidence files
     mq_evidence_data <- file.path(MS_KR1_data, 
@@ -189,32 +189,41 @@ MS_KR1_stoic_dt[, `:=`(
     factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
 )]
 
-plot_ptm_stoichiometry(
-  MS_KR1_stoic_dt, accession = "O60885", plot_range = NA, all.protein.bs, sample_colors = NA
-  )
 
+# BRD4 
 plot_ptm_stoichiometry(
-  MS_KR1_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA
-  ) + 
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
+  )
   
-
+# BRD3
 plot_ptm_stoichiometry(
-  MS_KR1_stoic_dt, accession = "P25440", plot_range = c(540, 580), all.protein.bs, sample_colors = NA
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "Q15059", plot_range = c(483, 533), all.protein.bs, sample_colors = NA
+  )
+
+# BRD2
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
   )
 
 
-MS_KR1_stoic_dt[diagnostic_peak == "+"]
+
+MS_KR1_stoic_dt[, stoic_bin := case_when(
+  stoichiometry < 0.10 ~ "low",
+  between(stoichiometry, 0.10, 0.50) ~ "middle",
+  stoichiometry > 0.50 ~ "high"
+)]
 
 
 # Plot 
 ggplot(
-  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 537],
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
+    color = gene_name
   )
 ) +
-  geom_col(fill = "steelblue") +
+  geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(
