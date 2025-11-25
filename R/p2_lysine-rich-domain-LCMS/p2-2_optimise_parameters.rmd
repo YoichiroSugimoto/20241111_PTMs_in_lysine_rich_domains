@@ -60,7 +60,7 @@ p2_results_dir <- file.path(project.dir,
 
 ```
 
-# Import basic data
+# 2.2.1 Import basic data
 
 ```{r import_basic_data}
 
@@ -88,7 +88,7 @@ setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein
 ```
 
 
-# MS/MS count by different setting
+# 2.2.2 MS/MS count by different setting
 
 ```{r MS_MS_count}
 
@@ -458,12 +458,26 @@ all_stoic_pos.dt[, `:=`(
 # PNAS paper reported 153 sites
 nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(protein_accession, aa_pos))])
 
-# The number of hydroxylated sites identified by 
+# The number of hydroxylated sites identified by different MQ cleavage setting
 all_stoic_pos.dt[
   curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
 ][order(stoichiometry, MQ_setting, decreasing = TRUE)][
   !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
   ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+
+MQ_Khydoxy_dt <- all_stoic_pos.dt[
+  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
+][order(stoichiometry, MQ_setting, decreasing = TRUE)][
+  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
+  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+
+# Plot - Number of hydroxylated sites identified based on MQ cleavage setting 
+ggplot(data = MQ_Khydoxy_dt,
+       aes(x = MQ_setting,
+           y = N) 
+) +
+  geom_col() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ## The sites not identified by the new workflow
 print("Unidentified sites out of 150")
