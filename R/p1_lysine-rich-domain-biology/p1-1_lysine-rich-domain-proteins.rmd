@@ -174,6 +174,10 @@ ggplot(
     scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
   labs(x = "max_k_ratio", y = "number of protein_count")
 
+#Median - 24112025
+median(max.k.score.dt[, max_k_ratio])
+# 0.3
+
 # Plot - Max K ratio vs protein length
 ggplot(
   max.k.score.dt,
@@ -542,27 +546,10 @@ print(median_k_ratio)
 range_max_k <- histone_protein_dt[, range(max_k_ratio, na.rm = TRUE)]
 print(range_max_k)
 
-H1_dt <- histone_protein_dt[grepl("^H1", gene_name)]
 H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
 H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
 H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
 H4_dt <- histone_protein_dt[grepl("^H4", gene_name)]
-
-# Plot - Histones 
-P1_H1 <- ggplot(
-  data = H1_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
 
 
 # Plot - Histones 
@@ -629,9 +616,9 @@ P5_H4 <- ggplot(
 
 
 combined <- ggarrange(
-  P1_H1, P2_H2A, P3_H2B, P4_H3, P5_H4,
-  ncol = 2, nrow = 3,
-  labels = c("H1","H2A", "H2B", "H3", "H4"),
+  P2_H2A, P3_H2B, P4_H3, P5_H4,
+  ncol = 2, nrow = 2,
+  labels = c("H2A", "H2B", "H3", "H4"),
   label.x = 0.0,          
   label.y = 1,  
   hjust = -0.5, 
@@ -649,6 +636,36 @@ annotate_figure(
 
 ```
 ```{r k_score_per_position}
+#H3
+ggplot(
+  protein.feature.dt[grepl("P62805", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+# H2AX 
+ggplot(
+  protein.feature.dt[grepl("P16104", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6)
+
+#H2B
+ggplot(
+  protein.feature.dt[grepl("P33778", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+
+#H4
 
 ggplot(
   protein.feature.dt[grepl("P62805", Accession)],
@@ -657,8 +674,20 @@ ggplot(
     y = K_ratio_score
   )
 ) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6) +
-  geom_ribbon(aes(xmin = 0 , xmax = 28), fill = "red", alpha = 0.1)
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+
+#H2A
+
+ggplot(
+  protein.feature.dt[grepl("Q6FI13", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+
+
 
 ```
 

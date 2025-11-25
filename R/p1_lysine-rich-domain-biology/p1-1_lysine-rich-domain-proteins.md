@@ -1,7 +1,7 @@
 1-1. Proteins with lysine-rich domains
 ================
 Pallavi Kesavan and Yoichiro Sugimoto
-18 November, 2025
+25 November, 2025
 
 - [Environment setup](#environment-setup)
 - [1.1 Import data](#11-import-data)
@@ -42,7 +42,7 @@ project.dir <- file.path("/fast/AG_Sugimoto/home/users/pallavi/projects/20241111
 #renv::status
 
 ## Load all R scripts from the 'functions' folder into the current session
-temp <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
 ```
 
     ## 
@@ -245,13 +245,12 @@ max.k.score.dt <- merge(
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(results.dir, "p1_K_rich_domains", "max-k-score-per-protein.csv")) 
 
-
-## Median K score of all region in human proteome
 # Import human protein reference data from specified file path 
 ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
   "UP000005640_9606.fasta")) 
 
+# Median K score of all region in human proteome
 all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
   if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
     return(NA_real_)
@@ -321,6 +320,15 @@ ggplot(
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-2.png)<!-- -->
 
 ``` r
+#Median - 24112025
+median(max.k.score.dt[, max_k_ratio])
+```
+
+    ## [1] 0.3
+
+``` r
+# 0.3
+
 # Plot - Max K ratio vs protein length
 ggplot(
   max.k.score.dt,
@@ -774,16 +782,11 @@ ggplot(
 ``` r
 library("RColorBrewer")
 
-install.packages("ggpubr")
-```
-
-    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
-    ## (as 'lib' is unspecified)
-
-``` r
+#install.packages("ggpubr")
 library("ggpubr")
 
 # Filter the K scores for histones 1-4
+max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
 histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
 
 median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
@@ -800,27 +803,10 @@ print(range_max_k)
     ## [1] 0.1 0.6
 
 ``` r
-H1_dt <- histone_protein_dt[grepl("^H1", gene_name)]
 H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
 H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
 H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
 H4_dt <- histone_protein_dt[grepl("^H4", gene_name)]
-
-# Plot - Histones 
-P1_H1 <- ggplot(
-  data = H1_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
 
 
 # Plot - Histones 
@@ -887,9 +873,9 @@ P5_H4 <- ggplot(
 
 
 combined <- ggarrange(
-  P1_H1, P2_H2A, P3_H2B, P4_H3, P5_H4,
-  ncol = 2, nrow = 3,
-  labels = c("H1","H2A", "H2B", "H3", "H4"),
+  P2_H2A, P3_H2B, P4_H3, P5_H4,
+  ncol = 2, nrow = 2,
+  labels = c("H2A", "H2B", "H3", "H4"),
   label.x = 0.0,          
   label.y = 1,  
   hjust = -0.5, 
@@ -908,18 +894,76 @@ annotate_figure(
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_versus_max_K_score-1.png)<!-- -->
 
 ``` r
+#H3
 ggplot(
-  protein.feature.dt[grepl("Q16695", Accession)],
+  protein.feature.dt[grepl("P62805", Accession)],
   aes(
-    x =position,
+    x = position,
     y = K_ratio_score
   )
 ) +
-  geom_area() +
-  geom_ribbon(aes(xmin = 0 , xmax = 79), fill = "red", alpha = 0.1)
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 ```
 
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-1.png)<!-- -->
+
+``` r
+# H2AX 
+ggplot(
+  protein.feature.dt[grepl("P16104", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6)
+```
+
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-2.png)<!-- -->
+
+``` r
+#H2B
+ggplot(
+  protein.feature.dt[grepl("P33778", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+```
+
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-3.png)<!-- -->
+
+``` r
+#H4
+
+ggplot(
+  protein.feature.dt[grepl("P62805", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+```
+
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-4.png)<!-- -->
+
+``` r
+#H2A
+
+ggplot(
+  protein.feature.dt[grepl("Q6FI13", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+```
+
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-5.png)<!-- -->
 
 # Session information
 
@@ -937,7 +981,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-18
+    ##  date     2025-11-25
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
