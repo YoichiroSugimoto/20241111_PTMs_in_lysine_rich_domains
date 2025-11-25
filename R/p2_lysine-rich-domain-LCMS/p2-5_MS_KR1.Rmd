@@ -181,7 +181,7 @@ MS_KR1_stoic_dt[, `:=`(
     grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
     grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
     default = NA_character_
-  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h"))
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev)
 )]
 
 MS_KR1_stoic_dt[, `:=`(
@@ -225,6 +225,45 @@ ggplot(
 ) +
   geom_point() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD2") & diagnostic_peak == "+" & aa_pos %in% 540:590],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 ggplot(
   data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
