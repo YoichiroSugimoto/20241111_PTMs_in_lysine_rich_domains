@@ -744,7 +744,7 @@ MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][orde
 # create data table with hydroxylated proteins
 MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-
+MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 #-----------
 ## PNAS2022
 #-----------
@@ -815,15 +815,6 @@ vennlist <-  list(
   MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]) 
 )
 
-# Generate Venn diagram
-ggVennDiagram(vennlist, 
-              label = "count",
-              label_alpha = 0) +
-  theme_void()+
-  scale_fill_gradient(low = "white", high = "skyblue") +  # optional coloring
-  ggtitle("Hydroxylated sites overlap")
-
-
 # Changing the circle size based on the number in the circle
 venn_size_based <- euler(vennlist)
 
@@ -852,19 +843,22 @@ MQ_all_hoxy_site_count[protein_accession == "Q9UQ35" & aa_pos %in% c(241, 243, 2
 
 # Extract the accession position vectors 
 vennlist <-  list(
-  PNAS2022_sites = as.vector(PNAS2022_protein_count[, accession_position]),
-  MQ_DI_sites = as.vector(MQ_DI_protein_count[, accession_position]),
-  MQ_DI_it_sites = as.vector(MQ_DI_it_protein_count[, accession_position])
+  PNAS2022_sites = as.vector(PNAS2022_protein_count[, gene_name]),
+  MQ_DI_sites = as.vector(MQ_DI_protein_count[, gene_name]),
+  MQ_all_sites = as.vector(MQ_all_hoxy_protein_count[, gene_name])
 )
 
-# Generate Venn diagram
-ggVennDiagram(vennlist, 
-              label = "count",
-              label_alpha = 0) +
-  theme_void()+
-  scale_fill_gradient(low = "white", high = "skyblue") +  # optional coloring
-  ggtitle("Hydroxylated proteins overlap")
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
 
+cols <- brewer.pal(3, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated proteins overlap")
 ```
 
 # 2.4.12 Analyse serine, threonine and tyrosine phosphorylation sites with DI data
