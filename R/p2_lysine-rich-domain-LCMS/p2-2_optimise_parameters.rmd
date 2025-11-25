@@ -28,8 +28,7 @@ project.dir <-
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
-
-renv::restore(file.path(project.dir, "R"))
+#renv::restore(file.path(project.dir, "R"))
 
 ```
 

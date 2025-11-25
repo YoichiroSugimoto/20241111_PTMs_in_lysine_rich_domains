@@ -1,7 +1,7 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto
-03 November, 2025
+25 November, 2025
 
 - [Environment setup](#environment-setup)
 - [Import basic data](#import-basic-data)
@@ -27,17 +27,8 @@ project.dir <-
 
 # renv::snapshot(file.path(project.dir, "R"))
 
-renv::restore(file.path(project.dir, "R"))
+#renv::restore(file.path(project.dir, "R"))
 ```
-
-    ## The following required system packages are not installed:
-    ## - pandoc  [required by knitr, rmarkdown]
-    ## The R packages depending on these system packages may fail to install.
-    ## 
-    ## An administrator can install these packages with:
-    ## - sudo apt install pandoc
-    ## 
-    ## - The library is already synchronized with the lockfile.
 
 ``` r
 # Load all R scripts from the 'functions' folder into the current session
@@ -154,13 +145,8 @@ P2_functions <-
 ``` r
 ### Install private packages 
 # Install ptm.stiochiometry package - package installed 
-install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
-```
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
-    ## (as 'lib' is unspecified)
-
-``` r
 # Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
 library("janitor")
@@ -175,14 +161,7 @@ library("janitor")
 
 ``` r
 library("ptm.stoichiometry")
-
-# Create and define path to result directory 
-p2_results_dir <- file.path(project.dir,
-                        "results",
-                        "p2_diagnostic_ions")
-dir.create(file.path(project.dir,
-                        "results",
-                        "p2_diagnostic_ions"), showWarnings = FALSE, recursive = TRUE)
+library("ggpubr")
 ```
 
 # Import basic data
@@ -323,7 +302,7 @@ ggplot(
 ![](p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/figure-gfm/identify_diagnostic_ions-2.png)<!-- -->
 
 ``` r
-selected.ms <- c("100.0762", "82.0657", "138.0919", "156.1025")
+selected.ms <- c("100.0762", "156.1025")
 
 # Count the number of PSMs for each selected monoisotopic mass 
 psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
@@ -355,32 +334,6 @@ for(mi.ms in selected.ms){
     ## odds ratio 
     ##          0 
     ## 
-    ## [1] "82.0657"
-    ## 
-    ##  Fisher's Exact Test for Count Data
-    ## 
-    ## data:  .
-    ## p-value = 0.001736
-    ## alternative hypothesis: true odds ratio is not equal to 1
-    ## 95 percent confidence interval:
-    ##  0.0000000 0.4571276
-    ## sample estimates:
-    ## odds ratio 
-    ##          0 
-    ## 
-    ## [1] "138.0919"
-    ## 
-    ##  Fisher's Exact Test for Count Data
-    ## 
-    ## data:  .
-    ## p-value = 1
-    ## alternative hypothesis: true odds ratio is not equal to 1
-    ## 95 percent confidence interval:
-    ##  0.07117751 7.49055293
-    ## sample estimates:
-    ## odds ratio 
-    ##  0.8551277 
-    ## 
     ## [1] "156.1025"
     ## 
     ##  Fisher's Exact Test for Count Data
@@ -393,6 +346,102 @@ for(mi.ms in selected.ms){
     ## sample estimates:
     ##  odds ratio 
     ## 0.006489756
+
+``` r
+m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)]
+```
+
+    ##                   file_name                 sample_name   cell genotype
+    ##                      <char>                      <char> <char>   <fctr>
+    ##    1:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
+    ##    2:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
+    ##    3:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
+    ##    4:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
+    ##    5:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
+    ##   ---                                                                  
+    ## 2672: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
+    ## 2673: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
+    ## 2674: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
+    ## 2675: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
+    ## 2676: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
+    ##       purification derivitisation replicate                            spectrum
+    ##             <char>         <char>     <int>                              <char>
+    ##    1:          JQ1            yes         1          201021_MC264.03134.03134.3
+    ##    2:          JQ1            yes         1          201021_MC264.03140.03140.2
+    ##    3:          JQ1            yes         1          201021_MC264.03206.03206.3
+    ##    4:          JQ1            yes         1          201021_MC264.03215.03215.3
+    ##    5:          JQ1            yes         1          201021_MC264.03218.03218.2
+    ##   ---                                                                          
+    ## 2672:          JQ1            yes         5 20201119_GV2048_MC278.62287.62287.3
+    ## 2673:          JQ1            yes         5 20201119_GV2048_MC278.62308.62308.3
+    ## 2674:          JQ1            yes         5 20201119_GV2048_MC278.62374.62374.3
+    ## 2675:          JQ1            yes         5 20201119_GV2048_MC278.62780.62780.4
+    ## 2676:          JQ1            yes         5 20201119_GV2048_MC278.62813.62813.4
+    ##       protein_id   gene protein_start protein_end
+    ##           <char> <char>         <int>       <int>
+    ##    1:     O60885   BRD4           553         562
+    ##    2:     O60885   BRD4           553         562
+    ##    3:     O60885   BRD4           538         546
+    ##    4:     O60885   BRD4           538         546
+    ##    5:     O60885   BRD4           538         546
+    ##   ---                                            
+    ## 2672:     O60885   BRD4           511         539
+    ## 2673:     O60885   BRD4           511         539
+    ## 2674:     O60885   BRD4           511         539
+    ## 2675:     O60885   BRD4           511         541
+    ## 2676:     O60885   BRD4           511         541
+    ##                               peptide
+    ##                                <char>
+    ##    1:                      RKEEVEENKK
+    ##    2:                      RKEEVEENKK
+    ##    3:                       KKEKDKKEK
+    ##    4:                       KKEKDKKEK
+    ##    5:                       KKEKDKKEK
+    ##   ---                                
+    ## 2672:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
+    ## 2673:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
+    ## 2674:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
+    ## 2675: LAELQEQLKAVHEQLAALSQPQQNKPKKKEK
+    ## 2676: LAELQEQLKAVHEQLAALSQPQQNKPKKKEK
+    ##                                                                                    mods
+    ##                                                                                  <char>
+    ##    1:                                                                                  
+    ##    2:                                                                                  
+    ##    3:                                1K(72.0211), 2K(15.9949), 4K(72.0211), 7K(72.0211)
+    ##    4:                                             1K(72.0211), 4K(72.0211), 7K(72.0211)
+    ##    5:                   1K(15.9949), 2K(56.0262), 4K(56.0262), 6K(72.0211), 7K(72.0211)
+    ##   ---                                                                                  
+    ## 2672:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
+    ## 2673:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
+    ## 2674:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
+    ## 2675: 25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 31K(56.0262), 9K(56.0262)
+    ## 2676: 25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 31K(56.0262), 9K(56.0262)
+    ##       pep_mass mass_shift              variable intensity monoisotopic_mass
+    ##          <num>      <num>                <fctr>     <num>            <fctr>
+    ##    1: 1287.678    -0.0003 ox_100_0762_intensity         0          100.0762
+    ##    2: 1287.678     0.0001 ox_100_0762_intensity         0          100.0762
+    ##    3: 1391.751     0.0004 ox_100_0762_intensity         0          100.0762
+    ##    4: 1375.756     0.0001 ox_100_0762_intensity         0          100.0762
+    ##    5: 1375.756     0.0003 ox_100_0762_intensity         0          100.0762
+    ##   ---                                                                      
+    ## 2672: 3518.946    -0.0036 ox_156_1025_intensity         0          156.1025
+    ## 2673: 3518.946     1.0012 ox_156_1025_intensity         0          156.1025
+    ## 2674: 3518.946     0.0017 ox_156_1025_intensity         0          156.1025
+    ## 2675: 3832.110     3.0114 ox_156_1025_intensity         0          156.1025
+    ## 2676: 3832.110     0.9897 ox_156_1025_intensity         0          156.1025
+    ##       diagnostic_ion
+    ##               <lgcl>
+    ##    1:          FALSE
+    ##    2:          FALSE
+    ##    3:          FALSE
+    ##    4:          FALSE
+    ##    5:          FALSE
+    ##   ---               
+    ## 2672:          FALSE
+    ## 2673:          FALSE
+    ## 2674:          FALSE
+    ## 2675:          FALSE
+    ## 2676:          FALSE
 
 ``` r
 # Plot - Violin plot of selected monoisotopic mass versus intensity in WT and JMJD6KO genotype
@@ -446,15 +495,20 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-03
+    ##  date     2025-11-25
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
+    ##  abind               1.4-8      2024-09-12 [1] CRAN (R 4.5.1)
+    ##  backports           1.5.0      2024-05-23 [1] CRAN (R 4.5.1)
     ##  beeswarm            0.4.0      2021-06-01 [1] CRAN (R 4.5.1)
     ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
     ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
+    ##  broom               1.0.10     2025-09-13 [1] CRAN (R 4.5.1)
+    ##  car                 3.1-3      2024-09-27 [1] CRAN (R 4.5.1)
+    ##  carData             3.0-5      2022-01-06 [1] CRAN (R 4.5.1)
     ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.5.1)
     ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
     ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
@@ -464,11 +518,14 @@ sessioninfo::session_info()
     ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
     ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
     ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
+    ##  Formula             1.2-5      2023-02-24 [1] CRAN (R 4.5.1)
     ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
     ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
     ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.5.1)
     ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
+    ##  ggpubr            * 0.6.2      2025-10-17 [1] CRAN (R 4.5.1)
+    ##  ggsignif            0.6.4      2022-10-13 [1] CRAN (R 4.5.1)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
@@ -484,13 +541,14 @@ sessioninfo::session_info()
     ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-03 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-07 [1] local
+    ##  purrr               1.1.0      2025-07-10 [1] CRAN (R 4.5.1)
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
-    ##  renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.1)
     ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
+    ##  rstatix             0.7.3      2025-10-18 [1] CRAN (R 4.5.1)
     ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
     ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
     ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
@@ -499,6 +557,7 @@ sessioninfo::session_info()
     ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
     ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
     ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
+    ##  tidyr               1.3.1      2024-01-24 [1] CRAN (R 4.5.1)
     ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
     ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
     ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~

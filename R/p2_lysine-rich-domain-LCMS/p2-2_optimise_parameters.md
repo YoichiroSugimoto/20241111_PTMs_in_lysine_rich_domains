@@ -1,11 +1,12 @@
 2-2. Optimise MQ parameters
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-04 November, 2025
+25 November, 2025
 
 - [Environment setup](#environment-setup)
-- [Import basic data](#import-basic-data)
-- [MS/MS count by different setting](#msms-count-by-different-setting)
+- [2.2.1 Import basic data](#221-import-basic-data)
+- [2.2.2 MS/MS count by different
+  setting](#222-msms-count-by-different-setting)
 - [QC by the position of propionylated
   lysines](#qc-by-the-position-of-propionylated-lysines)
 - [The effect of MQ setting by K
@@ -34,18 +35,8 @@ project.dir <-
   )
 
 # renv::snapshot(file.path(project.dir, "R"))
-
-renv::restore(file.path(project.dir, "R"))
+#renv::restore(file.path(project.dir, "R"))
 ```
-
-    ## The following required system packages are not installed:
-    ## - pandoc  [required by knitr, rmarkdown]
-    ## The R packages depending on these system packages may fail to install.
-    ## 
-    ## An administrator can install these packages with:
-    ## - sudo apt install pandoc
-    ## 
-    ## - The library is already synchronized with the lockfile.
 
 ``` r
 ## Load all R scripts from the 'functions' folder into the current session
@@ -174,7 +165,7 @@ p2_results_dir <- file.path(project.dir,
                         "p2_analysis_setting")
 ```
 
-# Import basic data
+# 2.2.1 Import basic data
 
 ``` r
 # Define path for data directory
@@ -199,7 +190,7 @@ protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_pe
 setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
 ```
 
-# MS/MS count by different setting
+# 2.2.2 MS/MS count by different setting
 
 ``` r
 # Define "read_evidence" function 
@@ -605,7 +596,7 @@ nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(protein_acces
     ## [1] 153
 
 ``` r
-# The number of hydroxylated sites identified by 
+# The number of hydroxylated sites identified by different MQ cleavage setting
 all_stoic_pos.dt[
   curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
 ][order(stoichiometry, MQ_setting, decreasing = TRUE)][
@@ -618,6 +609,24 @@ all_stoic_pos.dt[
     ## 1:       WT      m2_v2 [Oxidation (K)]    23
     ## 2:       WT      m5_v5 [Oxidation (K)]   110
     ## 3:       WT      m7_v7 [Oxidation (K)]   120
+
+``` r
+MQ_Khydoxy_dt <- all_stoic_pos.dt[
+  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
+][order(stoichiometry, MQ_setting, decreasing = TRUE)][
+  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
+  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+
+# Plot - Number of hydroxylated sites identified based on MQ cleavage setting 
+ggplot(data = MQ_Khydoxy_dt,
+       aes(x = MQ_setting,
+           y = N) 
+) +
+  geom_col() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](p2-2_optimise_parameters_files/figure-gfm/hydroxylation_site_reported_in_PNAS2022-1.png)<!-- -->
 
 ``` r
 ## The sites not identified by the new workflow
@@ -896,7 +905,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-04
+    ##  date     2025-11-25
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -933,11 +942,10 @@ sessioninfo::session_info()
     ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-03 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-07 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
-    ##  renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.1)
     ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
     ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~

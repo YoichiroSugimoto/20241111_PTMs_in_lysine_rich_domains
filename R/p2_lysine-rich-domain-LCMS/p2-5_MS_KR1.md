@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-24 November, 2025
+25 November, 2025
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -252,8 +252,8 @@ ptm_mapping_file <- file.path(
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4296377 229.5    8171660 436.5  8171660 436.5
-    ## Vcells 21529659 164.3   64859297 494.9 64859263 494.9
+    ## Ncells  4296384 229.5    8172117 436.5  8172117 436.5
+    ## Vcells 21529894 164.3   64859703 494.9 64859657 494.9
 
 ``` r
 # Define function - 'read_stoic_data'
@@ -293,7 +293,7 @@ MS_KR1_stoic_dt[, `:=`(
     grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
     grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
     default = NA_character_
-  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h"))
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev)
 )]
 
 MS_KR1_stoic_dt[, `:=`(
@@ -353,6 +353,55 @@ ggplot(
 
 ``` r
 ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-8.png)<!-- -->
+
+``` r
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-9.png)<!-- -->
+
+``` r
+ggplot(
+  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD2") & diagnostic_peak == "+" & aa_pos %in% 540:590],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry,
+    group = paste(protein_accession, aa_pos)
+  )
+) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-10.png)<!-- -->
+
+``` r
+ggplot(
   data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
   aes(
     x = Oxygen_levels,
@@ -363,7 +412,7 @@ ggplot(
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-8.png)<!-- -->
+![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-11.png)<!-- -->
 
 # Session information
 
@@ -381,7 +430,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-24
+    ##  date     2025-11-25
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 

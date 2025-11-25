@@ -30,7 +30,7 @@ project.dir <-
 
 # renv::snapshot(file.path(project.dir, "R"))
 
-renv::restore(file.path(project.dir, "R"))
+#renv::restore(file.path(project.dir, "R"))
 
 ```
 
@@ -48,22 +48,13 @@ P2_functions <-
 
 ### Install private packages 
 # Install ptm.stiochiometry package - package installed 
-install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
-
-# Create and define path to result directory 
-p2_results_dir <- file.path(project.dir,
-                        "results",
-                        "p2_diagnostic_ions")
-dir.create(file.path(project.dir,
-                        "results",
-                        "p2_diagnostic_ions"), showWarnings = FALSE, recursive = TRUE)
-
-
+library("ggpubr")
 
 ```
 
@@ -203,7 +194,7 @@ ggplot(
 
 ```{r plot_with_only_diagnostic_ions, fig.width = 6, fig.height = 4}
 
-selected.ms <- c("100.0762", "82.0657", "138.0919", "156.1025")
+selected.ms <- c("100.0762", "156.1025")
 
 # Count the number of PSMs for each selected monoisotopic mass 
 psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
