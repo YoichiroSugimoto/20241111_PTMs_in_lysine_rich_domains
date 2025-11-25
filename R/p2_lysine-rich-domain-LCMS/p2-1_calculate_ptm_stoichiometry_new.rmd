@@ -401,94 +401,7 @@ for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_inf
 
 ```
 
-# 2.1.6 Calculation of Stoichiometry with diagnostic ion and additional PTMs 
-
-```{r data_directory_w_di_aPTMs}
-# Load data into environment
-MQ_DI_aPTM_data <- file.path(
-  project.dir,
-  "data/MQ_with_additional_ptms_output/pnas2022" 
-)
-
-# Load sample run info data 
-MQ_DI_aPTM_run_info <- read_excel(
-  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI_addPTMs" 
-) %>% data.table
-
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_DI_aPTM_run_info[, sample_id := 1:.N]
-
-# Create file path for results
-MQ_with_DI_aPTMs_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI_addPTMs")
-dir.create(MQ_with_DI_aPTMs_dir, recursive = TRUE)
-
-# Define file path common PTM mapping file
-ptm_mapping_file <- file.path(
-  project.dir,
-  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
-)
-```
-
-```{r calculate_stoichiometry_w_di_aPTMs}
-
-# For each sample ID calculate the stiochiomtery
-for (i in 1:nrow(MQ_DI_aPTM_run_info)){ # Takes each row from the MQ_DI_aPTM_run_info
-  
-  # Retrieves the evidence.txt file for each sample ID 
-  mq_evidence_data = file.path(MQ_DI_aPTM_data,
-                               MQ_DI_aPTM_run_info[i, data_dir],
-                               paste0("evidence.txt"))
-  # Pastes the sample ID that is processing 
-  print(paste0("Processing: ", basename(mq_evidence_data)))
-  
-   # Checks whether the sample ID has the corresponsing evidence.txt file. If yes, then proceed
-  if (file.exists(mq_evidence_data)) {
-    
-    # Locate and fetch all PTM site files within the ptm folder
-    ptm_files <- list.files(file.path(
-      MQ_DI_aPTM_data, MQ_DI_aPTM_run_info[i, data_dir], "ptm"), 
-      full.names = TRUE)
-    
-    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
-    ptm_names <- paste0(
-      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-    )
-    
-    # Run the stoichiometry calculation
-    stoic.dt <- calculate_stoichiometry2(
-      mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
-        MQ_DI_aPTM_data,
-        "sample_info",
-        paste0(
-          "MS_dataset_overview_PXD031221_",
-          MQ_DI_aPTM_run_info[i, data],
-          ".csv"
-        )
-      ),
-      ref_protein_dt = ref_protein_data,
-      ptm_files = ptm_files,
-      ptm_names = ptm_names,
-      output_prefix = file.path(MQ_with_DI_aPTMs_dir, paste0("DI_", MQ_DI_aPTM_run_info[i, data_dir])),
-      ptm_mapping_file = ptm_mapping_file,
-      K_only = FALSE,
-      selected_type = c("MULTI-MSMS"),
-      parse_protein_accession_function = NA
-    )
-  } else { # If evidence.txt does not exist, skip the function and print below message
-    print(paste0("File does not exist: ", mq_evidence_data))
-  }
-  
-  # Garbage collection - to free up memory
-  gc()
-  
-}
-
-```
-
-# # 2.1.7 Comparison - PNAS2022 versus new workflow for PSM coverage and stoichiometry
+# 2.1.6 Comparison - PNAS2022 versus new workflow for PSM coverage and stoichiometry
 
 ```{r define_functions}
 
@@ -570,34 +483,49 @@ legend = "none"
 ```{r comparison_MQ_DI_PTM_PSM}
 
 # Load sample run info data (MQ DI)
-MQ_DI_run_info <- read_excel(
+MQ_Std_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI" 
+  sheet = "MQ_standard" 
 ) %>% data.table
 
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
 #row (1:N), where N is the total number of rows in the data.table
-MQ_DI_run_info[, sample_id := 1:.N]
+MQ_Std_run_info[, sample_id := 1:.N]
 
 ## Read stoichiometry data for MQ_DI
-MQ_DI_stoic_dt <- lapply(
-  MQ_DI_run_info[, prefix],
+MQ_Std_stoic_dt <- lapply(
+  MQ_Std_run_info[, prefix],
   read_stoic_data,
-  pre_prefix = "DI_", 
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+  pre_prefix = "", 
+  post_fix = "",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 ) %>% rbindlist
 
 
-# MQ_DI - BRD4 WT - PSM 
+# MQ_DI PSM coverage according to missed cleavages (m2, m5, m7)
 MQ_PSM_WT <- plot_psm_coverage(
-  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m2_v2_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+
+MQ_PSM_WT <- plot_psm_coverage(
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m5_v5_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+
+MQ_PSM_WT <- plot_psm_coverage(
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
 
 MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
 
 # MQ_DI - BRD4 WT - PTM 
 MQ_PTM_WT <- plot_ptm_stoichiometry(
-  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+# MQ_DI - BRD4 WT - PSM 
+MQ_PSM_WT <- plot_psm_coverage(
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
 
 ggarrange(
 MQ_PSM_WT, MQ_PTM_WT,
@@ -608,13 +536,13 @@ legend = "none"
 
 # MQ_DI - BRD4 JMJD6KO - PSM 
 MQ_PSM_JMJD6KO <-plot_psm_coverage(
-  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
 MQ_PSM_JMJD6KO <- MQ_PSM_JMJD6KO$coverage_plot_g
 
 # MQ_DI - BRD4 JMJD6KO - PTM
 MQ_PTM_JMJD6KO <- plot_ptm_stoichiometry(
-  MQ_DI_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
 ggarrange(
 MQ_PSM_JMJD6KO, MQ_PTM_JMJD6KO,
