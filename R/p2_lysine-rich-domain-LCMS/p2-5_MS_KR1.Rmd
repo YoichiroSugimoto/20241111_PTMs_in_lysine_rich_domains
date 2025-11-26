@@ -24,10 +24,10 @@ output:
 #    )
 
 # Define project directory - contains the R scripts, data and result folders
- project.dir <-
+project.dir <-
   file.path(
     "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
-)
+  )
 
 # renv::snapshot(file.path(project.dir, "R"))
 
@@ -62,8 +62,8 @@ library("ptm.stoichiometry")
 
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(file.path
-("/fast/AG_Sugimoto/reference/uniprot/human", 
-  "UP000005640_9606.fasta")) 
+                                         ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                           "UP000005640_9606.fasta")) 
 
 ```
 
@@ -83,7 +83,7 @@ MS_KR1_data <- file.path(
 
 # Create file path for results
 MS_KR_1_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MS_KR_1")
-dir.create(MS_KR_1_dir, recursive = TRUE)
+# dir.create(MS_KR_1_dir, recursive = TRUE)
 
 # Define file path common PTM mapping file
 ptm_mapping_file <- file.path(
@@ -95,49 +95,49 @@ ptm_mapping_file <- file.path(
 
 ```{r calculate_stoichiometry_MS_KR_1}
   
-    # Define file path to MaxQuant evidence files
-    mq_evidence_data <- file.path(MS_KR1_data, 
-                                  "MS_KR_1_evidence.txt")
-    
-    # Print which sample id is being processed
-    message("Processing: ", basename(mq_evidence_data)) 
-    
-   # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
-  if (file.exists(mq_evidence_data)) {
-    
-    # Locate and fetch all PTM site files within the ptm folder
-    ptm_files <- list.files(file.path(
-      MS_KR1_data, "ptm"), 
-      full.names = TRUE)
-    
-    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
-    ptm_names <- paste0(
-      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-    )
-    
-    # Run the stoichiometry calculation
-    stoic.dt <- calculate_stoichiometry2(
-      mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
-        MS_KR1_data,
-        "sample_info.csv"
-      ),
-      ref_protein_dt = ref_protein_dt,
-      ptm_files = ptm_files,
-      ptm_names = ptm_names,
-      output_prefix = file.path(MS_KR_1_dir, "MS_KR_1_"),
-      ptm_mapping_file = ptm_mapping_file,
-      K_only = FALSE,
-      selected_type = "MULTI-MSMS",
-      parse_protein_accession_function = NA
-    )
-  } else { # If evidence.txt does not exist, skip the function and print below message
-    print(paste0("File does not exist: ", mq_evidence_data))
-  }
+# Define file path to MaxQuant evidence files
+mq_evidence_data <- file.path(MS_KR1_data, 
+                              "MS_KR_1_evidence.txt")
+
+# Print which sample id is being processed
+message("Processing: ", basename(mq_evidence_data)) 
+
+# Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
+if (file.exists(mq_evidence_data)) {
   
-  # Garbage collection - to free up memory
-  gc()
+  # Locate and fetch all PTM site files within the ptm folder
+  ptm_files <- list.files(file.path(
+    MS_KR1_data, "ptm"), 
+    full.names = TRUE)
   
+  # Generate PTM names based on file names, add brackets and remove "Sites.txt"
+  ptm_names <- paste0(
+    "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+  )
+  
+  # Run the stoichiometry calculation
+  stoic.dt <- calculate_stoichiometry2(
+    mq_evidence_data = mq_evidence_data,
+    sample_info_file = file.path(
+      MS_KR1_data,
+      "sample_info.csv"
+    ),
+    ref_protein_dt = ref_protein_dt,
+    ptm_files = ptm_files,
+    ptm_names = ptm_names,
+    output_prefix = file.path(MS_KR_1_dir, "MS_KR_1_"),
+    ptm_mapping_file = ptm_mapping_file,
+    K_only = FALSE,
+    selected_type = "MULTI-MSMS",
+    parse_protein_accession_function = NA
+  )
+} else { # If evidence.txt does not exist, skip the function and print below message
+  print(paste0("File does not exist: ", mq_evidence_data))
+}
+
+# Garbage collection - to free up memory
+gc()
+
 
 ```
 
@@ -193,88 +193,66 @@ MS_KR1_stoic_dt[, `:=`(
 # BRD4 
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
-  )
-  
+)
+
 # BRD3
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "Q15059", plot_range = c(483, 533), all.protein.bs, sample_colors = NA
-  )
+)
 
 # BRD2
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
-  )
+)
 
 
-
-MS_KR1_stoic_dt[, stoic_bin := case_when(
-  stoichiometry < 0.10 ~ "low",
-  between(stoichiometry, 0.10, 0.50) ~ "middle",
-  stoichiometry > 0.50 ~ "high"
-)]
+MS_KR1_stoic_dt <- droplevels(MS_KR1_stoic_dt[
+  Oxygen_levels %in% c("Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h")])
 
 
-# Plot 
+# Plot - JMJD6 re-expression - BRD4
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-    color = gene_name
-  )
-) +
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
+# Plot - JMJD6 re-expression - BRD3
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
+# Plot - JMJD6 re-expression - BRD2
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD2") & diagnostic_peak == "+" & aa_pos %in% 540:590],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
 ```
 
