@@ -1,6 +1,6 @@
 ---
 title: "1-1. Proteins with lysine-rich domains"
-author: "Pallavi Kesavan and Yoichiro Sugimoto"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
   %\VignetteIndexEntry{Bioconductor style for PDF documents}
