@@ -1,6 +1,6 @@
 ---
 title: "2-3. Identify diagnostic ions that can mark lysine hydroxylations"
-author: "Yoichiro Sugimoto"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
   %\VignetteIndexEntry{Bioconductor style for PDF documents}
@@ -58,7 +58,7 @@ library("ggpubr")
 
 ```
 
-# Import basic data
+# 2.3.1 Import basic data
 
 ```{r import_basic_data}
 
@@ -101,7 +101,7 @@ ref_protein_dt <- import_reference_fasta(
 ```
 
 
-# Identify useful diagnostic ions to identify lysine hydroxylations
+# 2.3.2 Identify useful diagnostic ions to identify lysine hydroxylations
 
 
 ```{r identify_diagnostic_ions}
@@ -153,7 +153,7 @@ m.brd4_hydroxylation_site_di[, `:=`(
       "145.0977", #Hydroxylation (K)	K	O	15.9949	(intact, water loss)	C6H13N2O2+
       "156.1025", #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	diagnostic ion	C8 H14 N1 O2+
       "173.1290" #Hydroxylation-Propionylation (K)	K	C3 H4 O2	72.02112937	immonium ion	C8 H17 O2 N2 +
-      )),
+    )),
   diagnostic_ion = intensity > 0, 
   genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
 )]
