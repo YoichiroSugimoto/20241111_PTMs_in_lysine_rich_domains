@@ -339,6 +339,7 @@ ptm_mapping_file <- file.path(
 
 # Define the parse protein function 
 parse_protein_accession_iterative = function(x){str_split_fixed(x, pattern = "\\|", n = 3)[, 2]}
+
 ```
 
 
