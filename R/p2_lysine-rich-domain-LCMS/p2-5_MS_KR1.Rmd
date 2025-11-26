@@ -165,6 +165,7 @@ MS_KR1_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
+# Read FASTA data 
 all.protein.bs <- Biostrings::readAAStringSet(
   file.path(
     "/fast/AG_Sugimoto/reference/uniprot/human",
@@ -172,6 +173,7 @@ all.protein.bs <- Biostrings::readAAStringSet(
   )
 )
 
+# new column with simplified version of sample names 
 MS_KR1_stoic_dt[, `:=`(
   Oxygen_levels = fcase(
     grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
@@ -181,9 +183,10 @@ MS_KR1_stoic_dt[, `:=`(
     grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
     grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
     default = NA_character_
-  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev)
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev) # categorize data and order levels 
 )]
 
+# categorize data according to sample names 
 MS_KR1_stoic_dt[, `:=`(
   sample_name =  
     factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
@@ -204,7 +207,10 @@ plot_ptm_stoichiometry(
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
 )
+```
 
+
+```{r JMJD6_reexpression}
 
 MS_KR1_stoic_dt <- droplevels(MS_KR1_stoic_dt[
   Oxygen_levels %in% c("Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h")])
@@ -221,7 +227,9 @@ ggplot(
 ) +
   geom_point(aes(colour = paste(protein_accession, aa_pos))) +
   geom_line(linewidth = 0.4) +
+  labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
 # Plot - JMJD6 re-expression - BRD3
@@ -235,6 +243,7 @@ ggplot(
 ) +
   geom_point(aes(colour = paste(protein_accession, aa_pos))) +
   geom_line(linewidth = 0.4) +
+  labs(title = "BRD3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
@@ -250,6 +259,7 @@ ggplot(
 ) +
   geom_point(aes(colour = paste(protein_accession, aa_pos))) +
   geom_line(linewidth = 0.4) +
+  labs(title = "BRD2") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
