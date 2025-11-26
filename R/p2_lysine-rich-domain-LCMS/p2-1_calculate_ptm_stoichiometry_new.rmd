@@ -28,10 +28,10 @@ output:
 #    )
 
 # Define project directory - contains the R scripts, data and result folders
- project.dir <-
+project.dir <-
   file.path(
     "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
-)
+  )
 
 # renv::snapshot(file.path(project.dir, "R"))
 
@@ -72,8 +72,8 @@ results.dir <- file.path(project.dir, "results")
 
 # Import human protein reference data from specified file path 
 ref_protein_data <- import_reference_fasta(file.path
-("/fast/AG_Sugimoto/reference/uniprot/human", 
-  "UP000005640_9606.fasta")) 
+                                           ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                             "UP000005640_9606.fasta")) 
 
 all.protein.bs <- Biostrings::readAAStringSet(
   file.path(
@@ -241,6 +241,7 @@ ptm_mapping_file <- file.path(
   project.dir,
   "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
 )
+
 ```
 
 
@@ -250,7 +251,7 @@ ptm_mapping_file <- file.path(
 for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_info
   
   prefix <- MQ_DI_run_info$prefix[i]
-
+  
   # Retrieves the evidence.txt file for each sample ID 
   mq_evidence_data = file.path(MQ_DI_data,
                                "evidence",
@@ -293,7 +294,7 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
       K_only = FALSE,
       selected_type = c("MULTI-MSMS"),
     )
-     # If evidence.txt does not exist, skip the function and print below message
+    # If evidence.txt does not exist, skip the function and print below message
   } else {
     print(paste0("File does not exist: ", mq_evidence_data))
   }
@@ -389,12 +390,12 @@ for (i in 1:nrow(MQ_DI_it_run_info)){ # Takes each row from the MQ_DI_it_run_inf
       selected_type = c("MULTI-MSMS"),
       parse_protein_accession_function = parse_protein_accession_iterative
     )
-     # If evidence.txt does not exist, skip the function and print below message
+    # If evidence.txt does not exist, skip the function and print below message
   } else {
     print(paste0("File does not exist: ", mq_evidence_data))
   }
   
-   # Garbage collection - to free up memory 
+  # Garbage collection - to free up memory 
   gc()
   
 }
@@ -464,25 +465,25 @@ PNAS2022_PTM_JMJD6KO <- plot_ptm_stoichiometry(
   pnas2022.stoic.dt[sample_name == "HeLaJMJD6KO_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
 ggarrange(
-PNAS2022_PSM_WT, PNAS2022_PTM_WT,
+  PNAS2022_PSM_WT, PNAS2022_PTM_WT,
   ncol = 1, nrow = 2,
-align = "hv", 
-legend = "none"
+  align = "hv", 
+  legend = "none"
 )
 
 ggarrange(
-PNAS2022_PSM_JMJD6KO, PNAS2022_PTM_JMJD6KO,
+  PNAS2022_PSM_JMJD6KO, PNAS2022_PTM_JMJD6KO,
   ncol = 1, nrow = 2,
-align = "hv", 
-legend = "none"
+  align = "hv", 
+  legend = "none"
 )
 
 ```
 
 
-```{r comparison_MQ_DI_PTM_PSM}
+```{r MQ_Std_PSM_miscleavages}
 
-# Load sample run info data (MQ DI)
+# Load sample run info data (MQ standard)
 MQ_Std_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
   sheet = "MQ_standard" 
@@ -514,8 +515,11 @@ MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
 MQ_PSM_WT <- plot_psm_coverage(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
-
 MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
+
+```
+
+```{r comparison_MQ_Std_PSM_PTM}
 
 # MQ_DI - BRD4 WT - PTM 
 MQ_PTM_WT <- plot_ptm_stoichiometry(
@@ -528,10 +532,10 @@ MQ_PSM_WT <- plot_psm_coverage(
 MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
 
 ggarrange(
-MQ_PSM_WT, MQ_PTM_WT,
+  MQ_PSM_WT, MQ_PTM_WT,
   ncol = 1, nrow = 2,
-align = "hv", 
-legend = "none"
+  align = "hv", 
+  legend = "none"
 )
 
 # MQ_DI - BRD4 JMJD6KO - PSM 
@@ -545,14 +549,13 @@ MQ_PTM_JMJD6KO <- plot_ptm_stoichiometry(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
 
 ggarrange(
-MQ_PSM_JMJD6KO, MQ_PTM_JMJD6KO,
+  MQ_PSM_JMJD6KO, MQ_PTM_JMJD6KO,
   ncol = 1, nrow = 2,
-align = "hv", 
-legend = "none"
+  align = "hv", 
+  legend = "none"
 )
 
 ```
-
 
 
 # Session information
