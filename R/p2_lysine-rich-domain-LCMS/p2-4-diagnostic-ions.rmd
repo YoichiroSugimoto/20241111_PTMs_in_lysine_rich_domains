@@ -93,26 +93,6 @@ MQ_DI_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_run_info[, sample_id := 1:.N]
 
-# Load sample run info data (MQ DI + iterative)
-MQ_DI_it_run_info <- read_excel(
-  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI_iterative" 
-) %>% data.table
-
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_DI_it_run_info[, sample_id := 1:.N]
-
-# Load sample run info data (MQ DI + additional ptms)
-MQ_DI_aptm_run_info <- read_excel(
-  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI_addPTMs" 
-) %>% data.table
-
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_DI_aptm_run_info[, sample_id := 1:.N]
-
 ```
 
 # 2.4.2 Definition of functions
@@ -401,7 +381,7 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
 ```
 
-# 2.4.8 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
+# 2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
 
 ```{r methionine_cont_MQ_DI}
 
@@ -449,7 +429,7 @@ ggplot(feature_data_plot, aes(x = hydroxylation_site_class, fill = met_within_2)
 
 ```
 
-# 2.4.9 Comparison with previous PNAS 2022 paper
+# 2.4.8 Comparison with previous PNAS 2022 paper
 
 ```{r pnas2022_comparison_MQ_DI}
 
@@ -576,9 +556,9 @@ pnas2022_MQStd_hydroxyK_dt %$%
 
 ```
 
-# 2.4.10 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
+# 2.4.9 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
 
-```{r Venn_diagram_hyoxy_sites}
+```{r comparison_PNAS2022_vs_MQ}
 
 #----------
 ## MQ_All
