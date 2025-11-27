@@ -1,23 +1,24 @@
 2-2. Optimise MQ parameters
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-25 November, 2025
+27 November, 2025
 
 - [Environment setup](#environment-setup)
 - [2.2.1 Import basic data](#221-import-basic-data)
 - [2.2.2 MS/MS count by different
   setting](#222-msms-count-by-different-setting)
-- [QC by the position of propionylated
-  lysines](#qc-by-the-position-of-propionylated-lysines)
-- [The effect of MQ setting by K
-  score](#the-effect-of-mq-setting-by-k-score)
-- [The effect of MQ setting on
-  runtime](#the-effect-of-mq-setting-on-runtime)
-- [The hydroxylation sites reported in the PNAS2022
-  paper](#the-hydroxylation-sites-reported-in-the-pnas2022-paper)
-- [Comparison of WT and KO data](#comparison-of-wt-and-ko-data)
-- [Comparison of the results of PNAS paper (hydoxylation
-  stoichometry)](#comparison-of-the-results-of-pnas-paper-hydoxylation-stoichometry)
+- [2.2.3 QC by the position of propionylated
+  lysines](#223-qc-by-the-position-of-propionylated-lysines)
+- [2.2.4 The effect of MQ setting by K
+  score](#224-the-effect-of-mq-setting-by-k-score)
+- [2.2.5 The effect of MQ setting on
+  runtime](#225-the-effect-of-mq-setting-on-runtime)
+- [2.2.6 The hydroxylation sites reported in the PNAS2022
+  paper](#226-the-hydroxylation-sites-reported-in-the-pnas2022-paper)
+- [2.2.7 Comparison of WT and KO
+  data](#227-comparison-of-wt-and-ko-data)
+- [2.2.8 Comparison of the results of PNAS paper (hydoxylation
+  stoichometry)](#228-comparison-of-the-results-of-pnas-paper-hydoxylation-stoichometry)
 - [Session information](#session-information)
 
 This script calculates the stoichiometry of PTMs.
@@ -40,7 +41,7 @@ project.dir <-
 
 ``` r
 ## Load all R scripts from the 'functions' folder into the current session
-temp <-
+P2_functions <-
   sapply(list.files(
     file.path(project.dir, "R/functions"),
     pattern = "*.R",
@@ -213,7 +214,7 @@ evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding pre
   all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
   dir_path = p2_results_dir
-  ) %>% rbindlist
+) %>% rbindlist
 
 
 data.count.dt <- evidence.dt[, list(
@@ -235,7 +236,7 @@ data_col = c("total_peptide_count", "total_msms_count", "total_intensity")
 
 m2_v2.dt <- data.count.dt[
   MQ_setting == "m2_v2" & type == "MULTI-MSMS"
-  ][, c("file_name", data_col), with = FALSE]
+][, c("file_name", data_col), with = FALSE]
 setnames(m2_v2.dt, old = data_col, new = paste0("m2_v2_", data_col))
 
 rel_count.dt <- data.count.dt
@@ -290,13 +291,13 @@ ggplot(
 ![](p2-2_optimise_parameters_files/figure-gfm/MS_MS_count-1.png)<!-- -->
 
 ``` r
-  # scale_color_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE"))
+# scale_color_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE"))
 ```
 
 The results indicate that the setting with 7 miscleavage and 7 variable
 modifications identify the highest MS/MS count.
 
-# QC by the position of propionylated lysines
+# 2.2.3 QC by the position of propionylated lysines
 
 ``` r
 read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
@@ -309,7 +310,7 @@ all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
   dir_path = p2_results_dir
-  ) %>% rbindlist
+) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(
   propionylation = case_when(
@@ -363,7 +364,7 @@ ggplot(
 Based on the analyses here, we decided to focus on using MULTI-MSMS
 data.
 
-# The effect of MQ setting by K score
+# 2.2.4 The effect of MQ setting by K score
 
 ``` r
 read_stoic_data <- function(prefix, dir_path){
@@ -474,7 +475,7 @@ p3 + p4
 
 ![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_by_k_score-2.png)<!-- -->
 
-# The effect of MQ setting on runtime
+# 2.2.5 The effect of MQ setting on runtime
 
 ``` r
 read_runtime_data <- function(prefix, dir_path){
@@ -562,7 +563,7 @@ ggplot(
 
 ![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
 
-# The hydroxylation sites reported in the PNAS2022 paper
+# 2.2.6 The hydroxylation sites reported in the PNAS2022 paper
 
 ``` r
 ## Hydroxylation stoichiometry comparisons
@@ -601,7 +602,7 @@ all_stoic_pos.dt[
   curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
 ][order(stoichiometry, MQ_setting, decreasing = TRUE)][
   !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
-  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
 ```
 
     ##    genotype MQ_setting             ptm     N
@@ -615,7 +616,7 @@ MQ_Khydoxy_dt <- all_stoic_pos.dt[
   curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
 ][order(stoichiometry, MQ_setting, decreasing = TRUE)][
   !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
-  ][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
 
 # Plot - Number of hydroxylated sites identified based on MQ cleavage setting 
 ggplot(data = MQ_Khydoxy_dt,
@@ -623,7 +624,7 @@ ggplot(data = MQ_Khydoxy_dt,
            y = N) 
 ) +
   geom_col() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ![](p2-2_optimise_parameters_files/figure-gfm/hydroxylation_site_reported_in_PNAS2022-1.png)<!-- -->
@@ -691,7 +692,7 @@ In the end, 91% of hydroxylated sites were covered by the data, and 80%
 (120 / 150) of reported hydroxylation sites were identified by this
 workflow.
 
-# Comparison of WT and KO data
+# 2.2.7 Comparison of WT and KO data
 
 ``` r
 ## Compare WT vs KO data
@@ -702,7 +703,7 @@ wt_ko_comparison.dt <- all_stoic_pos.dt[
     "JQ1_HeLaWT_derivatised",
     "JQ1_HeLaJMJD6KO_derivatised"
   ) &
-  MQ_setting == "m7_v7"
+    MQ_setting == "m7_v7"
 ]
 
 wt_ko_comparison.dt[, `:=`(
@@ -827,7 +828,7 @@ d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
 The sites for BRD2 (551, 552, 555), ARL6IP4 (120, 122, 123), and maybe
 NIPBL (1023, 1034, 1923) might be novel hydroxylation sites.
 
-# Comparison of the results of PNAS paper (hydoxylation stoichometry)
+# 2.2.8 Comparison of the results of PNAS paper (hydoxylation stoichometry)
 
 ``` r
 non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
@@ -842,7 +843,7 @@ non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
     decreasing = TRUE
   )][
     !duplicated(accession_position)
-]
+  ]
 
 selected_stoic_pos.dt <- all_stoic_pos.dt[
   sample_name %in% c("JQ1_HeLaWT_derivatised", "JMJD6peptide_HeLaWT_derivatised") &
@@ -905,7 +906,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-25
+    ##  date     2025-11-27
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
