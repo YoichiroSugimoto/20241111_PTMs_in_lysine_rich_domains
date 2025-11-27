@@ -1,12 +1,12 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
-Yoichiro Sugimoto
-25 November, 2025
+Yoichiro Sugimoto and Pallavi Kesavan
+27 November, 2025
 
 - [Environment setup](#environment-setup)
-- [Import basic data](#import-basic-data)
-- [Identify useful diagnostic ions to identify lysine
-  hydroxylations](#identify-useful-diagnostic-ions-to-identify-lysine-hydroxylations)
+- [2.3.1 Import basic data](#231-import-basic-data)
+- [2.3.2 Identify useful diagnostic ions to identify lysine
+  hydroxylations](#232-identify-useful-diagnostic-ions-to-identify-lysine-hydroxylations)
 - [Session information](#session-information)
 
 This script identify diagnostic ions to identify confident hydroxylation
@@ -164,7 +164,7 @@ library("ptm.stoichiometry")
 library("ggpubr")
 ```
 
-# Import basic data
+# 2.3.1 Import basic data
 
 ``` r
 # Define path to data directory
@@ -208,7 +208,7 @@ ref_protein_dt <- import_reference_fasta(
 )
 ```
 
-# Identify useful diagnostic ions to identify lysine hydroxylations
+# 2.3.2 Identify useful diagnostic ions to identify lysine hydroxylations
 
 ``` r
 # Merge 'diagnostic_ion_data' and 'fragpipe_psm' data by column 'spectrum'
@@ -258,7 +258,7 @@ m.brd4_hydroxylation_site_di[, `:=`(
       "145.0977", #Hydroxylation (K)    K   O   15.9949 (intact, water loss)    C6H13N2O2+
       "156.1025", #Hydroxylation-Propionylation (K) K   C3 H4 O2    72.02112937 diagnostic ion  C8 H14 N1 O2+
       "173.1290" #Hydroxylation-Propionylation (K)  K   C3 H4 O2    72.02112937 immonium ion    C8 H17 O2 N2 +
-      )),
+    )),
   diagnostic_ion = intensity > 0, 
   genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
 )]
@@ -348,102 +348,6 @@ for(mi.ms in selected.ms){
     ## 0.006489756
 
 ``` r
-m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)]
-```
-
-    ##                   file_name                 sample_name   cell genotype
-    ##                      <char>                      <char> <char>   <fctr>
-    ##    1:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
-    ##    2:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
-    ##    3:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
-    ##    4:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
-    ##    5:          201021_MC264      JQ1_HeLaWT_derivatised   HeLa       WT
-    ##   ---                                                                  
-    ## 2672: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
-    ## 2673: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
-    ## 2674: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
-    ## 2675: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
-    ## 2676: 20201119_GV2048_MC278 JQ1_HeLaJMJD6KO_derivatised   HeLa  JMJD6KO
-    ##       purification derivitisation replicate                            spectrum
-    ##             <char>         <char>     <int>                              <char>
-    ##    1:          JQ1            yes         1          201021_MC264.03134.03134.3
-    ##    2:          JQ1            yes         1          201021_MC264.03140.03140.2
-    ##    3:          JQ1            yes         1          201021_MC264.03206.03206.3
-    ##    4:          JQ1            yes         1          201021_MC264.03215.03215.3
-    ##    5:          JQ1            yes         1          201021_MC264.03218.03218.2
-    ##   ---                                                                          
-    ## 2672:          JQ1            yes         5 20201119_GV2048_MC278.62287.62287.3
-    ## 2673:          JQ1            yes         5 20201119_GV2048_MC278.62308.62308.3
-    ## 2674:          JQ1            yes         5 20201119_GV2048_MC278.62374.62374.3
-    ## 2675:          JQ1            yes         5 20201119_GV2048_MC278.62780.62780.4
-    ## 2676:          JQ1            yes         5 20201119_GV2048_MC278.62813.62813.4
-    ##       protein_id   gene protein_start protein_end
-    ##           <char> <char>         <int>       <int>
-    ##    1:     O60885   BRD4           553         562
-    ##    2:     O60885   BRD4           553         562
-    ##    3:     O60885   BRD4           538         546
-    ##    4:     O60885   BRD4           538         546
-    ##    5:     O60885   BRD4           538         546
-    ##   ---                                            
-    ## 2672:     O60885   BRD4           511         539
-    ## 2673:     O60885   BRD4           511         539
-    ## 2674:     O60885   BRD4           511         539
-    ## 2675:     O60885   BRD4           511         541
-    ## 2676:     O60885   BRD4           511         541
-    ##                               peptide
-    ##                                <char>
-    ##    1:                      RKEEVEENKK
-    ##    2:                      RKEEVEENKK
-    ##    3:                       KKEKDKKEK
-    ##    4:                       KKEKDKKEK
-    ##    5:                       KKEKDKKEK
-    ##   ---                                
-    ## 2672:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
-    ## 2673:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
-    ## 2674:   LAELQEQLKAVHEQLAALSQPQQNKPKKK
-    ## 2675: LAELQEQLKAVHEQLAALSQPQQNKPKKKEK
-    ## 2676: LAELQEQLKAVHEQLAALSQPQQNKPKKKEK
-    ##                                                                                    mods
-    ##                                                                                  <char>
-    ##    1:                                                                                  
-    ##    2:                                                                                  
-    ##    3:                                1K(72.0211), 2K(15.9949), 4K(72.0211), 7K(72.0211)
-    ##    4:                                             1K(72.0211), 4K(72.0211), 7K(72.0211)
-    ##    5:                   1K(15.9949), 2K(56.0262), 4K(56.0262), 6K(72.0211), 7K(72.0211)
-    ##   ---                                                                                  
-    ## 2672:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
-    ## 2673:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
-    ## 2674:               25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 9K(56.0262)
-    ## 2675: 25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 31K(56.0262), 9K(56.0262)
-    ## 2676: 25K(56.0262), 27K(56.0262), 28K(56.0262), 29K(56.0262), 31K(56.0262), 9K(56.0262)
-    ##       pep_mass mass_shift              variable intensity monoisotopic_mass
-    ##          <num>      <num>                <fctr>     <num>            <fctr>
-    ##    1: 1287.678    -0.0003 ox_100_0762_intensity         0          100.0762
-    ##    2: 1287.678     0.0001 ox_100_0762_intensity         0          100.0762
-    ##    3: 1391.751     0.0004 ox_100_0762_intensity         0          100.0762
-    ##    4: 1375.756     0.0001 ox_100_0762_intensity         0          100.0762
-    ##    5: 1375.756     0.0003 ox_100_0762_intensity         0          100.0762
-    ##   ---                                                                      
-    ## 2672: 3518.946    -0.0036 ox_156_1025_intensity         0          156.1025
-    ## 2673: 3518.946     1.0012 ox_156_1025_intensity         0          156.1025
-    ## 2674: 3518.946     0.0017 ox_156_1025_intensity         0          156.1025
-    ## 2675: 3832.110     3.0114 ox_156_1025_intensity         0          156.1025
-    ## 2676: 3832.110     0.9897 ox_156_1025_intensity         0          156.1025
-    ##       diagnostic_ion
-    ##               <lgcl>
-    ##    1:          FALSE
-    ##    2:          FALSE
-    ##    3:          FALSE
-    ##    4:          FALSE
-    ##    5:          FALSE
-    ##   ---               
-    ## 2672:          FALSE
-    ## 2673:          FALSE
-    ## 2674:          FALSE
-    ## 2675:          FALSE
-    ## 2676:          FALSE
-
-``` r
 # Plot - Violin plot of selected monoisotopic mass versus intensity in WT and JMJD6KO genotype
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
@@ -495,7 +399,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-25
+    ##  date     2025-11-27
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
