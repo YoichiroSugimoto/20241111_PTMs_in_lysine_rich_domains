@@ -548,7 +548,6 @@ d.pnas2022.hydroxyK_DI_dt %$%
 ```{r pnas2022_comparison_MQ_standard}
 
 # Merge MQ_stoic data and PNAS2022 by 'protein_accession' and 'aa_pos' 
-
 pnas2022_MQStd_hydroxyK_dt <- merge(
   MQ_std_d.hydroxyK_dt,
   non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
@@ -577,14 +576,31 @@ pnas2022_MQStd_hydroxyK_dt %$%
 
 ```
 
-# 2.4.11 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
+# 2.4.10 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
 
 ```{r Venn_diagram_hyoxy_sites}
+
+#----------
+## MQ_All
+#----------
+
+# MQ data including all lysine hydroxylation sites
+MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+
+# Add new column to data table 
+MQ_all_hoxy_site_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
+# MQ data including all lysine hydroxylation proteins
+MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+
 #-----------
 ## MQ_DI
 #-----------
 
-# Count the total number of hydroxylations in MQ_DI (aa_pos)
+# Count the total number of lysine hydroxylations in MQ_DI (aa_pos)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 
 # create data table with hydroxylated sites 
@@ -596,25 +612,16 @@ MQ_DI_site_count[, `:=`(
 )
 ]
 
-# MQ_DI including all hydroxylations 
-MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
-
-# Add new column to data table 
-MQ_all_hoxy_site_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
-
-# Count the total number of hydroxylations in MQ_DI (gene_name)
+# Count the total number of lysine hydroxylations in MQ_DI (gene_name)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
 # create data table with hydroxylated proteins
 MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 #-----------
 ## PNAS2022
 #-----------
+
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
@@ -662,6 +669,10 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 ][
   !duplicated(paste(protein_accession, gene_name))
 ]
+
+```
+
+```{r Venn_diagram_hyoxy_sites}
 
 # Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
 
