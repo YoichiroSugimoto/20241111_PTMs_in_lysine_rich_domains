@@ -445,6 +445,11 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 
+#---------------
+# PNAS2022 - WT
+#---------------
+
+
 # PNAS2022 - BRD4 WT -PSM
 PNAS2022_PSM_WT <-plot_psm_coverage(
   pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
@@ -454,6 +459,10 @@ PNAS2022_PSM_WT <- PNAS2022_PSM_WT$coverage_plot_g
 # PNAS2022 - BRD4 WT -PTM
 PNAS2022_PTM_WT <- plot_ptm_stoichiometry(
   pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
+
+#--------------------
+# PNAS2022 - JMJD6KO
+#--------------------
 
 # PNAS2022 - BRD4 JMJD6KO -PSM
 PNAS2022_PSM_JMJD6KO <- plot_psm_coverage(
@@ -504,10 +513,11 @@ MQ_Std_stoic_dt <- lapply(
 ) %>% rbindlist
 
 
-# MQ_DI PSM coverage according to missed cleavages (m2, m5, m7)
+# MQ_DI PSM coverage according to miscleavages (m2, m5, m7)
 MQ_PSM_WT <- plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m2_v2_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m2_v2_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA) 
+MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350)) +
+    labs(title = "BRD4 PSM miscleavages m2")
 
 MQ_PSM_WT <- plot_psm_coverage(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m5_v5_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
