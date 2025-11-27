@@ -301,7 +301,6 @@ ggplot(
 
 ```
 
-
 # 2.4.5 Analyse hydroxylation sites with DI 
 
 ```{r hydroxylation_sites_DI}
@@ -370,79 +369,7 @@ ggplot(
 
 ```
 
-# 2.5.6 Analyse hydroxylation sites with DI and iterations data
-
-```{r hydroxylation_sites_DI_iterations}
-
-## Read stoichiometry data for MQ_DI_it
-MQ_DI_it_stoic_dt <- lapply(
-  MQ_DI_it_run_info[, data_dir],
-  read_stoic_data,
-  pre_prefix = "DI_", 
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_iterative")
-) %>% rbindlist
-
-# Generate data table with stoichiometry values for WT and JMJD6KO 
-MQ_DI_it_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_it_stoic_dt)
-
-# Generate data table with WT and JMJD6KO with diagnostic ions
-DI_info <- MQ_DI_it_stoic_dt[
-  , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
-][
-  order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
-][                                              
-  !duplicated(paste(protein_accession, aa_pos)) # Keep only the first row for each unique protein and amino acid position,
-  # removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
-]
-
-# merge the modified data table 'DI_info' with the metadata 'MQ_DI_it_d.hydroxyK_dt'
-MQ_DI_it_d.hydroxyK_dt <- merge(MQ_DI_it_d.hydroxyK_dt, DI_info, by = c("protein_accession", "aa_pos"))
-
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MQ_DI_it_d.hydroxyK_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" # create a new column 'is_diagnostic_peak', keep rows where diagnostic peak is "+"
-)]
-
-MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"] #filter data with diagnostic peak = "+"
-
-MQ_DI_it_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N, by = gene_name][order(N)] # only includes data WT values
-
-
-# Plot - WT versus JMJD6KO with presence of diagnostic ions
-ggplot(
-  data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
-  aes(
-    x = JMJD6KO,
-    y = WT,
-    color = is_diagnostic_peak
-  )
-) + geom_point() +
-  theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
-
-```
-
-```{r hydroxylation_sites_DI_iterations_JMJD6KO}
-
-# Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
-# This plot identifies lysine hydroxylations events in the absence of JMJD6
-ggplot(
-  data = MQ_DI_it_d.hydroxyK_dt[order(is_diagnostic_peak)],
-  aes(
-    x = JMJD6KO,
-    y = WT,
-    color = is_diagnostic_peak
-  )
-) + geom_point() +
-  ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA))) +
-  theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
-
-```
-
-
-# 2.4.7 Comparison of data without and with DI consideration
+# 2.4.6 Comparison of data without and with DI consideration
 
 ```{r comparison_nonDI_and_DI_data, fig.width = 5, fig.height = 5}
 
@@ -456,15 +383,6 @@ MQ_DI_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
   )
 )]
 
-# Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values (MQ_DI_it)
-MQ_DI_it_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
-  hydroxylation_site_class = case_when( 
-    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A", # low in JMJD6KO and high in WT, then classify as class_A
-    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B", # low in WT and high in JMJD6KO, then classify as class_B
-    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C", # present in JMJD6KO and WT, then classify as class_C
-    TRUE ~ "others" # values that equal to 0 and missing values, classify as "others"
-  )
-)]
 
 #Plot - Bar chart of hydroxylation site based on JMJD6KO and WT stoichiometry values
 ggplot(
@@ -484,7 +402,7 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
 ```
 
-# 2.4.8 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
+# 2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
 
 ```{r methionine_cont_MQ_DI}
 
@@ -532,9 +450,9 @@ ggplot(feature_data_plot, aes(x = hydroxylation_site_class, fill = met_within_2)
 
 ```
 
-# 2.4.9 Comparison with previous PNAS 2022 paper
+# 2.4.9 Comparison with previous PNAS 2022 paper - MQ_DI data
 
-```{r pnas2022_comparison}
+```{r pnas2022_comparison_MQ_DI}
 
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
@@ -548,17 +466,17 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 # Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
-MQ_DI_it_d.hydroxyK_dt[, `:=`( 
+MQ_DI_d.hydroxyK_dt[, `:=`( 
   curated_oxK_site = 
     paste0(protein_accession, "_", aa_pos) %in%
     pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
 )]
 
 # Convert the data table into table and sum the number of diagnostic peak and curated oxK sites
-MQ_DI_it_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
+MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
 
 # Additionally, sum the number of hydroxylation site 
-MQ_DI_it_d.hydroxyK_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
+MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
 
 ## Data table containing WT and JMJD6KO samples isolated by J6 peptide
 # Filter rows and columns to create a new data table 
@@ -601,7 +519,7 @@ non.duplicated.pnas2022.stoic.dt[, stoichiometry_PNAS2022 := oxK_ratio]
 
 # Merge MQ_DI stoic and pnas2022 by 'protein_accession' and 'aa_pos'
 d.pnas2022.hydroxyK_DI_dt <- merge(
-  MQ_DI_it_d.hydroxyK_dt,
+  MQ_DI_d.hydroxyK_dt,
   non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
   by = c("protein_accession", "aa_pos")
 )
@@ -625,6 +543,10 @@ d.pnas2022.hydroxyK_DI_dt %$%
   cor.test(
     stoichiometry_PNAS2022, WT
   )
+
+```
+
+```{r pnas2022_comparison_MQ_standard}
 
 # Merge MQ_stoic data and PNAS2022 by 'protein_accession' and 'aa_pos' 
 
@@ -654,17 +576,33 @@ pnas2022_MQStd_hydroxyK_dt %$%
     stoichiometry_PNAS2022, WT
   )
 
-
 ```
 
 # 2.4.11 Number of hydroxylation sites and proteins identified in PNAS2022 and new workflow
 
 ```{r Venn_diagram_hyoxy_sites}
+
+#----------
+# MQ_All
+#----------
+
+# MQ data including all hydroxylation sites (with and without DI)
+MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+
+# Add new column to data table 
+MQ_all_hoxy_site_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
+# MQ data including all hydroxylation proteins (with and without DI)
+MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+
 #-----------
 ## MQ_DI
 #-----------
 
-# Count the total number of hydroxylations in MQ_DI (aa_pos)
+# Count the total number of hydroxylation sites in MQ_DI (aa_pos)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 
 # create data table with hydroxylated sites 
@@ -676,25 +614,16 @@ MQ_DI_site_count[, `:=`(
 )
 ]
 
-# MQ_DI including all hydroxylations 
-MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
-
-# Add new column to data table 
-MQ_all_hoxy_site_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
-
 # Count the total number of hydroxylations in MQ_DI (gene_name)
 MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
 # create data table with hydroxylated proteins
 MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 #-----------
 ## PNAS2022
 #-----------
+
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
@@ -743,6 +672,10 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
   !duplicated(paste(protein_accession, gene_name))
 ]
 
+```
+
+```{r Venn_diagram_hyoxy_sites}
+
 # Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
 
 # Install package "ggVennDiagram"
@@ -780,6 +713,7 @@ plot(venn_size_based,
 # MQ_all_hoxy_site_count[protein_accession == "Q9UQ35" & aa_pos %in% c(241, 243, 244)]
 
 ```
+
 
 ```{r Venn_diagram_hyoxy_proteins}
 
