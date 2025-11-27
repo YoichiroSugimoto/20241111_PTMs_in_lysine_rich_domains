@@ -141,6 +141,7 @@ gc()
 
 ```
 
+# 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
 ```{r hydroxylation_hypoxia_vs_normoxia}
 
@@ -209,6 +210,7 @@ plot_ptm_stoichiometry(
 )
 ```
 
+# 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ```{r JMJD6_reexpression}
 

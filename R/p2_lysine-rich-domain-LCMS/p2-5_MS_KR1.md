@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-25 November, 2025
+27 November, 2025
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -10,6 +10,12 @@ Yoichiro Sugimoto and Pallavi Kesavan
   data](#252-import-human-protein-reference-data)
 - [2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and
   normoxia](#253-calculation-of-stoichiometry-with-diagnostic-ion-in-hypoxia-and-normoxia)
+- [2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+
+  diagnostic
+  ion)](#254-plotting-stoichiometry-values-of-hypoxia-and-normoxia-data--diagnostic-ion)
+- [2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with
+  re-expression of JMJD6 (+ diagnostic
+  ion)](#255-plotting-stoichiometry-of-hypoxia-and-normoxia-data-with-re-expression-of-jmjd6--diagnostic-ion)
 - [Session information](#session-information)
 
 # Environment setup
@@ -23,10 +29,10 @@ Yoichiro Sugimoto and Pallavi Kesavan
 #    )
 
 # Define project directory - contains the R scripts, data and result folders
- project.dir <-
+project.dir <-
   file.path(
     "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
-)
+  )
 
 # renv::snapshot(file.path(project.dir, "R"))
 
@@ -168,8 +174,8 @@ library("ptm.stoichiometry")
 ``` r
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(file.path
-("/fast/AG_Sugimoto/reference/uniprot/human", 
-  "UP000005640_9606.fasta")) 
+                                         ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                           "UP000005640_9606.fasta")) 
 ```
 
 # 2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia
@@ -187,14 +193,8 @@ MS_KR1_data <- file.path(
 
 # Create file path for results
 MS_KR_1_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MS_KR_1")
-dir.create(MS_KR_1_dir, recursive = TRUE)
-```
+# dir.create(MS_KR_1_dir, recursive = TRUE)
 
-    ## Warning in dir.create(MS_KR_1_dir, recursive = TRUE):
-    ## '/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/results/p2-analysis-setting/MS_KR_1'
-    ## already exists
-
-``` r
 # Define file path common PTM mapping file
 ptm_mapping_file <- file.path(
   project.dir,
@@ -203,57 +203,59 @@ ptm_mapping_file <- file.path(
 ```
 
 ``` r
-    # Define file path to MaxQuant evidence files
-    mq_evidence_data <- file.path(MS_KR1_data, 
-                                  "MS_KR_1_evidence.txt")
-    
-    # Print which sample id is being processed
-    message("Processing: ", basename(mq_evidence_data)) 
+# Define file path to MaxQuant evidence files
+mq_evidence_data <- file.path(MS_KR1_data, 
+                              "MS_KR_1_evidence.txt")
+
+# Print which sample id is being processed
+message("Processing: ", basename(mq_evidence_data)) 
 ```
 
     ## Processing: MS_KR_1_evidence.txt
 
 ``` r
-   # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
-  if (file.exists(mq_evidence_data)) {
-    
-    # Locate and fetch all PTM site files within the ptm folder
-    ptm_files <- list.files(file.path(
-      MS_KR1_data, "ptm"), 
-      full.names = TRUE)
-    
-    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
-    ptm_names <- paste0(
-      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-    )
-    
-    # Run the stoichiometry calculation
-    stoic.dt <- calculate_stoichiometry2(
-      mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path(
-        MS_KR1_data,
-        "sample_info.csv"
-      ),
-      ref_protein_dt = ref_protein_dt,
-      ptm_files = ptm_files,
-      ptm_names = ptm_names,
-      output_prefix = file.path(MS_KR_1_dir, "MS_KR_1_"),
-      ptm_mapping_file = ptm_mapping_file,
-      K_only = FALSE,
-      selected_type = "MULTI-MSMS",
-      parse_protein_accession_function = NA
-    )
-  } else { # If evidence.txt does not exist, skip the function and print below message
-    print(paste0("File does not exist: ", mq_evidence_data))
-  }
+# Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
+if (file.exists(mq_evidence_data)) {
   
-  # Garbage collection - to free up memory
-  gc()
+  # Locate and fetch all PTM site files within the ptm folder
+  ptm_files <- list.files(file.path(
+    MS_KR1_data, "ptm"), 
+    full.names = TRUE)
+  
+  # Generate PTM names based on file names, add brackets and remove "Sites.txt"
+  ptm_names <- paste0(
+    "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+  )
+  
+  # Run the stoichiometry calculation
+  stoic.dt <- calculate_stoichiometry2(
+    mq_evidence_data = mq_evidence_data,
+    sample_info_file = file.path(
+      MS_KR1_data,
+      "sample_info.csv"
+    ),
+    ref_protein_dt = ref_protein_dt,
+    ptm_files = ptm_files,
+    ptm_names = ptm_names,
+    output_prefix = file.path(MS_KR_1_dir, "MS_KR_1_"),
+    ptm_mapping_file = ptm_mapping_file,
+    K_only = FALSE,
+    selected_type = "MULTI-MSMS",
+    parse_protein_accession_function = NA
+  )
+} else { # If evidence.txt does not exist, skip the function and print below message
+  print(paste0("File does not exist: ", mq_evidence_data))
+}
+
+# Garbage collection - to free up memory
+gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4296384 229.5    8172117 436.5  8172117 436.5
-    ## Vcells 21529894 164.3   64859703 494.9 64859657 494.9
+    ## Ncells  4296002 229.5    8173422 436.6  8173422 436.6
+    ## Vcells 21528977 164.3   64858119 494.9 64858096 494.9
+
+# 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
 ``` r
 # Define function - 'read_stoic_data'
@@ -277,6 +279,7 @@ MS_KR1_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
+# Read FASTA data 
 all.protein.bs <- Biostrings::readAAStringSet(
   file.path(
     "/fast/AG_Sugimoto/reference/uniprot/human",
@@ -284,6 +287,7 @@ all.protein.bs <- Biostrings::readAAStringSet(
   )
 )
 
+# new column with simplified version of sample names 
 MS_KR1_stoic_dt[, `:=`(
   Oxygen_levels = fcase(
     grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
@@ -293,9 +297,10 @@ MS_KR1_stoic_dt[, `:=`(
     grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
     grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
     default = NA_character_
-  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev)
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev) # categorize data and order levels 
 )]
 
+# categorize data according to sample names 
 MS_KR1_stoic_dt[, `:=`(
   sample_name =  
     factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
@@ -305,7 +310,7 @@ MS_KR1_stoic_dt[, `:=`(
 # BRD4 
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
-  )
+)
 ```
 
 ![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-1.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-2.png)<!-- -->
@@ -314,7 +319,7 @@ plot_ptm_stoichiometry(
 # BRD3
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "Q15059", plot_range = c(483, 533), all.protein.bs, sample_colors = NA
-  )
+)
 ```
 
 ![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-3.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-4.png)<!-- -->
@@ -323,96 +328,76 @@ plot_ptm_stoichiometry(
 # BRD2
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
-  )
+)
 ```
 
 ![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-5.png)<!-- -->![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-6.png)<!-- -->
 
-``` r
-MS_KR1_stoic_dt[, stoic_bin := case_when(
-  stoichiometry < 0.10 ~ "low",
-  between(stoichiometry, 0.10, 0.50) ~ "middle",
-  stoichiometry > 0.50 ~ "high"
-)]
-
-
-# Plot 
-ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-    color = gene_name
-  )
-) +
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-7.png)<!-- -->
+# 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ``` r
+MS_KR1_stoic_dt <- droplevels(MS_KR1_stoic_dt[
+  Oxygen_levels %in% c("Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h")])
+
+
+# Plot - JMJD6 re-expression - BRD4
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
+  labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-8.png)<!-- -->
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-1.png)<!-- -->
 
 ``` r
+# Plot - JMJD6 re-expression - BRD3
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
+  labs(title = "BRD3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-9.png)<!-- -->
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-2.png)<!-- -->
 
 ``` r
+# Plot - JMJD6 re-expression - BRD2
 ggplot(
-  data = MS_KR1_stoic_dt[sample_name %in% c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA","HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h") & gene_name %in% c("BRD2") & diagnostic_peak == "+" & aa_pos %in% 540:590],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
 ) +
-  geom_point() +
-  geom_line() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(linewidth = 0.4) +
+  labs(title = "BRD2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-10.png)<!-- -->
-
-``` r
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name == "BRD4" & diagnostic_peak == "+" & aa_pos == 538],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-![](p2-5_MS_KR1_files/figure-gfm/hydroxylation_hypoxia_vs_normoxia-11.png)<!-- -->
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-3.png)<!-- -->
 
 # Session information
 
@@ -430,7 +415,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-25
+    ##  date     2025-11-27
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
