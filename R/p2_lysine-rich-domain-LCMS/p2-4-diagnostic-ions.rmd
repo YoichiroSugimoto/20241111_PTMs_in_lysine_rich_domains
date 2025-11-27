@@ -383,16 +383,6 @@ MQ_DI_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
   )
 )]
 
-# Categorize hydroxylation site based on JMJD6KO and WT stoichiometry values (MQ_DI_it)
-MQ_DI_it_d.hydroxyK_dt[, `:=`(   # Create new column "hydroxylation_site_class"
-  hydroxylation_site_class = case_when( 
-    JMJD6KO < 0.00001 & WT > 0.01 ~ "class_A", # low in JMJD6KO and high in WT, then classify as class_A
-    WT < 0.00001 & JMJD6KO > 0.01 ~ "class_B", # low in WT and high in JMJD6KO, then classify as class_B
-    JMJD6KO > 0.00001 & WT > 0.00001 ~ "class_C", # present in JMJD6KO and WT, then classify as class_C
-    TRUE ~ "others" # values that equal to 0 and missing values, classify as "others"
-  )
-)]
-
 #Plot - Bar chart of hydroxylation site based on JMJD6KO and WT stoichiometry values
 ggplot(
   MQ_DI_d.hydroxyK_dt[hydroxylation_site_class != "others"], # exclude "others" category 
@@ -461,7 +451,7 @@ ggplot(feature_data_plot, aes(x = hydroxylation_site_class, fill = met_within_2)
 
 # 2.4.9 Comparison with previous PNAS 2022 paper
 
-```{r pnas2022_comparison}
+```{r pnas2022_comparison_MQ_DI}
 
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
@@ -475,21 +465,21 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 # Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
-MQ_DI_it_d.hydroxyK_dt[, `:=`( 
+MQ_DI_d.hydroxyK_dt[, `:=`( 
   curated_oxK_site = 
     paste0(protein_accession, "_", aa_pos) %in%
     pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
 )]
 
 # Convert the data table into table and sum the number of diagnostic peak and curated oxK sites
-MQ_DI_it_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
+MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins]
 
 # Additionally, sum the number of hydroxylation site 
-MQ_DI_it_d.hydroxyK_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
+MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curated_oxK_site) %>% addmargins]
 
 ## Data table containing WT and JMJD6KO samples isolated by J6 peptide
 # Filter rows and columns to create a new data table 
-j6_target_protein <- MQ_DI_it_d.hydroxyK_dt[
+j6_target_protein <- MQ_DI_d.hydroxyK_dt[
   hydroxylation_site_class == "class_A" & # keep only rows where hydroxylation_site_class is "class_A"
     is_diagnostic_peak == TRUE # keep only rows where is_diagnostic_peak is TRUE
 ][!duplicated(protein_accession)][, .(protein_accession, gene_name)] # remove duplicated protein_accession values (keep first occurrence), select and return columns 'protein_accession', 'gene_name'
@@ -528,7 +518,7 @@ non.duplicated.pnas2022.stoic.dt[, stoichiometry_PNAS2022 := oxK_ratio]
 
 # Merge MQ_DI stoic and pnas2022 by 'protein_accession' and 'aa_pos'
 d.pnas2022.hydroxyK_DI_dt <- merge(
-  MQ_DI_it_d.hydroxyK_dt,
+  MQ_DI_d.hydroxyK_dt,
   non.duplicated.pnas2022.stoic.dt[, .(protein_accession, aa_pos, stoichiometry_PNAS2022)],
   by = c("protein_accession", "aa_pos")
 )
@@ -552,6 +542,10 @@ d.pnas2022.hydroxyK_DI_dt %$%
   cor.test(
     stoichiometry_PNAS2022, WT
   )
+
+```
+
+```{r pnas2022_comparison_MQ_standard}
 
 # Merge MQ_stoic data and PNAS2022 by 'protein_accession' and 'aa_pos' 
 
@@ -580,7 +574,6 @@ pnas2022_MQStd_hydroxyK_dt %$%
   cor.test(
     stoichiometry_PNAS2022, WT
   )
-
 
 ```
 
