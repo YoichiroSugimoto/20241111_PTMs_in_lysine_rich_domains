@@ -73,6 +73,10 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
+#------------
+# MQ_Standard
+#------------
+
 # Load sample run info data (MQ Standard)
 MQ_std_sample_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
@@ -82,6 +86,10 @@ MQ_std_sample_run_info <- read_excel(
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
 #row (1:N), where N is the total number of rows in the data.table
 MQ_std_sample_run_info[, sample_id := 1:.N]
+
+#-------
+# MQ_DI
+#-------
 
 # Load sample run info data (MQ DI)
 MQ_DI_run_info <- read_excel(
@@ -93,6 +101,21 @@ MQ_DI_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_run_info[, sample_id := 1:.N]
 
+
+#------------
+# MQ_DI_noH2O
+#------------
+
+# Load sample run info data (MQ DI with no waterloss)
+MQ_DI_noH2O_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI_noH2O" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_noH2O_run_info[, sample_id := 1:.N]
+
 ```
 
 # 2.4.2 Definition of functions
@@ -103,7 +126,7 @@ MQ_DI_run_info[, sample_id := 1:.N]
 read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   # Read csv file with defined file path,  
   dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
-  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
   return(dt)
 }
 
@@ -381,6 +404,7 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
 ```
 
+
 # 2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
 
 ```{r methionine_cont_MQ_DI}
@@ -598,6 +622,32 @@ MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][orde
 # create data table with hydroxylated proteins
 MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
+
+#------------
+# MQ_DI_noH2O
+#------------
+
+# Count the total number of lysine hydroxylations in MQ_DI (aa_pos)
+MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
+
+# create data table with hydroxylated sites 
+MQ_DI_noH2O_site_count <- MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+
+# Add new column to data table 
+MQ_DI_noH2O_site_count[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos)
+)
+]
+
+# Count the total number of lysine hydroxylations in MQ_DI (gene_name)
+MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
+
+# create data table with hydroxylated proteins
+MQ_DI_noH2O_protein_count <- MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+
+
+
+
 #-----------
 ## PNAS2022
 #-----------
@@ -670,7 +720,27 @@ library(RColorBrewer)
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
   MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]) 
+  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(4, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap")
+
+
+vennlist <-  list(
+  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
+  MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
 )
 
 # Changing the circle size based on the number in the circle
@@ -684,6 +754,14 @@ plot(venn_size_based,
      legend = list(side = "right"),
      quantities = TRUE,
      main = "Hydroxylated Sites Overlap")
+
+
+vennlist <-  list(
+  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
+)
+
+ggVennDiagram(vennlist)+scale_fill_gradient(low = "#F4FAFE", high = "#4981BF")
 
 
 # Duplicated sites check PNAS 
