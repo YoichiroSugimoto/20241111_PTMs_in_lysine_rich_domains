@@ -1,7 +1,7 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-27 November, 2025
+09 December, 2025
 
 - [Environment setup](#environment-setup)
 - [2.3.1 Import basic data](#231-import-basic-data)
@@ -188,15 +188,15 @@ fragpipe_psm <- file.path(
   fread %>%
   clean_names
 
-# Load PNAS2022 MQ standard data
-pnas2022_data <- file.path(
+# Load MQ standard data
+MQ_Std_data <- file.path(
   data.dir,
   "MQ_standard/PNAS2022" 
 )
 
 # Load Data A sample info from data directory 
 dataA_sample_info <- fread(file.path(
-  pnas2022_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
+  MQ_Std_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
 ))
 
 # Import human protein reference data
@@ -399,7 +399,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-27
+    ##  date     2025-12-09
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
