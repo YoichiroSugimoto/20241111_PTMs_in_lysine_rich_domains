@@ -155,10 +155,10 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 
 ## Read stoichiometry data for MS_KR1 data 
 MS_KR1_stoic_dt <- read_stoic_data(
-  prefix = "MS_KR_1_",
+  prefix = "MS_KR_1_noH2O_",
   pre_prefix = "",
   post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1"))
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
 
 
 #Filter data table with presence of diagnostic_peak and WT stoichiometry values
