@@ -79,15 +79,15 @@ fragpipe_psm <- file.path(
   fread %>%
   clean_names
 
-# Load PNAS2022 MQ standard data
-pnas2022_data <- file.path(
+# Load MQ standard data
+MQ_Std_data <- file.path(
   data.dir,
   "MQ_standard/PNAS2022" 
 )
 
 # Load Data A sample info from data directory 
 dataA_sample_info <- fread(file.path(
-  pnas2022_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
+  MQ_Std_data, "sample_info/MS_dataset_overview_PXD031221_data-A.csv"
 ))
 
 # Import human protein reference data
@@ -100,9 +100,7 @@ ref_protein_dt <- import_reference_fasta(
 
 ```
 
-
 # 2.3.2 Identify useful diagnostic ions to identify lysine hydroxylations
-
 
 ```{r identify_diagnostic_ions}
 
@@ -241,8 +239,6 @@ ggplot(
   ylab("Proportion of PSMs with diagnostic ions")
 
 ```
-
-
 
 # Session information
 
