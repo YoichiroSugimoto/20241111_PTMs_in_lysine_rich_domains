@@ -252,8 +252,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4296016 229.5    8173162 436.5  8173162 436.5
-    ## Vcells 21529212 164.3   64858526 494.9 64857779 494.9
+    ## Ncells  4296014 229.5    8174550 436.6  8174550 436.6
+    ## Vcells 21529297 164.3   64858672 494.9 64858492 494.9
 
 # 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
@@ -369,7 +369,7 @@ ggplot(
   geom_line(linewidth = 0.4) +
   labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="right") +
+  theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
@@ -431,7 +431,55 @@ library(viridis)
     ## Loading required package: viridisLite
 
 ``` r
-# Plot 1 - JMJD6 re-expression - BRD2
+# Plot - JMJD6 re-expression - BRD2
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
+  labs(title = "BRD2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+```
+
+    ## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+    ## ℹ Please use `linewidth` instead.
+    ## This warning is displayed once every 8 hours.
+    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+    ## generated.
+
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-4.png)<!-- -->
+
+``` r
+# Plot - JMJD6 re-expression - BRD3
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
+  labs(title = "BRD3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-5.png)<!-- -->
+
+``` r
+# Plot - JMJD6 re-expression - BRD4
 ggplot(
   data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
   aes(
@@ -440,16 +488,16 @@ ggplot(
   )
 ) +
   stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot(outlier.colour="red", outlier.shape=8,
-               outlier.size=4) +
-  geom_jitter(color= "steelblue", size=1.7, alpha=1) +
+  geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
   labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
-![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-4.png)<!-- -->
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-6.png)<!-- -->
 
 # Session information
 
