@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-27 November, 2025
+10 December, 2025
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -252,8 +252,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4296002 229.5    8173422 436.6  8173422 436.6
-    ## Vcells 21528977 164.3   64858119 494.9 64858096 494.9
+    ## Ncells  4296016 229.5    8173162 436.5  8173162 436.5
+    ## Vcells 21529212 164.3   64858526 494.9 64857779 494.9
 
 # 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
@@ -268,10 +268,10 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 
 ## Read stoichiometry data for MS_KR1 data 
 MS_KR1_stoic_dt <- read_stoic_data(
-  prefix = "MS_KR_1_",
+  prefix = "MS_KR_1_noH2O_",
   pre_prefix = "",
   post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1"))
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
 
 
 #Filter data table with presence of diagnostic_peak and WT stoichiometry values
@@ -307,6 +307,24 @@ MS_KR1_stoic_dt[, `:=`(
 )]
 
 
+## Reoxygentaion samples were removed from MAxQunat analysis in MS_KR_1_noH2O data
+# new column with simplified version of sample names 
+MS_KR1_stoic_dt[, `:=`(
+  Oxygen_levels = fcase(
+    grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
+    grepl("^HeLaiJMJD6_noDox_N_NA", sample_name), "Normoxia_JMJD6KO",
+    grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
+    grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
+    default = NA_character_
+  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia") %>% rev) # categorize data and order levels 
+)]
+
+# categorize data according to sample names 
+MS_KR1_stoic_dt[, `:=`(
+  sample_name =  
+    factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA"))
+)]
+
 # BRD4 
 plot_ptm_stoichiometry(
   MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
@@ -336,9 +354,7 @@ plot_ptm_stoichiometry(
 # 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ``` r
-MS_KR1_stoic_dt <- droplevels(MS_KR1_stoic_dt[
-  Oxygen_levels %in% c("Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h")])
-
+MS_KR1_stoic_dt <-  droplevels(MS_KR1_stoic_dt[!sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA")])
 
 # Plot - JMJD6 re-expression - BRD4
 ggplot(
@@ -353,7 +369,7 @@ ggplot(
   geom_line(linewidth = 0.4) +
   labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
+  theme(legend.position="right") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
@@ -373,7 +389,7 @@ ggplot(
   geom_line(linewidth = 0.4) +
   labs(title = "BRD3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
+  theme(legend.position="right") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
@@ -393,11 +409,47 @@ ggplot(
   geom_line(linewidth = 0.4) +
   labs(title = "BRD2") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
+  theme(legend.position="right") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 ```
 
 ![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-3.png)<!-- -->
+
+``` r
+## Boxplot
+
+install.packages("viridis")
+```
+
+    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
+    ## (as 'lib' is unspecified)
+
+``` r
+library(viridis)
+```
+
+    ## Loading required package: viridisLite
+
+``` r
+# Plot 1 - JMJD6 re-expression - BRD2
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=8,
+               outlier.size=4) +
+  geom_jitter(color= "steelblue", size=1.7, alpha=1) +
+  labs(title = "BRD4") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+```
+
+![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression-4.png)<!-- -->
 
 # Session information
 
@@ -415,7 +467,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-27
+    ##  date     2025-12-10
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -439,6 +491,7 @@ sessioninfo::session_info()
     ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
     ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
+    ##  gridExtra           2.3        2017-09-09 [1] CRAN (R 4.5.1)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
     ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
@@ -472,6 +525,8 @@ sessioninfo::session_info()
     ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
     ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
     ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
+    ##  viridis           * 0.6.5      2024-01-29 [1] CRAN (R 4.5.1)
+    ##  viridisLite       * 0.4.2      2023-05-02 [1] CRAN (R 4.5.1)
     ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
     ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
     ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
