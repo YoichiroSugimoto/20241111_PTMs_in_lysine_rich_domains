@@ -235,5 +235,13 @@ if (file.exists(mq_evidence_data)) {
 # Garbage collection - to free up memory
 gc()
 
+```
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
 
 ```
+
