@@ -250,60 +250,43 @@ ggplot(
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
-# Plot - JMJD6 re-expression - BRD3
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-    group = paste(protein_accession, aa_pos)
-  )
-) +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(linewidth = 0.4) +
-  labs(title = "BRD3") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="right") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-
-# Plot - JMJD6 re-expression - BRD2
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry,
-    group = paste(protein_accession, aa_pos)
-  )
-) +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(linewidth = 0.4) +
-  labs(title = "BRD2") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="right") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-
-
-
-
 
 ## Boxplot
 
 install.packages("viridis")
 library(viridis)
 
-# Plot 1 - JMJD6 re-expression - BRD2
+# Plot - JMJD6 re-expression - BRD2
 ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
   aes(
     x = Oxygen_levels,
     y = stoichiometry
   )
 ) +
   stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot(outlier.colour="red", outlier.shape=8,
-               outlier.size=4) +
-  geom_jitter(color= "steelblue", size=1.7, alpha=1) +
-  labs(title = "BRD4") +
+  geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
+  labs(title = "BRD2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(legend.position="none") +
+  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
+
+
+# Plot - JMJD6 re-expression - BRD3
+ggplot(
+  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
+  aes(
+    x = Oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
+  labs(title = "BRD3") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
@@ -317,15 +300,14 @@ ggplot(
     y = stoichiometry
   )
 ) +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(linewidth = 0.4) +
   stat_boxplot(geom = "errorbar", width = 0.25) + 
   geom_boxplot() +
+  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
+  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
   labs(title = "BRD4") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   theme(legend.position="none") +
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-
 
 ```
 
