@@ -174,26 +174,6 @@ all.protein.bs <- Biostrings::readAAStringSet(
   )
 )
 
-# new column with simplified version of sample names 
-MS_KR1_stoic_dt[, `:=`(
-  Oxygen_levels = fcase(
-    grepl("^HeLaWT_NA_N_NA", sample_name), "Normoxia_WT",
-    grepl("^HeLaiJMJD6_noDox_N_NA", sample_name), "Normoxia_JMJD6KO",
-    grepl("^HeLaiJMJD6_Dox_01O224h_N2h", sample_name), "Hypoxia_reox_2h",
-    grepl("^HeLaiJMJD6_Dox_01O224h_N4h", sample_name), "Hypoxia_reox_4h", 
-    grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "Hypoxia", 
-    grepl("^HeLaiJMJD6_Dox_N_NA", sample_name), "Normoxia_JMJD6KO_reexp", 
-    default = NA_character_
-  ) %>% factor(levels = c("Normoxia_WT", "Normoxia_JMJD6KO", "Normoxia_JMJD6KO_reexp", "Hypoxia", "Hypoxia_reox_2h", "Hypoxia_reox_4h") %>% rev) # categorize data and order levels 
-)]
-
-# categorize data according to sample names 
-MS_KR1_stoic_dt[, `:=`(
-  sample_name =  
-    factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_01O224h_N2h", "HeLaiJMJD6_Dox_01O224h_N4h"))
-)]
-
-
 ## Reoxygentaion samples were removed from MAxQunat analysis in MS_KR_1_noH2O data
 # new column with simplified version of sample names 
 MS_KR1_stoic_dt[, `:=`(
@@ -233,6 +213,11 @@ plot_ptm_stoichiometry(
 ```{r JMJD6_reexpression}
 
 MS_KR1_stoic_dt <-  droplevels(MS_KR1_stoic_dt[!sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA")])
+
+# converting the data format from long to wide to calculate the stoichiometry differences 
+# between JMJD6 repression and hypoxia
+
+MS_KR1_stoic_dt <-  dcast(MS_KR1_stoic_dt, gene_name + protein_accession + aa_pos ~ sample_name, value.var = "stoichiometry")
 
 # Plot - JMJD6 re-expression - BRD4
 ggplot(
