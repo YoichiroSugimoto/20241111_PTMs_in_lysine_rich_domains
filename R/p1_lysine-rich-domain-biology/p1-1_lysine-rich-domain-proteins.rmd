@@ -119,7 +119,10 @@ ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
   "UP000005640_9606.fasta")) 
 
-# Median K score of all region in human proteome
+# Median K score of all region in human proteome#
+protein.feature.dt[, median(K_ratio)]
+
+
 all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
   if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
     return(NA_real_)
