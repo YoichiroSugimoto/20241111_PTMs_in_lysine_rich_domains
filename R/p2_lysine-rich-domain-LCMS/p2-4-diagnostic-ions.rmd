@@ -47,8 +47,9 @@ P2_functions <-
   source)
 
 ### Install private packages 
-# Install ptm.stiochiometry package - package installed 24.09.2025
-#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+# Install ptm.stiochiometry package - package installed 16.12.2025
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
 
 # Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
@@ -308,9 +309,9 @@ ggplot(
 
 ```{r hydroxylation_sites_DI}
 
-## Read stoichiometry data for MQ_DI
-MQ_DI_stoic_dt <- lapply(
-  MQ_DI_run_info[, prefix],
+## Read stoichiometry data for MQ_DI without waterloss
+MQ_DI_noH20_stoic_dt <- lapply(
+  MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_", 
   post_fix = "_DI",
@@ -318,10 +319,10 @@ MQ_DI_stoic_dt <- lapply(
 ) %>% rbindlist
 
 # Generate data table with stoichiometry values for WT and JMJD6KO 
-MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_stoic_dt)
+MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_noH20_stoic_dt)
 
 # Generate data table with WT and JMJD6KO with diagnostic peaks
-DI_info <- MQ_DI_stoic_dt[
+DI_info <- MQ_DI_noH20_stoic_dt[
   , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
 ][
   order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
