@@ -90,7 +90,7 @@ MQ_DI_noH2O_data <- file.path(
 
 # Create file path for results
 MQ_DI_noH2O_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI_noH2O")
-dir.create(MQ_DI_noH2O_dir, recursive = TRUE)
+# dir.create(MQ_DI_noH2O_dir, recursive = TRUE)
 
 
 ```
@@ -185,7 +185,7 @@ MS_KR1_no_H2O_data <- file.path(
 
 # Create file path for results
 MS_KR_1_noH2O_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MS_KR_1_noH2O")
-dir.create(MS_KR_1_noH2O_dir, recursive = TRUE)
+#dir.create(MS_KR_1_noH2O_dir, recursive = TRUE)
 
 ```
 
