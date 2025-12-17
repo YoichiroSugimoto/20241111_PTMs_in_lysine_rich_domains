@@ -603,29 +603,6 @@ MQ_all_hoxy_site_count[, `:=`(
 # MQ data including all lysine hydroxylation proteins
 MQ_all_hoxy_protein_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-#-----------
-## MQ_DI
-#-----------
-
-# Count the total number of lysine hydroxylations in MQ_DI (aa_pos)
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
-
-# create data table with hydroxylated sites 
-MQ_DI_site_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
-
-# Add new column to data table 
-MQ_DI_site_count[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)
-]
-
-# Count the total number of lysine hydroxylations in MQ_DI (gene_name)
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
-
-# create data table with hydroxylated proteins
-MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
-
-
 #------------
 # MQ_DI_noH2O
 #------------
