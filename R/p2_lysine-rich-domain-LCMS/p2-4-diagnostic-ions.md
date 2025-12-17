@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-27 November, 2025
+17 December, 2025
 
 - [Environment setup](#environment-setup)
 - [2.4.1 Import basic data](#241-import-basic-data)
@@ -10,8 +10,8 @@ Yoichiro Sugimoto and Pallavi Kesavan
   paper](#243-analyse-hydroxylation-sites-in-the-data-of-pnas-paper)
 - [2.4.4 Analyse hydroxylation sites without DI
   data](#244-analyse-hydroxylation-sites-without-di-data)
-- [2.4.5 Analyse hydroxylation sites with
-  DI](#245-analyse-hydroxylation-sites-with-di)
+- [2.4.5 Analyse hydroxylation sites with DI (wihtout
+  waterloss)](#245-analyse-hydroxylation-sites-with-di-wihtout-waterloss)
 - [2.4.6 Comparison of data without and with DI
   consideration](#246-comparison-of-data-without-and-with-di-consideration)
 - [2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine
@@ -159,8 +159,9 @@ P2_functions <-
 
 ``` r
 ### Install private packages 
-# Install ptm.stiochiometry package - package installed 24.09.2025
-#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+# Install ptm.stiochiometry package - package installed 16.12.2025
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
 
 # Load Libraries - ptm.stiochiometry,readxl and janitor
 library("readxl")
@@ -193,6 +194,10 @@ ref_protein_dt <- import_reference_fasta(
   )
 )
 
+#------------
+# MQ_Standard
+#------------
+
 # Load sample run info data (MQ Standard)
 MQ_std_sample_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
@@ -203,15 +208,19 @@ MQ_std_sample_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_std_sample_run_info[, sample_id := 1:.N]
 
-# Load sample run info data (MQ DI)
-MQ_DI_run_info <- read_excel(
+#----------------
+# MQ_DI_noH2Oloss
+#----------------
+
+# Load sample run info data (MQ DI with no waterloss)
+MQ_DI_noH2O_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI" 
+  sheet = "MQ_with_DI_noH2O" 
 ) %>% data.table
 
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
 #row (1:N), where N is the total number of rows in the data.table
-MQ_DI_run_info[, sample_id := 1:.N]
+MQ_DI_noH2O_run_info[, sample_id := 1:.N]
 ```
 
 # 2.4.2 Definition of functions
@@ -221,7 +230,7 @@ MQ_DI_run_info[, sample_id := 1:.N]
 read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   # Read csv file with defined file path,  
   dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
-  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condiiton
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
   return(dt)
 }
 
@@ -414,12 +423,12 @@ ggplot(
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/analyse_hydroyxlation_sites_without_DI-1.png)<!-- -->
 
-# 2.4.5 Analyse hydroxylation sites with DI
+# 2.4.5 Analyse hydroxylation sites with DI (wihtout waterloss)
 
 ``` r
-## Read stoichiometry data for MQ_DI
-MQ_DI_stoic_dt <- lapply(
-  MQ_DI_run_info[, prefix],
+## Read stoichiometry data for MQ_DI without waterloss
+MQ_DI_noH20_stoic_dt <- lapply(
+  MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_", 
   post_fix = "_DI",
@@ -427,10 +436,10 @@ MQ_DI_stoic_dt <- lapply(
 ) %>% rbindlist
 
 # Generate data table with stoichiometry values for WT and JMJD6KO 
-MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_stoic_dt)
+MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_noH20_stoic_dt)
 
 # Generate data table with WT and JMJD6KO with diagnostic peaks
-DI_info <- MQ_DI_stoic_dt[
+DI_info <- MQ_DI_noH20_stoic_dt[
   , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
 ][
   order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
@@ -493,7 +502,7 @@ ggplot(
     ## Warning: Removed 503 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
-![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI-1.png)<!-- -->
+![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_no_waterloss-1.png)<!-- -->
 
 ``` r
 # Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
@@ -517,7 +526,7 @@ ggplot(
     ## Warning: Removed 1827 rows containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
 
-![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_JMJD6KO-1.png)<!-- -->
+![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_JMJD6KO_noH20loss-1.png)<!-- -->
 
 # 2.4.6 Comparison of data without and with DI consideration
 
@@ -544,7 +553,7 @@ ggplot(
   scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/comparison_nonDI_and_DI_data-1.png)<!-- -->
+![](p2-4-diagnostic-ions_files/figure-gfm/comparison_nonDI_and_DI_noH20loss_data-1.png)<!-- -->
 
 ``` r
 # Count the total hydroxylation site per class with diagnostic peak 
@@ -603,7 +612,7 @@ ggplot(feature_data_plot, aes(x = hydroxylation_site_class, fill = met_within_2)
   )
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/methionine_cont_MQ_DI-1.png)<!-- -->
+![](p2-4-diagnostic-ions_files/figure-gfm/methionine_cont_MQ_DI_noH20loss-1.png)<!-- -->
 
 # 2.4.8 Comparison with previous PNAS 2022 paper
 
@@ -735,8 +744,9 @@ ggplot(
   )
 ) +
   geom_point() +
-  ggrepel::geom_text_repel(aes(label = gene_name))+
+  ggrepel::geom_text_repel(aes(label = gene_name), size = 3, force = 1, max.overlaps = 7)+
   theme(aspect.ratio = 1) +
+  labs(title = "PNAS2022 stoichiometry versus MQ_DI (noH20) stoichiometry data ") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
@@ -747,10 +757,10 @@ ggplot(
     ## Warning: Removed 1 row containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
 
-    ## Warning: ggrepel: 66 unlabeled data points (too many overlaps). Consider
+    ## Warning: ggrepel: 72 unlabeled data points (too many overlaps). Consider
     ## increasing max.overlaps
 
-![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison_MQ_DI-1.png)<!-- -->
+![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison_MQ_DI_noH20loss-1.png)<!-- -->
 
 ``` r
 # Correlation test between pnas2022 stoic and new stoic data 
@@ -789,8 +799,9 @@ ggplot(
   )
 ) +
   geom_point() +
-  ggrepel::geom_text_repel(aes(label = gene_name))+
+  ggrepel::geom_text_repel(aes(label = gene_name), size = 3, force = 1, max.overlaps = 7)+
   theme(aspect.ratio = 1) +
+  labs(title = "PNAS2022 stoichiometry versus MQ_DI (noH20) stoichiometry data ") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
@@ -801,7 +812,7 @@ ggplot(
     ## Warning: Removed 1 row containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
 
-    ## Warning: ggrepel: 61 unlabeled data points (too many overlaps). Consider
+    ## Warning: ggrepel: 73 unlabeled data points (too many overlaps). Consider
     ## increasing max.overlaps
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison_MQ_standard-1.png)<!-- -->
@@ -834,7 +845,7 @@ pnas2022_MQStd_hydroxyK_dt %$%
 #----------
 
 # MQ data including all lysine hydroxylation sites
-MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+MQ_all_hoxy_site_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Add new column to data table 
 MQ_all_hoxy_site_count[, `:=`(
@@ -843,37 +854,38 @@ MQ_all_hoxy_site_count[, `:=`(
 ]
 
 # MQ data including all lysine hydroxylation proteins
-MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+MQ_all_hoxy_protein_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
-#-----------
-## MQ_DI
-#-----------
+#----------------
+# MQ_DI_noH2Oloss
+#----------------
 
 # Count the total number of lysine hydroxylations in MQ_DI (aa_pos)
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
+MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 ```
 
     ## [1] 235
 
 ``` r
 # create data table with hydroxylated sites 
-MQ_DI_site_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+MQ_DI_noH2O_site_count <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Add new column to data table 
-MQ_DI_site_count[, `:=`(
+MQ_DI_noH2O_site_count[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos)
 )
 ]
 
 # Count the total number of lysine hydroxylations in MQ_DI (gene_name)
-MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
+MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 ```
 
     ## [1] 68
 
 ``` r
 # create data table with hydroxylated proteins
-MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+MQ_DI_noH2O_protein_count <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+
 
 #-----------
 ## PNAS2022
@@ -929,7 +941,7 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 ```
 
 ``` r
-# Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_DI and MQ_DI_it
+# Plot - Venn Diagram of comparing hydroxylated sites between PNAS2022, MQ_all and MQ_DI_noH20loss
 
 # Install package "ggVennDiagram"
 # install.packages("ggVennDiagram")
@@ -945,7 +957,7 @@ library(RColorBrewer)
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
   MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]) 
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
 )
 
 # Changing the circle size based on the number in the circle
@@ -964,19 +976,44 @@ plot(venn_size_based,
 ![](p2-4-diagnostic-ions_files/figure-gfm/Venn_diagram_hyoxy_sites-1.png)<!-- -->
 
 ``` r
+vennlist <-  list(
+  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(2, "Set2")
+```
+
+    ## Warning in brewer.pal(2, "Set2"): minimal value for n is 3, returning requested palette with 3 different levels
+
+``` r
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap")
+```
+
+![](p2-4-diagnostic-ions_files/figure-gfm/Venn_diagram_hyoxy_sites-2.png)<!-- -->
+
+``` r
 # Duplicated sites check PNAS 
 # MQ_all_hoxy_site_count[protein_accession == "Q14331" & aa_pos %in% c(27, 29, 30)]
 # MQ_all_hoxy_site_count[protein_accession == "Q9UQ35" & aa_pos %in% c(241, 243, 244)]
 ```
 
 ``` r
-# Plot - Venn Diagram of comparing hydroxylated proteins between PNAS2022, MQ_DI and MQ_DI_it
+# Plot - Venn Diagram of comparing hydroxylated proteins between PNAS2022, MQ_all and MQ_DI_noH20loss
 
-# Extract the accession position vectors 
+# Extract the gene name vectors 
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_protein_count[, gene_name]),
-  MQ_DI_sites = as.vector(MQ_DI_protein_count[, gene_name]),
-  MQ_all_sites = as.vector(MQ_all_hoxy_protein_count[, gene_name])
+    MQ_all_sites = as.vector(MQ_all_hoxy_protein_count[, gene_name]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_protein_count[, gene_name])
 )
 
 # Changing the circle size based on the number in the circle
@@ -994,6 +1031,32 @@ plot(venn_size_based,
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/Venn_diagram_hyoxy_proteins-1.png)<!-- -->
 
+``` r
+# Extract the gene name vectors 
+vennlist <-  list(
+  PNAS2022_sites = as.vector(PNAS2022_protein_count[, gene_name]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_protein_count[, gene_name])
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(2, "Set2")
+```
+
+    ## Warning in brewer.pal(2, "Set2"): minimal value for n is 3, returning requested palette with 3 different levels
+
+``` r
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated proteins overlap")
+```
+
+![](p2-4-diagnostic-ions_files/figure-gfm/Venn_diagram_hyoxy_proteins-2.png)<!-- -->
+
 # Session information
 
 ``` r
@@ -1010,7 +1073,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-27
+    ##  date     2025-12-17
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -1031,7 +1094,7 @@ sessioninfo::session_info()
     ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
     ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
-    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
+    ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
     ##  ggrepel             0.9.6      2024-09-07 [1] CRAN (R 4.5.1)
     ##  ggVennDiagram     * 1.5.4      2025-06-21 [1] CRAN (R 4.5.1)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
@@ -1051,13 +1114,14 @@ sessioninfo::session_info()
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
     ##  polyclip            1.10-7     2024-07-23 [1] CRAN (R 4.5.1)
     ##  polylabelr          0.3.0      2024-11-19 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-07 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-16 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)
     ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
     ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.5.1)
     ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
     ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
     ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
