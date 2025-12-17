@@ -305,9 +305,9 @@ ggplot(
 
 ```
 
-# 2.4.5 Analyse hydroxylation sites with DI 
+# 2.4.5 Analyse hydroxylation sites with DI (wihtout waterloss)
 
-```{r hydroxylation_sites_DI}
+```{r hydroxylation_sites_DI_no_waterloss}
 
 ## Read stoichiometry data for MQ_DI without waterloss
 MQ_DI_noH20_stoic_dt <- lapply(
@@ -355,7 +355,7 @@ ggplot(
 
 ```
 
-```{r hydroxylation_sites_DI_JMJD6KO}
+```{r hydroxylation_sites_DI_JMJD6KO_no_waterloss}
 
 # Plot - WT versus JMJD6KO with presence of diagnostic ions (label points that are JMJD6KO > 0.1 with diagnostic ion)
 # This plot identifies lysine hydroxylations events in the absence of JMJD6
@@ -408,7 +408,7 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
 # 2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak 
 
-```{r methionine_cont_MQ_DI}
+```{r methionine_cont_MQ_DI_no_waterloss}
 
 # Load protein feature data 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -537,8 +537,9 @@ ggplot(
   )
 ) +
   geom_point() +
-  ggrepel::geom_text_repel(aes(label = gene_name))+
+  ggrepel::geom_text_repel(aes(label = gene_name), size = 3, force = 1, max.overlaps = 7)+
   theme(aspect.ratio = 1) +
+  labs(title = "PNAS2022 stoichiometry versus MQ_DI (noH20) stoichiometry data ") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
@@ -568,8 +569,9 @@ ggplot(
   )
 ) +
   geom_point() +
-  ggrepel::geom_text_repel(aes(label = gene_name))+
+  ggrepel::geom_text_repel(aes(label = gene_name), size = 3, force = 1, max.overlaps = 7)+
   theme(aspect.ratio = 1) +
+  labs(title = "PNAS2022 stoichiometry versus MQ_DI (noH20) stoichiometry data ") +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
@@ -590,7 +592,7 @@ pnas2022_MQStd_hydroxyK_dt %$%
 #----------
 
 # MQ data including all lysine hydroxylation sites
-MQ_all_hoxy_site_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+MQ_all_hoxy_site_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Add new column to data table 
 MQ_all_hoxy_site_count[, `:=`(
@@ -599,7 +601,7 @@ MQ_all_hoxy_site_count[, `:=`(
 ]
 
 # MQ data including all lysine hydroxylation proteins
-MQ_all_hoxy_protein_count <- MQ_DI_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
+MQ_all_hoxy_protein_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
 #-----------
 ## MQ_DI
@@ -629,10 +631,10 @@ MQ_DI_protein_count <- MQ_DI_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == 
 #------------
 
 # Count the total number of lysine hydroxylations in MQ_DI (aa_pos)
-MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
+MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 
 # create data table with hydroxylated sites 
-MQ_DI_noH2O_site_count <- MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
+MQ_DI_noH2O_site_count <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Add new column to data table 
 MQ_DI_noH2O_site_count[, `:=`(
@@ -641,12 +643,10 @@ MQ_DI_noH2O_site_count[, `:=`(
 ]
 
 # Count the total number of lysine hydroxylations in MQ_DI (gene_name)
-MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
+MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 
 # create data table with hydroxylated proteins
-MQ_DI_noH2O_protein_count <- MQ_DI_noH2O_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
-
-
+MQ_DI_noH2O_protein_count <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))]
 
 
 #-----------
@@ -721,26 +721,6 @@ library(RColorBrewer)
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
   MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]),
-  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
-)
-
-# Changing the circle size based on the number in the circle
-venn_size_based <- euler(vennlist)
-
-cols <- brewer.pal(4, "Set2")
-
-# Plot the diagram
-plot(venn_size_based,
-     fills = list(fill = cols, alpha = 0.4),
-     legend = list(side = "right"),
-     quantities = TRUE,
-     main = "Hydroxylated Sites Overlap")
-
-
-vennlist <-  list(
-  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
-  MQ_all_hoxy_sites = as.vector(MQ_all_hoxy_site_count[, accession_position]),
   MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
 )
 
@@ -758,11 +738,22 @@ plot(venn_size_based,
 
 
 vennlist <-  list(
-  MQ_DI_sites = as.vector(MQ_DI_site_count[, accession_position]),
+  PNAS2022_sites = as.vector(PNAS2022_site_count[, accession_position]),
   MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_site_count[, accession_position])
 )
 
-ggVennDiagram(vennlist)+scale_fill_gradient(low = "#F4FAFE", high = "#4981BF")
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(2, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap")
+
 
 
 # Duplicated sites check PNAS 
@@ -778,14 +769,34 @@ ggVennDiagram(vennlist)+scale_fill_gradient(low = "#F4FAFE", high = "#4981BF")
 # Extract the accession position vectors 
 vennlist <-  list(
   PNAS2022_sites = as.vector(PNAS2022_protein_count[, gene_name]),
-  MQ_DI_sites = as.vector(MQ_DI_protein_count[, gene_name]),
-  MQ_all_sites = as.vector(MQ_all_hoxy_protein_count[, gene_name])
+    MQ_all_sites = as.vector(MQ_all_hoxy_protein_count[, gene_name]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_protein_count[, gene_name])
 )
 
 # Changing the circle size based on the number in the circle
 venn_size_based <- euler(vennlist)
 
 cols <- brewer.pal(3, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated proteins overlap")
+
+
+
+# Extract the accession position vectors 
+vennlist <-  list(
+  PNAS2022_sites = as.vector(PNAS2022_protein_count[, gene_name]),
+  MQ_DI_noH2O_sites = as.vector(MQ_DI_noH2O_protein_count[, gene_name])
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(2, "Set2")
 
 # Plot the diagram
 plot(venn_size_based,
