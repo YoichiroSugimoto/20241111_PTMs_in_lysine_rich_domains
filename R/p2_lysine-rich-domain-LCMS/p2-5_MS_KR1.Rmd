@@ -46,7 +46,7 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
 ## Install private package 
 # Install ptm.stiochiometry package
-#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
 library("readxl")
@@ -313,6 +313,152 @@ MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[, `:=`(
   Stoic_ratio = (Hypoxia/Normoxia)
 )]
 
+# filter data to have hydroxylysine with diagnostic ion 
+MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE]
+
+# Factor the gene names
+MS_KR_1_hydroxy_dt[, `:=`(
+  gene_name =  
+    factor(gene_name)
+)]
+
+```
+
+```{r ANOVA_ttest}
+
+# Normoxia set at 0.05 and above
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.05)
+
+# ANOVA - Stoic-diff
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+# Normoxia set at 0.06
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.06)
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+# Normoxia set at 0.07
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.07)
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+# Normoxia set at 0.08
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.08)
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+# Normoxia set at 0.09
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.09)
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+
+# Normoxia set at 0.1
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.1)
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+# ANOVA - Stoic-ratio
+anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
+t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
+
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+
+```
+
+
+```{r boxplots_stoic_diff_ratio}
 
 # Plot - Stoic difference between BRD2, 3 and 4
 ggplot(
@@ -325,7 +471,7 @@ ggplot(
   stat_boxplot(geom = "errorbar", width = 0.25) + 
   geom_boxplot() +
   geom_point() +
-  labs(title = "Stoichiometry difference between BRD2, 3 and 4") +
+  labs(title = "Stoichiometry difference (Normoxia 0.1 between BRD2, 3 and 4") +
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
 
@@ -341,9 +487,10 @@ ggplot(
   stat_boxplot(geom = "errorbar", width = 0.25) + 
   geom_boxplot() +
   geom_point() +
-  labs(title = "Stoichiometry ratio between BRD2, 3 and 4") +
+  labs(title = "Stoichiometry ratio (Normoxia 0.1) between BRD2, 3 and 4") +
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
+
 ```
 
 
