@@ -329,6 +329,8 @@ MS_KR_1_hydroxy_dt[, `:=`(
 # Normoxia set at 0.05 and above
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.05)
 
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+
 # ANOVA - Stoic-diff
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
 
@@ -349,6 +351,8 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
 
 # Normoxia set at 0.06
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.06)
+
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
 
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
@@ -371,6 +375,8 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
 # Normoxia set at 0.07
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.07)
 
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
 
@@ -392,6 +398,8 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
 # Normoxia set at 0.08
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.08)
 
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
 
@@ -412,6 +420,8 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
 
 # Normoxia set at 0.09
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.09)
+
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
 
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
@@ -435,6 +445,8 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
 # Normoxia set at 0.1
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.1)
 
+subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
 
@@ -452,8 +464,6 @@ t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% 
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
-
-subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
 
 ```
 
@@ -500,7 +510,7 @@ ggplot(
 ggplot(
   data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
   aes(
-    x = Oxygen_levels,
+    x = oxygen_levels,
     y = stoichiometry,
     group = paste(protein_accession, aa_pos)
   )
@@ -513,52 +523,16 @@ ggplot(
   scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
 
 
-## Boxplot
+## Boxplot and scatter plot
 
 install.packages("viridis")
 library(viridis)
-
-# Plot - JMJD6 re-expression - BRD2
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD2") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry
-  )
-) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
-  labs(title = "BRD2") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-
-
-# Plot - JMJD6 re-expression - BRD3
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD3") & diagnostic_peak == "+"],
-  aes(
-    x = Oxygen_levels,
-    y = stoichiometry
-  )
-) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
-  labs(title = "BRD3") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-
 
 # Plot - JMJD6 re-expression - BRD4
 ggplot(
   data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
   aes(
-    x = Oxygen_levels,
+    x = oxygen_levels,
     y = stoichiometry
   )
 ) +
