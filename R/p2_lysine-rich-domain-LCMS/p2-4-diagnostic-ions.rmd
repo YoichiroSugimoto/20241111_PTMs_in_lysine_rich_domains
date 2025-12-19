@@ -336,7 +336,7 @@ ggplot(
   )
 ) + geom_point() +
   theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 
 ```
 
@@ -354,7 +354,7 @@ ggplot(
 ) + geom_point() +
   ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA)), max.overlaps = 50) +
   theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 
 ```
 
