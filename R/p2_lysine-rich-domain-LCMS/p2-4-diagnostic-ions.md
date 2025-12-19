@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-17 December, 2025
+19 December, 2025
 
 - [Environment setup](#environment-setup)
 - [2.4.1 Import basic data](#241-import-basic-data)
@@ -496,7 +496,7 @@ ggplot(
   )
 ) + geom_point() +
   theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 ```
 
     ## Warning: Removed 503 rows containing missing values or values outside the scale range
@@ -517,7 +517,7 @@ ggplot(
 ) + geom_point() +
   ggrepel::geom_text_repel(aes(label = ifelse(JMJD6KO > 0.1 & diagnostic_peak == "+", gene_name, NA)), max.overlaps = 50) +
   theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 ```
 
     ## Warning: Removed 503 rows containing missing values or values outside the scale range
@@ -1073,7 +1073,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-12-17
+    ##  date     2025-12-19
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
