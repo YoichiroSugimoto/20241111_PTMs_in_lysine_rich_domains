@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-22 December, 2025
+06 January, 2026
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -252,8 +252,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4225954 225.7    8204368 438.2  8204368 438.2
-    ## Vcells 21422705 163.5   64674738 493.5 64674266 493.5
+    ## Ncells  4225955 225.7    8204018 438.2  8204018 438.2
+    ## Vcells 21422719 163.5   64674762 493.5 64674223 493.5
 
 # 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
@@ -286,6 +286,8 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 MS_KR1_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
+
+MS_KR1_stoic_dt <- MS_KR1_stoic_dt[is_diagnostic_peak == TRUE]
 
 # categorize data according to sample names 
 MS_KR1_stoic_dt[, `:=`(
@@ -465,10 +467,11 @@ summary(anova_MS_KR_1)
 ```
 
     ##             Df Sum Sq Mean Sq F value Pr(>F)  
-    ## gene_name    2 0.3554 0.17770   5.199 0.0133 *
-    ## Residuals   24 0.8204 0.03418                 
+    ## gene_name    2 0.2540 0.12699   4.706 0.0199 *
+    ## Residuals   22 0.5936 0.02698                 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 2 observations deleted due to missingness
 
 ``` r
 # ANOVA - Stoic-ratio
@@ -478,8 +481,9 @@ summary(anova_MS_KR_1)
 ```
 
     ##             Df Sum Sq Mean Sq F value Pr(>F)
-    ## gene_name    2 0.3506 0.17528   2.342  0.118
-    ## Residuals   24 1.7959 0.07483
+    ## gene_name    2 0.2326 0.11632   1.573   0.23
+    ## Residuals   22 1.6264 0.07393               
+    ## 2 observations deleted due to missingness
 
 ``` r
 t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
@@ -489,13 +493,13 @@ t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% 
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_diff by gene_name
-    ## t = 0.46666, df = 10.162, p-value = 0.6506
+    ## t = -0.21304, df = 10.224, p-value = 0.8355
     ## alternative hypothesis: true difference in means between group BRD2 and group BRD3 is not equal to 0
     ## 95 percent confidence interval:
-    ##  -0.1872285  0.2867037
+    ##  -0.2403675  0.1983003
     ## sample estimates:
     ## mean in group BRD2 mean in group BRD3 
-    ##          0.4615853          0.4118476
+    ##          0.3984090          0.4194426
 
 ``` r
 t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
@@ -505,13 +509,13 @@ t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% 
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_diff by gene_name
-    ## t = 3.3036, df = 15.469, p-value = 0.004658
+    ## t = 3.1686, df = 12.541, p-value = 0.007701
     ## alternative hypothesis: true difference in means between group BRD3 and group BRD4 is not equal to 0
     ## 95 percent confidence interval:
-    ##  0.07321137 0.33749826
+    ##  0.06721554 0.35868396
     ## sample estimates:
     ## mean in group BRD3 mean in group BRD4 
-    ##          0.4118476          0.2064928
+    ##          0.4194426          0.2064928
 
 ``` r
 t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
@@ -521,13 +525,13 @@ t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% 
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_diff by gene_name
-    ## t = 2.4495, df = 9.5667, p-value = 0.0353
+    ## t = 2.0719, df = 8.9473, p-value = 0.06834
     ## alternative hypothesis: true difference in means between group BRD2 and group BRD4 is not equal to 0
     ## 95 percent confidence interval:
-    ##  0.02162352 0.48856139
+    ##  -0.01781303  0.40164534
     ## sample estimates:
     ## mean in group BRD2 mean in group BRD4 
-    ##          0.4615853          0.2064928
+    ##          0.3984090          0.2064928
 
 ``` r
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
@@ -537,13 +541,13 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_ratio by gene_name
-    ## t = 0.38638, df = 13.01, p-value = 0.7055
+    ## t = 0.43455, df = 10.957, p-value = 0.6723
     ## alternative hypothesis: true difference in means between group BRD2 and group BRD3 is not equal to 0
     ## 95 percent confidence interval:
-    ##  -0.2054414  0.2949418
+    ##  -0.2080184  0.3103046
     ## sample estimates:
     ## mean in group BRD2 mean in group BRD3 
-    ##          0.2937103          0.2489600
+    ##          0.3356689          0.2845258
 
 ``` r
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
@@ -553,13 +557,13 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_ratio by gene_name
-    ## t = -2.1001, df = 16.63, p-value = 0.0513
+    ## t = -1.8075, df = 15.893, p-value = 0.08964
     ## alternative hypothesis: true difference in means between group BRD3 and group BRD4 is not equal to 0
     ## 95 percent confidence interval:
-    ##  -0.504811598  0.001589927
+    ##  -0.46956515  0.03747492
     ## sample estimates:
     ## mean in group BRD3 mean in group BRD4 
-    ##          0.2489600          0.5005709
+    ##          0.2845258          0.5005709
 
 ``` r
 t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
@@ -569,13 +573,13 @@ t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in%
     ##  Welch Two Sample t-test
     ## 
     ## data:  Stoic_ratio by gene_name
-    ## t = -1.5395, df = 16.733, p-value = 0.1424
+    ## t = -1.2104, df = 15.169, p-value = 0.2446
     ## alternative hypothesis: true difference in means between group BRD2 and group BRD4 is not equal to 0
     ## 95 percent confidence interval:
-    ##  -0.49069585  0.07697462
+    ##  -0.4549949  0.1251909
     ## sample estimates:
     ## mean in group BRD2 mean in group BRD4 
-    ##          0.2937103          0.5005709
+    ##          0.3356689          0.5005709
 
 ``` r
 # Plot - Stoic difference between BRD2, 3 and 4
@@ -593,6 +597,14 @@ ggplot(
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
 ```
+
+    ## Warning: Removed 2 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+    ## Removed 2 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+    ## Warning: Removed 2 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
 
 ![](p2-5_MS_KR1_files/figure-gfm/boxplots_stoic_diff_ratio-1.png)<!-- -->
 
@@ -612,6 +624,15 @@ ggplot(
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
 ```
+
+    ## Warning: Removed 2 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+    ## Warning: Removed 2 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+    ## Warning: Removed 2 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
 
 ![](p2-5_MS_KR1_files/figure-gfm/boxplots_stoic_diff_ratio-2.png)<!-- -->
 
@@ -693,7 +714,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-12-22
+    ##  date     2026-01-06
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
