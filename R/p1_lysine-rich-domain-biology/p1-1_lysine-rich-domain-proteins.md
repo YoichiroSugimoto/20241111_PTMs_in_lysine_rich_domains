@@ -1,7 +1,7 @@
 1-1. Proteins with lysine-rich domains
 ================
-Pallavi Kesavan and Yoichiro Sugimoto
-25 November, 2025
+Yoichiro Sugimoto and Pallavi Kesavan
+06 January, 2026
 
 - [Environment setup](#environment-setup)
 - [1.1 Import data](#11-import-data)
@@ -160,7 +160,7 @@ results.dir <- file.path(project.dir, "results")
 
 #Create p1 results directory
 p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
-dir.create(p1_K_rich_domains, showWarnings = FALSE, recursive = TRUE)
+# dir.create(p1_K_rich_domains, showWarnings = FALSE, recursive = TRUE)
 
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -250,7 +250,13 @@ ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
   "UP000005640_9606.fasta")) 
 
-# Median K score of all region in human proteome
+# Median K score of all region in human proteome#
+protein.feature.dt[, median(K_ratio)]
+```
+
+    ## [1] 0
+
+``` r
 all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
   if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
     return(NA_real_)
@@ -902,10 +908,11 @@ ggplot(
     y = K_ratio_score
   )
 ) +
+  coord_cartesian(ylim = c(0,0.5)) +
   geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 ```
 
-![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-1.png)<!-- -->
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-1.png)<!-- -->
 
 ``` r
 # H2AX 
@@ -916,10 +923,11 @@ ggplot(
     y = K_ratio_score
   )
 ) +
+  coord_cartesian(ylim = c(0,0.5)) +
   geom_area(color = "black", fill = "steelblue", alpha = 0.6)
 ```
 
-![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-2.png)<!-- -->
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-2.png)<!-- -->
 
 ``` r
 #H2B
@@ -930,10 +938,11 @@ ggplot(
     y = K_ratio_score
   )
 ) +
+  coord_cartesian(ylim = c(0,0.5)) +
   geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 ```
 
-![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-3.png)<!-- -->
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-3.png)<!-- -->
 
 ``` r
 #H4
@@ -945,10 +954,11 @@ ggplot(
     y = K_ratio_score
   )
 ) +
+  coord_cartesian(ylim = c(0,0.5)) +
   geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 ```
 
-![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-4.png)<!-- -->
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-4.png)<!-- -->
 
 ``` r
 #H2A
@@ -960,10 +970,11 @@ ggplot(
     y = K_ratio_score
   )
 ) +
+  coord_cartesian(ylim = c(0,0.5)) +
   geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 ```
 
-![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/k_score_per_position-5.png)<!-- -->
+![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-5.png)<!-- -->
 
 # Session information
 
@@ -981,7 +992,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-11-25
+    ##  date     2026-01-06
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -1017,7 +1028,7 @@ sessioninfo::session_info()
     ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
     ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
-    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.5.1)
+    ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
     ##  ggpubr            * 0.6.2      2025-10-17 [1] CRAN (R 4.5.1)
     ##  ggsignif            0.6.4      2022-10-13 [1] CRAN (R 4.5.1)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
@@ -1054,8 +1065,8 @@ sessioninfo::session_info()
     ##  plyr                1.8.9      2023-10-02 [1] CRAN (R 4.5.1)
     ##  png                 0.1-8      2022-11-29 [1] CRAN (R 4.5.1)
     ##  promises            1.3.3      2025-05-29 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-11-07 [1] local
-    ##  purrr               1.1.0      2025-07-10 [1] CRAN (R 4.5.1)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-16 [1] local
+    ##  purrr               1.2.0      2025-11-04 [1] CRAN (R 4.5.1)
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)
@@ -1064,6 +1075,7 @@ sessioninfo::session_info()
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
     ##  RSQLite             2.4.3      2025-08-20 [1] CRAN (R 4.5.1)
     ##  rstatix             0.7.3      2025-10-18 [1] CRAN (R 4.5.1)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.5.1)
     ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
     ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
     ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
