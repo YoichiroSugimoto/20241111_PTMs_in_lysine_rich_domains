@@ -56,9 +56,6 @@ library("readxl")
 # Define path to result directory 
 results.dir <- file.path(project.dir, "results")
 
-### To be deleted
-results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
-
 p2_results_dir <- file.path(results.dir,
                         "p2-analysis-setting")
 

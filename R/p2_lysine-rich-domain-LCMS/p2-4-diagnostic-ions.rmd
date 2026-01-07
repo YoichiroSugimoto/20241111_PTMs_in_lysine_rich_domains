@@ -68,10 +68,6 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
-### To be deleted
-results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
-
-
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(
   file.path(
