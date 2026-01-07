@@ -12,7 +12,9 @@ output:
      toc_depth: 2
 ---
 
-This script calculates the stoichiometry of PTMs.
+# Overview
+
+This script determines the optimal settings for the database search that analyses the LC-MS data of lysine-derivatised samples.
 
 # Environment setup
 

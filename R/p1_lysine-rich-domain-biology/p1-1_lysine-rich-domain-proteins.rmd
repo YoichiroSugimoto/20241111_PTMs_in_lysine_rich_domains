@@ -12,6 +12,9 @@ output:
      toc_depth: 2
 ---
 
+# Overview
+
+This script characterises lysine-rich domains of proteins.
 
 # Environment setup
 
