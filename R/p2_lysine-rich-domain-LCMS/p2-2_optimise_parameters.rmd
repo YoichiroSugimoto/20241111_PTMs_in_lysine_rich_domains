@@ -278,12 +278,12 @@ ms_ms_count.dt <- all_stoic_pos.dt[
 
 ms_ms_count.dt <- merge(
   ms_ms_count.dt,
-  protein.feature.dt[, .(protein_accession, aa_pos, K_ratio, K_ratio_score)],
+  protein.feature.dt[, .(protein_accession, aa_pos, K_ratio, K_ratio_score, IUPRED2)],
   by = c("protein_accession", "aa_pos")
 )
 
 d.ms_ms_count.dt <- dcast(
-  ms_ms_count.dt,
+  copy(ms_ms_count.dt)[, IUPRED2 := NULL],
   protein_accession + aa_pos + K_ratio + K_ratio_score ~ MQ_setting,
   value.var = "total_ms_ms_count", fill = 0
   
@@ -346,6 +346,7 @@ p4 <- ggplot(
 p3 + p4
 
 ```
+
 
 # 2.2.5 The effect of MQ setting on runtime
 

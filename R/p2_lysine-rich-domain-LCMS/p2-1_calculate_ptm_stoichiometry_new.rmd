@@ -64,6 +64,9 @@ library("readxl")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
 ```
 
 # 2.1.2 Import human protein reference data 
@@ -183,7 +186,7 @@ ptm_mapping_file <- file.path(
 samples_to_process <- MQ_standard_data[data %in% c("data-A", "data-D")]
 
 # Define output directory for MSMS + SECPEP results
-MQ_Std_MSMS_SECEP_dir <- file.path(project.dir, "results", "p2-analysis-setting","MQ_Std_MSMS_SECEP")
+MQ_Std_MSMS_SECEP_dir <- file.path(results.dir, "p2-analysis-setting","MQ_Std_MSMS_SECEP")
 
 # Run stoichiometry processing for MSMS + SECPEP
 process_stoichiometry(
@@ -198,7 +201,7 @@ process_stoichiometry(
 ##MSMS only
 
 # Define output directory for MSMS-only results
-MQ_Std_MSMS_dir <- file.path(project.dir, "results","p2-analysis-setting", "MQ_Std_MSMS")
+MQ_Std_MSMS_dir <- file.path(results.dir,"p2-analysis-setting", "MQ_Std_MSMS")
 
 # Run stoichiometry processing for MSMS-only
 process_stoichiometry(
@@ -211,49 +214,48 @@ process_stoichiometry(
 )
 ```
 
+# 2.1.4 Calculation of Stoichiometry of MQ_DI without waterloss 
 
-# 2.1.4 Calculation of Stiochiometry with diagnostic ions
-
-```{r data_directory_w_di}
+```{r data_directory_w_di_no_H2O}
 
 # Load data into environment
-MQ_DI_data <- file.path(
+MQ_DI_noH2O_data <- file.path(
   project.dir,
-  "data/MQ_with_DI/PNAS2022" 
+  "data/MQ_with_DI_no_waterloss/PNAS2022" 
 )
-
-# Load sample run info data 
-MQ_DI_run_info <- read_excel(
-  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_with_DI" 
-) %>% data.table
-
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_DI_run_info[, sample_id := 1:.N]
 
 # Create file path for results
-MQ_with_DI_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MQ_DI")
-#dir.create(MQ_with_DI_dir, recursive = TRUE)
+MQ_DI_noH2O_dir <- file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O")
+create.dir(MQ_DI_noH2O_dir)
 
-# Load common PTM mapping file
-ptm_mapping_file <- file.path(
-  project.dir,
-  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
-)
 
 ```
 
 
-```{r calculate_stoichiometry_w_di}
+```{r sample_info_MQ_DI_no_H2O}
+
+# Load sample run info data 
+MQ_DI_noH2O_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_with_DI_noH2O" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_noH2O_run_info[, sample_id := 1:.N]
+
+```
+
+
+```{r calculate_stoichiometry_MQ_DI_no_H2O}
 
 # For each sample ID calculate the stoichiomtery
-for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_info
+for (i in seq_len(nrow(MQ_DI_noH2O_run_info))){ # Takes each row from the MQ_DI_noH2O_run_info
   
-  prefix <- MQ_DI_run_info$prefix[i]
+  prefix <- MQ_DI_noH2O_run_info$prefix[i]
   
   # Retrieves the evidence.txt file for each sample ID 
-  mq_evidence_data = file.path(MQ_DI_data,
+  mq_evidence_data = file.path(MQ_DI_noH2O_data,
                                "evidence",
                                paste0(prefix, "evidence.txt"))
   
@@ -264,8 +266,8 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
     
     # Locate and fetch all PTM site files within the ptm folder
     ptm_files <- list.files(file.path(
-      MQ_DI_data, "ptm",
-      paste0(MQ_DI_run_info[i, prefix], "ptm")), 
+      MQ_DI_noH2O_data, "ptm",
+      paste0(MQ_DI_noH2O_run_info[i, prefix], "ptm")), 
       full.names = TRUE)
     
     # Generate PTM names based on file names, add brackets and remove "Sites.txt"
@@ -277,19 +279,19 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
     stoic.dt <- calculate_stoichiometry2(
       mq_evidence_data = mq_evidence_data,
       sample_info_file = file.path( # Corresponding sample info data 
-        MQ_DI_data,
+        MQ_DI_noH2O_data,
         "sample_info",
         paste0(
           "MS_dataset_overview_PXD031221_",
-          MQ_DI_run_info[i, data],
+          MQ_DI_noH2O_run_info[i, data],
           ".csv"
         )
       ),
       ref_protein_dt = ref_protein_data,
       ptm_files = ptm_files,
       ptm_names = ptm_names,
-      output_prefix = file.path(MQ_with_DI_dir,  # Define output prefix for results
-                                paste0("DI_", MQ_DI_run_info[i, prefix])),
+      output_prefix = file.path(MQ_DI_noH2O_dir,  # Define output prefix for results
+                                paste0("DI_", "noH2O_", MQ_DI_noH2O_run_info[i, prefix])),
       ptm_mapping_file = ptm_mapping_file,
       K_only = FALSE,
       selected_type = c("MULTI-MSMS"),
@@ -305,6 +307,7 @@ for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_in
 }
 
 ```
+
 
 
 # Session information

@@ -12,6 +12,8 @@ output:
      toc_depth: 2
 ---
 
+# Overview
+
 This script examines how the use of diagnostic ions improve the analysis of lysine hydroxylations.
 
 # Environment setup
@@ -66,6 +68,10 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
+
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(
   file.path(
@@ -117,7 +123,7 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 }
 
 ## This function creates a data table with stoichiomtery values of WT and JMJD6KO samples for each gene_name
-contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
+contrast_hydroxylation_by_genotype <- function(all_stoic_dt, min.psm = 2){
   wt_ko_dt <- all_stoic_dt
   
   # Add new columns into metadata
@@ -155,9 +161,9 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
     no_hydroxyK_dt
   )
   
-  # Filter psm mapped greater than 2 for higher confidence 
+  # Filter psm mapped greater than min.psm (def. 2) for higher confidence 
   hydroxyK_dt <- hydroxyK_dt[
-    sum_psm_mapped_per_position > 2
+    sum_psm_mapped_per_position > min.psm
   ]
   
   # Sort stoichiometry column from highest to lowest
@@ -177,7 +183,9 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
 
 ```
 
-# 2.4.3 Analyse hydroxylation sites in the data of PNAS paper
+# 2.4.3 Analyse hydroxylation sites in the data of PNAS 2022 paper
+
+In Cockman et al. (PNAS, 2022), lysine hydroxylation sites were identified by combining the following  pieces of information: (1) hydroxylysine identified through database search software (PEAKS); (2) manual inspection of MSMS spectra; and (3) the absence of hydroxylation in JMJD6 knockout cells. Here, we analysed the relationship between all the hydroxylysines identified by the software and those that satisfied conditions 2 and 3. 
 
 ```{r hydroyxlation_sites_PNAS}
 
@@ -257,6 +265,7 @@ ggplot(
 
 ```
 
+
 # 2.4.4 Analyse hydroxylation sites without DI data
 
 ```{r analyse_hydroyxlation_sites_without_DI}
@@ -290,18 +299,20 @@ ggplot(
 
 ```
 
-# 2.4.5 Analyse hydroxylation sites with DI (wihtout waterloss)
+# 2.4.5 Analyse hydroxylation sites with DI
 
 ```{r hydroxylation_sites_DI_no_waterloss}
 
-## Read stoichiometry data for MQ_DI without waterloss
+## Read stoichiometry data for MQ_DI (change from the older version: a potential diagnostic ions with water loss is no longer considered)
 MQ_DI_noH20_stoic_dt <- lapply(
   MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
-  pre_prefix = "DI_", 
+  pre_prefix = "DI_noH2O_", 
   post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O")
 ) %>% rbindlist
+
+fwrite(MQ_DI_noH20_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
 
 # Generate data table with stoichiometry values for WT and JMJD6KO 
 MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_noH20_stoic_dt)
@@ -655,6 +666,12 @@ PNAS2022_site_count <- pnas2022.stoic.dt[
   !duplicated(paste(protein_accession, aa_pos))
 ]
 
+# Since different sub-isoforms were used
+PNAS2022_site_count[, aa_pos := case_when(
+  protein_accession == "Q66PJ3" ~ aa_pos - 184,
+  TRUE ~ aa_pos
+)]
+
 PNAS2022_protein_count <- pnas2022.stoic.dt[
   curated_oxK_site == TRUE & aa == "K"
 ][
@@ -674,7 +691,7 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 # install.packages("eulerr")
 
 # load libraries
-library(ggVennDiagram)
+# library(ggVennDiagram)
 library(ggplot2)
 library(eulerr)
 library(RColorBrewer)

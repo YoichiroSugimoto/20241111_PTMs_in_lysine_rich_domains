@@ -1,17 +1,18 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-19 December, 2025
+07 January, 2026
 
+- [Overview](#overview)
 - [Environment setup](#environment-setup)
 - [2.4.1 Import basic data](#241-import-basic-data)
 - [2.4.2 Definition of functions](#242-definition-of-functions)
-- [2.4.3 Analyse hydroxylation sites in the data of PNAS
-  paper](#243-analyse-hydroxylation-sites-in-the-data-of-pnas-paper)
+- [2.4.3 Analyse hydroxylation sites in the data of PNAS 2022
+  paper](#243-analyse-hydroxylation-sites-in-the-data-of-pnas-2022-paper)
 - [2.4.4 Analyse hydroxylation sites without DI
   data](#244-analyse-hydroxylation-sites-without-di-data)
-- [2.4.5 Analyse hydroxylation sites with DI (wihtout
-  waterloss)](#245-analyse-hydroxylation-sites-with-di-wihtout-waterloss)
+- [2.4.5 Analyse hydroxylation sites with
+  DI](#245-analyse-hydroxylation-sites-with-di)
 - [2.4.6 Comparison of data without and with DI
   consideration](#246-comparison-of-data-without-and-with-di-consideration)
 - [2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine
@@ -23,6 +24,8 @@ Yoichiro Sugimoto and Pallavi Kesavan
   PNAS2022 and new
   workflow](#249-number-of-hydroxylation-sites-and-proteins-identified-in-pnas2022-and-new-workflow)
 - [Session information](#session-information)
+
+# Overview
 
 This script examines how the use of diagnostic ions improve the analysis
 of lysine hydroxylations.
@@ -76,26 +79,12 @@ P2_functions <-
 
     ## Loading required package: BiocGenerics
 
-    ## Loading required package: generics
-
-    ## 
-    ## Attaching package: 'generics'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     explain
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
-    ##     setequal, union
-
     ## 
     ## Attaching package: 'BiocGenerics'
 
-    ## The following object is masked from 'package:dplyr':
+    ## The following objects are masked from 'package:dplyr':
     ## 
-    ##     combine
+    ##     combine, intersect, setdiff, union
 
     ## The following objects are masked from 'package:stats':
     ## 
@@ -105,10 +94,10 @@ P2_functions <-
     ## 
     ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
     ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
-    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-    ##     rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
-    ##     unsplit, which.max, which.min
+    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
+    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+    ##     Position, rank, rbind, Reduce, rownames, sapply, saveRDS, setdiff,
+    ##     table, tapply, union, unique, unsplit, which.max, which.min
 
     ## Loading required package: S4Vectors
 
@@ -186,6 +175,10 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
+
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(
   file.path(
@@ -235,7 +228,7 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 }
 
 ## This function creates a data table with stoichiomtery values of WT and JMJD6KO samples for each gene_name
-contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
+contrast_hydroxylation_by_genotype <- function(all_stoic_dt, min.psm = 2){
   wt_ko_dt <- all_stoic_dt
   
   # Add new columns into metadata
@@ -273,9 +266,9 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
     no_hydroxyK_dt
   )
   
-  # Filter psm mapped greater than 2 for higher confidence 
+  # Filter psm mapped greater than min.psm (def. 2) for higher confidence 
   hydroxyK_dt <- hydroxyK_dt[
-    sum_psm_mapped_per_position > 2
+    sum_psm_mapped_per_position > min.psm
   ]
   
   # Sort stoichiometry column from highest to lowest
@@ -294,7 +287,15 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt){
 }
 ```
 
-# 2.4.3 Analyse hydroxylation sites in the data of PNAS paper
+# 2.4.3 Analyse hydroxylation sites in the data of PNAS 2022 paper
+
+In Cockman et al. (PNAS, 2022), lysine hydroxylation sites were
+identified by combining the following pieces of information: (1)
+hydroxylysine identified through database search software (PEAKS); (2)
+manual inspection of MSMS spectra; and (3) the absence of hydroxylation
+in JMJD6 knockout cells. Here, we analysed the relationship between all
+the hydroxylysines identified by the software and those that satisfied
+conditions 2 and 3.
 
 ``` r
 # Load PNAS stoichiometry data
@@ -423,17 +424,19 @@ ggplot(
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/analyse_hydroyxlation_sites_without_DI-1.png)<!-- -->
 
-# 2.4.5 Analyse hydroxylation sites with DI (wihtout waterloss)
+# 2.4.5 Analyse hydroxylation sites with DI
 
 ``` r
-## Read stoichiometry data for MQ_DI without waterloss
+## Read stoichiometry data for MQ_DI (change from the older version: a potential diagnostic ions with water loss is no longer considered)
 MQ_DI_noH20_stoic_dt <- lapply(
   MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
-  pre_prefix = "DI_", 
+  pre_prefix = "DI_noH2O_", 
   post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O")
 ) %>% rbindlist
+
+fwrite(MQ_DI_noH20_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
 
 # Generate data table with stoichiometry values for WT and JMJD6KO 
 MQ_DI_d.hydroxyK_dt <- contrast_hydroxylation_by_genotype(MQ_DI_noH20_stoic_dt)
@@ -469,20 +472,22 @@ MQ_DI_d.hydroxyK_dt[diagnostic_peak == "+"][JMJD6KO < 0.0001 & WT > 0.001][, .N,
     ##  6:     SARNP     1
     ##  7:      GNL3     1
     ##  8:  SREK1IP1     2
-    ##  9:     RIOK1     2
-    ## 10:    LUC7L3     3
-    ## 11:      TOP1     3
-    ## 12:     SSRP1     3
-    ## 13:      BRD3     3
-    ## 14:     SRRM2     3
-    ## 15:     SF3B2     5
-    ## 16:     SREK1     5
-    ## 17:   ARL6IP4     7
-    ## 18:   ZCCHC17     7
-    ## 19:    SRSF11     9
-    ## 20:      BRD2    11
-    ## 21:      BRD4    12
-    ## 22:      NKAP    16
+    ##  9:     ZC3H4     2
+    ## 10:   SUPT16H     2
+    ## 11:    LUC7L3     3
+    ## 12:      TOP1     3
+    ## 13:     SSRP1     3
+    ## 14:      BRD3     3
+    ## 15:     RIOK1     3
+    ## 16:     SRRM2     3
+    ## 17:     SF3B2     5
+    ## 18:     SREK1     5
+    ## 19:   ARL6IP4     7
+    ## 20:   ZCCHC17     7
+    ## 21:      BRD2     9
+    ## 22:    SRSF11     9
+    ## 23:      BRD4    14
+    ## 24:      NKAP    16
     ##     gene_name     N
 
 ``` r
@@ -499,7 +504,7 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 ```
 
-    ## Warning: Removed 503 rows containing missing values or values outside the scale range
+    ## Warning: Removed 497 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_no_waterloss-1.png)<!-- -->
@@ -520,10 +525,10 @@ ggplot(
   scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 ```
 
-    ## Warning: Removed 503 rows containing missing values or values outside the scale range
+    ## Warning: Removed 497 rows containing missing values or values outside the scale range
     ## (`geom_point()`).
 
-    ## Warning: Removed 1827 rows containing missing values or values outside the scale range
+    ## Warning: Removed 1856 rows containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_JMJD6KO_noH20loss-1.png)<!-- -->
@@ -563,9 +568,9 @@ MQ_DI_d.hydroxyK_dt[, table(diagnostic_peak, hydroxylation_site_class) %>%
 
     ##                hydroxylation_site_class
     ## diagnostic_peak class_A class_B class_C others  Sum
-    ##                     276     192     536    647 1651
-    ##             +        90       1      17     79  187
-    ##             Sum     366     193     553    726 1838
+    ##                     276     201     545    650 1672
+    ##             +        96       1      17     81  195
+    ##             Sum     372     202     562    731 1867
 
 # 2.4.7 Comparison of hydroxylation site class (MQ_DI) vs methionine presence with diagnostic peak
 
@@ -641,9 +646,9 @@ MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, curated_oxK_site) %>% addmargins
 
     ##                   curated_oxK_site
     ## is_diagnostic_peak FALSE TRUE  Sum
-    ##              FALSE  1605   46 1651
-    ##              TRUE    115   72  187
-    ##              Sum    1720  118 1838
+    ##              FALSE  1629   43 1672
+    ##              TRUE    120   75  195
+    ##              Sum    1749  118 1867
 
 ``` r
 # Additionally, sum the number of hydroxylation site 
@@ -654,25 +659,25 @@ MQ_DI_d.hydroxyK_dt[, table(is_diagnostic_peak, hydroxylation_site_class, curate
     ## 
     ##                   hydroxylation_site_class
     ## is_diagnostic_peak class_A class_B class_C others  Sum
-    ##              FALSE     243     191     535    636 1605
-    ##              TRUE       43       1      17     54  115
-    ##              Sum       286     192     552    690 1720
+    ##              FALSE     246     200     544    639 1629
+    ##              TRUE       47       1      17     55  120
+    ##              Sum       293     201     561    694 1749
     ## 
     ## , , curated_oxK_site = TRUE
     ## 
     ##                   hydroxylation_site_class
     ## is_diagnostic_peak class_A class_B class_C others  Sum
-    ##              FALSE      33       1       1     11   46
-    ##              TRUE       47       0       0     25   72
-    ##              Sum        80       1       1     36  118
+    ##              FALSE      30       1       1     11   43
+    ##              TRUE       49       0       0     26   75
+    ##              Sum        79       1       1     37  118
     ## 
     ## , , curated_oxK_site = Sum
     ## 
     ##                   hydroxylation_site_class
     ## is_diagnostic_peak class_A class_B class_C others  Sum
-    ##              FALSE     276     192     536    647 1651
-    ##              TRUE       90       1      17     79  187
-    ##              Sum       366     193     553    726 1838
+    ##              FALSE     276     201     545    650 1672
+    ##              TRUE       96       1      17     81  195
+    ##              Sum       372     202     562    731 1867
 
 ``` r
 ## Data table containing WT and JMJD6KO samples isolated by J6 peptide
@@ -694,7 +699,7 @@ j6_target_protein[, table(known_target)]
 
     ## known_target
     ## FALSE  TRUE 
-    ##     3    17
+    ##     4    18
 
 ``` r
 # Return all rows where 'known_target' is FALSE
@@ -707,6 +712,7 @@ j6_target_protein[known_target == FALSE]
     ## 1:            P53999      SUB1        FALSE
     ## 2:            P62979    RPS27A        FALSE
     ## 3:            Q9NP64   ZCCHC17        FALSE
+    ## 4:            Q9UPT8     ZC3H4        FALSE
 
 ``` r
 ## Correlation between pnas2022 stoic and new stoic data  
@@ -757,7 +763,7 @@ ggplot(
     ## Warning: Removed 1 row containing missing values or values outside the scale range
     ## (`geom_text_repel()`).
 
-    ## Warning: ggrepel: 72 unlabeled data points (too many overlaps). Consider
+    ## Warning: ggrepel: 73 unlabeled data points (too many overlaps). Consider
     ## increasing max.overlaps
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison_MQ_DI_noH20loss-1.png)<!-- -->
@@ -774,13 +780,13 @@ d.pnas2022.hydroxyK_DI_dt %$%
     ##  Pearson's product-moment correlation
     ## 
     ## data:  stoichiometry_PNAS2022 and WT
-    ## t = 25.939, df = 111, p-value < 2.2e-16
+    ## t = 24.22, df = 111, p-value < 2.2e-16
     ## alternative hypothesis: true correlation is not equal to 0
     ## 95 percent confidence interval:
-    ##  0.8949274 0.9488277
+    ##  0.8816087 0.9421326
     ## sample estimates:
     ##       cor 
-    ## 0.9264901
+    ## 0.9169969
 
 ``` r
 # Merge MQ_stoic data and PNAS2022 by 'protein_accession' and 'aa_pos' 
@@ -864,7 +870,7 @@ MQ_all_hoxy_protein_count <- MQ_DI_noH20_stoic_dt[aa == "K"][ptm == "[Oxidation 
 MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, aa_pos))][, .N]
 ```
 
-    ## [1] 235
+    ## [1] 241
 
 ``` r
 # create data table with hydroxylated sites 
@@ -880,7 +886,7 @@ MQ_DI_noH2O_site_count[, `:=`(
 MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][aa == "K"][ptm == "[Oxidation (K)]"][order(protein_accession, aa_pos, -diagnostic_peak)][!duplicated(paste(protein_accession, gene_name))][, .N]
 ```
 
-    ## [1] 68
+    ## [1] 66
 
 ``` r
 # create data table with hydroxylated proteins
@@ -931,6 +937,12 @@ PNAS2022_site_count <- pnas2022.stoic.dt[
   !duplicated(paste(protein_accession, aa_pos))
 ]
 
+# Since different sub-isoforms were used
+PNAS2022_site_count[, aa_pos := case_when(
+  protein_accession == "Q66PJ3" ~ aa_pos - 184,
+  TRUE ~ aa_pos
+)]
+
 PNAS2022_protein_count <- pnas2022.stoic.dt[
   curated_oxK_site == TRUE & aa == "K"
 ][
@@ -948,7 +960,7 @@ PNAS2022_protein_count <- pnas2022.stoic.dt[
 # install.packages("eulerr")
 
 # load libraries
-library(ggVennDiagram)
+# library(ggVennDiagram)
 library(ggplot2)
 library(eulerr)
 library(RColorBrewer)
@@ -1065,7 +1077,7 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.5.1 (2025-06-13)
+    ##  version  R version 4.4.3 (2025-02-28)
     ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
@@ -1073,73 +1085,72 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2025-12-19
-    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
-    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ##  date     2026-01-07
+    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
-    ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
-    ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
-    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.5.1)
-    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
-    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
-    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.5.1)
-    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.5.1)
-    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.5.1)
-    ##  eulerr            * 7.0.4      2025-09-24 [1] CRAN (R 4.5.1)
-    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
-    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
-    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
-    ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
-    ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
-    ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
-    ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
-    ##  ggrepel             0.9.6      2024-09-07 [1] CRAN (R 4.5.1)
-    ##  ggVennDiagram     * 1.5.4      2025-06-21 [1] CRAN (R 4.5.1)
-    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
-    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
-    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
-    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
-    ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
-    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
-    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
-    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
-    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
-    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
-    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
-    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
-    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
-    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
-    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  polyclip            1.10-7     2024-07-23 [1] CRAN (R 4.5.1)
-    ##  polylabelr          0.3.0      2024-11-19 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-16 [1] local
-    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
-    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
-    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)
-    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
-    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
-    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
-    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.5.1)
-    ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
-    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
-    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
-    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.5.1)
-    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.5.1)
-    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
-    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
-    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
-    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
-    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
-    ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
-    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
-    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
-    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
-    ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
-    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
+    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
+    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
+    ##  eulerr            * 7.0.4      2025-09-24 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.4      2025-06-18 [1] CRAN (R 4.4.3)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
+    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
+    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggplot2           * 3.5.2      2025-04-09 [1] CRAN (R 4.4.3)
+    ##  ggrepel             0.9.6      2024-09-07 [1] CRAN (R 4.4.3)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
+    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
+    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.0     2025-07-04 [1] CRAN (R 4.4.3)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
+    ##  polyclip            1.10-7     2024-07-23 [1] CRAN (R 4.4.3)
+    ##  polylabelr          0.3.0      2024-11-19 [1] CRAN (R 4.4.3)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.4.3)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
+    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.4.3)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
+    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
+    ##  xfun                0.52       2025-04-02 [1] CRAN (R 4.4.3)
+    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
+    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
     ## 
-    ##  [1] /home/pkesava/R/x86_64-pc-linux-gnu-library/4.5
+    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
     ##  [2] /usr/local/lib/R/site-library
     ##  [3] /usr/lib/R/site-library
     ##  [4] /usr/lib/R/library

@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-06 January, 2026
+07 January, 2026
 
 - [Environment setup](#environment-setup)
 - [2.5.1 Install,load essential functions and
@@ -67,26 +67,12 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
     ## Loading required package: BiocGenerics
 
-    ## Loading required package: generics
-
-    ## 
-    ## Attaching package: 'generics'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     explain
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
-    ##     setequal, union
-
     ## 
     ## Attaching package: 'BiocGenerics'
 
-    ## The following object is masked from 'package:dplyr':
+    ## The following objects are masked from 'package:dplyr':
     ## 
-    ##     combine
+    ##     combine, intersect, setdiff, union
 
     ## The following objects are masked from 'package:stats':
     ## 
@@ -96,10 +82,10 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
     ## 
     ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
     ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
-    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
-    ##     rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
-    ##     unsplit, which.max, which.min
+    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
+    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+    ##     Position, rank, rbind, Reduce, rownames, sapply, saveRDS, setdiff,
+    ##     table, tapply, union, unique, unsplit, which.max, which.min
 
     ## Loading required package: S4Vectors
 
@@ -185,15 +171,18 @@ ref_protein_dt <- import_reference_fasta(file.path
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
 # Load data into environment
 MS_KR1_data <- file.path(
   project.dir,
-  "data/MQ_with_DI/MS_KR_1" 
+  "data/MQ_with_DI_no_waterloss/MS_KR_1" 
 )
 
 # Create file path for results
-MS_KR_1_dir <- file.path(project.dir, "results", "p2-analysis-setting", "MS_KR_1")
-# dir.create(MS_KR_1_dir, recursive = TRUE)
+MS_KR_1_dir <- file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O")
+create.dir(MS_KR_1_dir)
 
 # Define file path common PTM mapping file
 ptm_mapping_file <- file.path(
@@ -252,8 +241,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4225955 225.7    8204018 438.2  8204018 438.2
-    ## Vcells 21422719 163.5   64674762 493.5 64674223 493.5
+    ## Ncells  3897055 208.2    7378418 394.1  7378418 394.1
+    ## Vcells 16101086 122.9   44656049 340.7 44656049 340.7
 
 # 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
@@ -276,7 +265,7 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 
 ## Read stoichiometry data for MS_KR1 data 
  MS_KR1_stoic_dt <- read_stoic_data(
-  prefix = "MS_KR_1_noH2O_",
+  prefix = "MS_KR_1_",
   pre_prefix = "",
   post_fix = "_DI",
   dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
@@ -286,8 +275,6 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 MS_KR1_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
-
-MS_KR1_stoic_dt <- MS_KR1_stoic_dt[is_diagnostic_peak == TRUE]
 
 # categorize data according to sample names 
 MS_KR1_stoic_dt[, `:=`(
@@ -432,14 +419,13 @@ MS_KR_1_hydroxy_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
-# Calculate the difference in stoichiometric values of JMJD6 re expression and Hypoxia
-MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[, `:=`(
-  Stoic_diff = (Normoxia - Hypoxia),
-  Stoic_ratio = (Hypoxia/Normoxia)
-)]
-
 # filter data to have hydroxylysine with diagnostic ion 
 MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE]
+
+# Calculate the difference in stoichiometric values of JMJD6 re expression and Hypoxia
+MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[, `:=`(
+  Stoic_diff = (Normoxia - Hypoxia)
+)]
 
 # Factor the gene names
 MS_KR_1_hydroxy_dt[, `:=`(
@@ -452,7 +438,7 @@ MS_KR_1_hydroxy_dt[, `:=`(
 # Normoxia set at 0.1
 MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.1)
 
-subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3", "BRD4"))[, table(gene_name)]
+MS_KR_1_hydroxy_dt[, table(gene_name)]
 ```
 
     ## gene_name
@@ -467,119 +453,10 @@ summary(anova_MS_KR_1)
 ```
 
     ##             Df Sum Sq Mean Sq F value Pr(>F)  
-    ## gene_name    2 0.2540 0.12699   4.706 0.0199 *
-    ## Residuals   22 0.5936 0.02698                 
+    ## gene_name    2 0.3554 0.17770   5.199 0.0133 *
+    ## Residuals   24 0.8204 0.03418                 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 2 observations deleted due to missingness
-
-``` r
-# ANOVA - Stoic-ratio
-anova_MS_KR_1 <- aov(Stoic_ratio ~ gene_name, data = MS_KR_1_hydroxy_dt)
-
-summary(anova_MS_KR_1)
-```
-
-    ##             Df Sum Sq Mean Sq F value Pr(>F)
-    ## gene_name    2 0.2326 0.11632   1.573   0.23
-    ## Residuals   22 1.6264 0.07393               
-    ## 2 observations deleted due to missingness
-
-``` r
-t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_diff by gene_name
-    ## t = -0.21304, df = 10.224, p-value = 0.8355
-    ## alternative hypothesis: true difference in means between group BRD2 and group BRD3 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.2403675  0.1983003
-    ## sample estimates:
-    ## mean in group BRD2 mean in group BRD3 
-    ##          0.3984090          0.4194426
-
-``` r
-t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_diff by gene_name
-    ## t = 3.1686, df = 12.541, p-value = 0.007701
-    ## alternative hypothesis: true difference in means between group BRD3 and group BRD4 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  0.06721554 0.35868396
-    ## sample estimates:
-    ## mean in group BRD3 mean in group BRD4 
-    ##          0.4194426          0.2064928
-
-``` r
-t.test(Stoic_diff ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_diff by gene_name
-    ## t = 2.0719, df = 8.9473, p-value = 0.06834
-    ## alternative hypothesis: true difference in means between group BRD2 and group BRD4 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.01781303  0.40164534
-    ## sample estimates:
-    ## mean in group BRD2 mean in group BRD4 
-    ##          0.3984090          0.2064928
-
-``` r
-t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD3")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_ratio by gene_name
-    ## t = 0.43455, df = 10.957, p-value = 0.6723
-    ## alternative hypothesis: true difference in means between group BRD2 and group BRD3 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.2080184  0.3103046
-    ## sample estimates:
-    ## mean in group BRD2 mean in group BRD3 
-    ##          0.3356689          0.2845258
-
-``` r
-t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD3", "BRD4")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_ratio by gene_name
-    ## t = -1.8075, df = 15.893, p-value = 0.08964
-    ## alternative hypothesis: true difference in means between group BRD3 and group BRD4 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.46956515  0.03747492
-    ## sample estimates:
-    ## mean in group BRD3 mean in group BRD4 
-    ##          0.2845258          0.5005709
-
-``` r
-t.test(Stoic_ratio ~ gene_name, data = subset(MS_KR_1_hydroxy_dt, gene_name %in% c("BRD2", "BRD4")))
-```
-
-    ## 
-    ##  Welch Two Sample t-test
-    ## 
-    ## data:  Stoic_ratio by gene_name
-    ## t = -1.2104, df = 15.169, p-value = 0.2446
-    ## alternative hypothesis: true difference in means between group BRD2 and group BRD4 is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.4549949  0.1251909
-    ## sample estimates:
-    ## mean in group BRD2 mean in group BRD4 
-    ##          0.3356689          0.5005709
 
 ``` r
 # Plot - Stoic difference between BRD2, 3 and 4
@@ -598,105 +475,7 @@ ggplot(
   theme(legend.position="none")
 ```
 
-    ## Warning: Removed 2 rows containing non-finite outside the scale range
-    ## (`stat_boxplot()`).
-    ## Removed 2 rows containing non-finite outside the scale range
-    ## (`stat_boxplot()`).
-
-    ## Warning: Removed 2 rows containing missing values or values outside the scale range
-    ## (`geom_point()`).
-
 ![](p2-5_MS_KR1_files/figure-gfm/boxplots_stoic_diff_ratio-1.png)<!-- -->
-
-``` r
-# Plot - Stoic ratio between BRD2, 3 and 4
-ggplot(
-  data = MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE],
-  aes(
-    x = gene_name,
-    y = Stoic_ratio
-  )
-) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point() +
-  labs(title = "Stoichiometry ratio (Normoxia 0.1) between BRD2, 3 and 4") +
-  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
-  theme(legend.position="none")
-```
-
-    ## Warning: Removed 2 rows containing non-finite outside the scale range
-    ## (`stat_boxplot()`).
-
-    ## Warning: Removed 2 rows containing non-finite outside the scale range
-    ## (`stat_boxplot()`).
-
-    ## Warning: Removed 2 rows containing missing values or values outside the scale range
-    ## (`geom_point()`).
-
-![](p2-5_MS_KR1_files/figure-gfm/boxplots_stoic_diff_ratio-2.png)<!-- -->
-
-``` r
-# Plot - JMJD6 re-expression - BRD4
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
-  aes(
-    x = oxygen_levels,
-    y = stoichiometry,
-    group = paste(protein_accession, aa_pos)
-  )
-) +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(linewidth = 0.4) +
-  labs(title = "BRD4") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-```
-
-![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression_scatter_plot-1.png)<!-- -->
-
-``` r
-## Boxplot and scatter plot
-
-install.packages("viridis")
-```
-
-    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
-    ## (as 'lib' is unspecified)
-
-``` r
-library(viridis)
-```
-
-    ## Loading required package: viridisLite
-
-``` r
-# Plot - JMJD6 re-expression - BRD4
-ggplot(
-  data = MS_KR1_stoic_dt[gene_name %in% c("BRD4") & diagnostic_peak == "+"],
-  aes(
-    x = oxygen_levels,
-    y = stoichiometry
-  )
-) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point(aes(colour = paste(protein_accession, aa_pos))) +
-  geom_line(aes(group =  aa_pos), size=0.3, colour='black') +
-  labs(title = "BRD4") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  theme(legend.position="none") +
-  scale_x_discrete(limits = rev(levels(MS_KR1_stoic_dt$Oxygen_levels)))
-```
-
-    ## Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-    ## ℹ Please use `linewidth` instead.
-    ## This warning is displayed once every 8 hours.
-    ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-    ## generated.
-
-![](p2-5_MS_KR1_files/figure-gfm/JMJD6_reexpression_scatter_plot-2.png)<!-- -->
 
 # Session information
 
@@ -706,7 +485,7 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.5.1 (2025-06-13)
+    ##  version  R version 4.4.3 (2025-02-28)
     ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
@@ -714,73 +493,70 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-01-06
-    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
-    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ##  date     2026-01-07
+    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
-    ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
-    ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
-    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.5.1)
-    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.5.1)
-    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.5.1)
-    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
-    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
-    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.5.1)
-    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.5.1)
-    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.5.1)
-    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
-    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
-    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
-    ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
-    ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
-    ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
-    ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
-    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
-    ##  gridExtra           2.3        2017-09-09 [1] CRAN (R 4.5.1)
-    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
-    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
-    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
-    ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
-    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
-    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
-    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
-    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
-    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
-    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
-    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
-    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
-    ##  patchwork           1.3.2      2025-08-25 [1] CRAN (R 4.5.1)
-    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
-    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-16 [1] local
-    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
-    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
-    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
-    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
-    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
-    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.5.1)
-    ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
-    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
-    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
-    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.5.1)
-    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.5.1)
-    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
-    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
-    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
-    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
-    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
-    ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
-    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
-    ##  viridis           * 0.6.5      2024-01-29 [1] CRAN (R 4.5.1)
-    ##  viridisLite       * 0.4.2      2023-05-02 [1] CRAN (R 4.5.1)
-    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
-    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
-    ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
-    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
+    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
+    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
+    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.4.3)
+    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.4.3)
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.4      2025-06-18 [1] CRAN (R 4.4.3)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
+    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
+    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggplot2           * 3.5.2      2025-04-09 [1] CRAN (R 4.4.3)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
+    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
+    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.4.3)
+    ##  patchwork           1.3.1      2025-06-21 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.0     2025-07-04 [1] CRAN (R 4.4.3)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
+    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.4.3)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
+    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
+    ##  xfun                0.52       2025-04-02 [1] CRAN (R 4.4.3)
+    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
+    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
     ## 
-    ##  [1] /home/pkesava/R/x86_64-pc-linux-gnu-library/4.5
+    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
     ##  [2] /usr/local/lib/R/site-library
     ##  [3] /usr/lib/R/site-library
     ##  [4] /usr/lib/R/library

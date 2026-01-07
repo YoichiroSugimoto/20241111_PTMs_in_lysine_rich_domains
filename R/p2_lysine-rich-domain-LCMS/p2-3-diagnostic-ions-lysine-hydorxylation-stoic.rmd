@@ -54,7 +54,7 @@ P2_functions <-
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
-library("ggpubr")
+# library("ggpubr")
 
 ```
 
@@ -198,6 +198,14 @@ selected.ms <- c("100.0762", "156.1025")
 psm.count.by.di <- m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(
   monoisotopic_mass, genotype, diagnostic_ion
 )]
+
+print("Ratio of PSM with diagnostic ion: 100.0762")
+psm.count.by.di[monoisotopic_mass == "100.0762" & genotype == "WT" & diagnostic_ion == TRUE, N] /
+  psm.count.by.di[monoisotopic_mass == "100.0762" & genotype == "WT", sum(N)]
+
+print("Ratio of PSM with diagnostic ion: 156.1025")
+psm.count.by.di[monoisotopic_mass == "156.1025" & genotype == "WT" & diagnostic_ion == TRUE, N] /
+  psm.count.by.di[monoisotopic_mass == "156.1025" & genotype == "WT", sum(N)]
 
 # Perform Fisher's test for each selected monoisotopic mass 
 for(mi.ms in selected.ms){

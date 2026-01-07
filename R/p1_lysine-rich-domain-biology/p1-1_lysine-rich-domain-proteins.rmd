@@ -52,9 +52,12 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
 #Create p1 results directory
 p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
-# dir.create(p1_K_rich_domains, showWarnings = FALSE, recursive = TRUE)
+create.dirs(c(results.dir, p1_K_rich_domains))
 
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -114,6 +117,9 @@ max.k.score.dt <- merge(
 # Create dataset with max k score 
 fwrite(max.k.score.dt, file.path(results.dir, "p1_K_rich_domains", "max-k-score-per-protein.csv")) 
 
+print("The ratio of proteins with the max K ratio > 0.3")
+nrow(max.k.score.dt[max_k_ratio > 0.3]) / nrow(max.k.score.dt)
+
 # Import human protein reference data from specified file path 
 ref_protein_data <- import_reference_fasta(file.path
 ("/fast/AG_Sugimoto/reference/uniprot/human", 
@@ -121,19 +127,6 @@ ref_protein_data <- import_reference_fasta(file.path
 
 # Median K score of all region in human proteome#
 protein.feature.dt[, median(K_ratio)]
-
-
-all_protein_K_ratio <- sapply(ref_protein_data$protein_seq, function(seq){
-  if (is.na(seq) || nchar(seq) == 0) # checks for missing values 
-    return(NA_real_)
-  k_count <- str_count(seq, "K") # counts number of K in each sequence
-  len <- nchar(seq) # counts the number of amino acid in sequence
-  (k_count/len)*10 # compute K per 10 residues
-})
-
-# median K score
-median_k_ratio <- median(all_protein_K_ratio, na.rm = TRUE)
-print(median_k_ratio)
 
 ```
 
@@ -218,94 +211,7 @@ ggplot(
 
 ```
 
-# 1.3 RNA-Binding proteins
-
-```{r RNA_binding_proteins, warning=FALSE}
-
-#---------------------------
-# RNA-Binding Proteins (RBP)
-#---------------------------
-
-# Load data into environment 
-rbp.dt <- readxl::read_excel(file.path(data.dir, "20241113_RBPbase_Hs_DescriptiveID.xlsx")) %>%
-  data.table()
-
-# Remove line breaks and split into two columns
-setnames(rbp.dt, old = colnames(rbp.dt), new = str_split_fixed(colnames(rbp.dt), "\n", n = 2)[, 1])
-rbp.dt <- janitor::clean_names(rbp.dt, case = "none") #Rename duplicate column names
-setnames(rbp.dt, old = "UnitProtSwissProtID_Hs", new = "uniprot_id") 
-
-
-# Dataset containing only UniProt id and Hs_ columns
-rbp.dt <- rbp.dt[
-  , c("uniprot_id", grep("^Hs_", colnames(rbp.dt), value = TRUE)), with = FALSE
-  ]
-
-# Remove NA and duplicated values
-rbp.dt <- rbp.dt[!is.na(uniprot_id) & !duplicated(uniprot_id)]
-
-# Reshape dataset into long format for easy data management and visualization 
-m.rbp.dt <- melt(
-    rbp.dt,
-    id.vars = c("uniprot_id"),
-    variable.name = "dataset",
-    value.name = "RBP"
-)
-
-# Dataset containing count of identified RBP and total RBP 
-rbp.count.dt <- m.rbp.dt[!is.na(uniprot_id),
-  list(
-    identified_RBP = sum(RBP == "YES"),
-    total = sum(RBP == "YES") + sum(RBP == "no") 
-    ), by = uniprot_id
-  ]
-
-rbp.count.dt[, table(identified_RBP)]
-
-#-----------------------------------
-## Comparing Max K score versus RBP
-#-----------------------------------
-
-# Create dataset containing max K score and RBP count
-rbp.count.dt <- merge(
-  max.k.score.dt, rbp.count.dt, by = "uniprot_id"
-)
-
-data.set.names <- c(
-  "Others", 
-  "RBP (1 dataset)", "RBP (2 dataset)", "RBP (> 2 dataset)"
-  )
-
-# Assign values to RBP dataset columns based on RBP count 
-rbp.count.dt[, RBP := case_when(
-  identified_RBP > 2 ~ "RBP (> 2 dataset)",
-  identified_RBP > 1 ~ "RBP (2 dataset)",
-  identified_RBP > 0 ~ "RBP (1 dataset)", 
-  TRUE ~ "Others") %>% factor(levels = data.set.names)]
-rbp.count.dt[, table(RBP)]
-
-```
-
-# Data Visualization - RNA-Binding Proteins (Max K score versus RBP)
-
-```{r Data_Visualization_RNA_Binding_Proteins}
-
-# Plot - Max K score versus RBP
- ggplot(
-  data = rbp.count.dt,
-  aes(
-    x = RBP,
-    y = max_k_ratio
-    )
-  ) +
-  geom_boxplot(fill = "steelblue", outlier.shape = NA) +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  theme(aspect.ratio = 3)
-
-```
-
-
-# 1.4 Subcellular localisation
+# 1.3 Subcellular localisation
 
 ```{r subcellular_localisation_analysis}
 
@@ -537,7 +443,7 @@ ggplot(
 library("RColorBrewer")
 
 #install.packages("ggpubr")
-library("ggpubr")
+#library("ggpubr")
 
 # Filter the K scores for histones 1-4
 max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
@@ -617,49 +523,48 @@ P5_H4 <- ggplot(
   xlab("") + 
   ylab("")
 
+P2_H2A
+P3_H2B
+P4_H3
+P5_H4
 
-combined <- ggarrange(
-  P2_H2A, P3_H2B, P4_H3, P5_H4,
-  ncol = 2, nrow = 2,
-  labels = c("H2A", "H2B", "H3", "H4"),
-  label.x = 0.0,          
-  label.y = 1,  
-  hjust = -0.5, 
-  vjust = 1,
-  heights = 1,
-  font.label = list(size = 8, face = "bold")
-)
+# combined <- ggarrange(
+#   P2_H2A, P3_H2B, P4_H3, P5_H4,
+#   ncol = 2, nrow = 2,
+#   labels = c("H2A", "H2B", "H3", "H4"),
+#   label.x = 0.0,          
+#   label.y = 1,  
+#   hjust = -0.5, 
+#   vjust = 1,
+#   heights = 1,
+#   font.label = list(size = 8, face = "bold")
+# )
 
-annotate_figure(
-  combined,
-  left   = text_grob("Max K Score", rot = 90, size = 10),
-  bottom = text_grob("Histone", size = 10)
-)
+# annotate_figure(
+#   combined,
+#   left   = text_grob("Max K Score", rot = 90, size = 10),
+#   bottom = text_grob("Histone", size = 10)
+# )
 
 
 ```
-```{r histone_k_score_per_position}
-#H3
-ggplot(
-  protein.feature.dt[grepl("P62805", Accession)],
-  aes(
-    x = position,
-    y = K_ratio_score
-  )
-) +
-  coord_cartesian(ylim = c(0,0.5)) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
 
-# H2AX 
+The definition of histone tail was obtained from "Histone post-translational modifications — cause and consequence of genome function (https://doi.org/10.1038/s41576-022-00468-7)".
+
+```{r histone_k_score_per_position}
+
+#H2A
 ggplot(
-  protein.feature.dt[grepl("P16104", Accession)],
+  protein.feature.dt[grepl("Q6FI13", Accession)],
   aes(
     x = position,
     y = K_ratio_score
   )
 ) +
   coord_cartesian(ylim = c(0,0.5)) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6)
+  annotate("rect", xmin = 2, xmax = 26, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q6FI13", Accession)][1, Accession])
 
 #H2B
 ggplot(
@@ -670,10 +575,36 @@ ggplot(
   )
 ) +
   coord_cartesian(ylim = c(0,0.5)) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+  annotate("rect", xmin = 2, xmax = 33, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("P33778", Accession)][1, Accession])
+
+
+# H2AX 
+# ggplot(
+#   protein.feature.dt[grepl("P16104", Accession)],
+#   aes(
+#     x = position,
+#     y = K_ratio_score
+#   )
+# ) +
+#   coord_cartesian(ylim = c(0,0.5)) +
+#   geom_area(color = "black", fill = "steelblue", alpha = 0.6)
+
+#H3
+ggplot(
+  protein.feature.dt[grepl("Q16695", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0,0.5)) +
+  annotate("rect", xmin = 2, xmax = 44, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q16695", Accession)][1, Accession])
 
 #H4
-
 ggplot(
   protein.feature.dt[grepl("P62805", Accession)],
   aes(
@@ -682,23 +613,80 @@ ggplot(
   )
 ) +
   coord_cartesian(ylim = c(0,0.5)) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+  annotate("rect", xmin = 2, xmax = 24, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("P62805", Accession)][1, Accession])
 
-#H2A
+print("Median K score of histone tails")
+rbindlist(list(
+  protein.feature.dt[grepl("Q6FI13", Accession)][2:26],
+  protein.feature.dt[grepl("P33778", Accession)][2:33],
+  protein.feature.dt[grepl("Q16695", Accession)][2:44],
+  protein.feature.dt[grepl("P62805", Accession)][2:24]
+))[, median(K_ratio_score)]
 
-ggplot(
-  protein.feature.dt[grepl("Q6FI13", Accession)],
+```
+
+```{r kscore_disorderedness_other_proteins}
+
+library("patchwork")
+
+dkc1.1 <- ggplot(
+  protein.feature.dt[grepl("O60832", Accession)],
   aes(
     x = position,
     y = K_ratio_score
   )
 ) +
-  coord_cartesian(ylim = c(0,0.5)) +
-  geom_area(color = "black", fill = "steelblue", alpha = 0.6) 
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("O60832", Accession)][1, Accession]) +
+  geom_point(x = 475, y = 0, color = "red") +
+  geom_point(data = data.table(x = c(501:505), y = rep(0, 5)), aes(x = x, y = y), color = "blue")
 
+dkc1.2 <- ggplot(
+  protein.feature.dt[grepl("O60832", Accession)],
+  aes(
+    x = position,
+    y = IUPRED2
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("O60832", Accession)][1, Accession])
+
+dkc1.1 / dkc1.2
+
+
+ARL6IP4.1 <- ggplot(
+  protein.feature.dt[grepl("Q66PJ3", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q66PJ3", Accession)][1, Accession]) +
+  geom_point(data = data.table(x = c(290, 292, 294), y = rep(0, 3)), aes(x = x, y = y), color = "red") +
+  geom_point(data = data.table(x = c(290, 292, 294, 303, 304, 306, 307), y = rep(0, 7)), aes(x = x, y = y), color = "blue")
+
+ARL6IP4.2 <- ggplot(
+  protein.feature.dt[grepl("Q66PJ3", Accession)],
+  aes(
+    x = position,
+    y = IUPRED2
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q66PJ3", Accession)][1, Accession])
+
+ARL6IP4.1 / ARL6IP4.2
 
 
 ```
+
 
 
 

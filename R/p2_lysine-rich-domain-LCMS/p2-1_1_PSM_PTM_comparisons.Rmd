@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# 2.1.1.1 Install,load essential functions and libraries
+# 2.1.1.1 Install and load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -83,8 +83,7 @@ all.protein.bs <- Biostrings::readAAStringSet(
 
 ```
 
-
-# 2.1.1.3 Comparison - PNAS2022 versus new workflow for PSM coverage and PTM stoichiometry
+# 2.1.1.3 Comparing PSM coverage between m2, m5, and m7 miscleavages
 
 ```{r define_functions}
 
@@ -127,62 +126,9 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 
-#---------------
-# PNAS2022 - WT
-#---------------
-
-# PNAS2022 - BRD4 WT -PSM
-PNAS2022_PSM_WT <-plot_psm_coverage(
-  pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-PNAS2022_PSM_WT <- PNAS2022_PSM_WT$coverage_plot_g
-
-# PNAS2022 - BRD4 WT -PTM
-PNAS2022_PTM_WT <- plot_ptm_stoichiometry(
-  pnas2022.stoic.dt[sample_name == "HeLaWT_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-#--------------------
-# PNAS2022 - JMJD6KO
-#--------------------
-
-# PNAS2022 - BRD4 JMJD6KO -PSM
-PNAS2022_PSM_JMJD6KO <- plot_psm_coverage(
-  pnas2022.stoic.dt[sample_name == "HeLaJMJD6KO_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-PNAS2022_PSM_JMJD6KO <- PNAS2022_PSM_JMJD6KO$coverage_plot_g
-
-# PNAS2022 - BRD4 JMJD6KO - PTM 
-PNAS2022_PTM_JMJD6KO <- plot_ptm_stoichiometry(
-  pnas2022.stoic.dt[sample_name == "HeLaJMJD6KO_JQ1"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-
-# Combine PSM and PTM plot together using patchwork
-# WT
-#PNAS2022_PSM_WT/PNAS2022_PTM_WT
-
-# JMJD6KO
-#PNAS2022_PSM_JMJD6KO/PNAS2022_PTM_JMJD6KO
-
 # Load library 
 library(ggplot2)
-library(ggpubr)
-
-# Combine PSM and PTM plot together using ggarrange
-# WT
-ggarrange(
-  PNAS2022_PSM_WT, PNAS2022_PTM_WT,
-  ncol = 1, nrow = 2,
-  align = "hv", 
-  legend = "none"
-)
-
-# JMJD6KO
-ggarrange(
-  PNAS2022_PSM_JMJD6KO, PNAS2022_PTM_JMJD6KO,
-  ncol = 1, nrow = 2,
-  align = "hv", 
-  legend = "none"
-)
+# library(ggpubr)
 
 ```
 
@@ -198,7 +144,7 @@ MQ_Std_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_Std_run_info[, sample_id := 1:.N]
 
-## Read stoichiometry data for MQ_DI
+## Read stoichiometry data for MQ_Std
 MQ_Std_stoic_dt <- lapply(
   MQ_Std_run_info[, prefix],
   read_stoic_data,
@@ -207,49 +153,10 @@ MQ_Std_stoic_dt <- lapply(
   dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 ) %>% rbindlist
 
-# MQ_DI - BRD4 WT - PTM 
-MQ_PTM_WT <- plot_ptm_stoichiometry(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-# MQ_DI - BRD4 WT - PSM 
-MQ_PSM_WT <- plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
-
-# Combine PSM and PTM plot together using ggarrange
-# WT
-ggarrange(
-  MQ_PSM_WT, MQ_PTM_WT,
-  ncol = 1, nrow = 2,
-  align = "hv", 
-  legend = "none"
-)
-
-
-# MQ_DI - BRD4 JMJD6KO - PSM 
-MQ_PSM_JMJD6KO <-plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-MQ_PSM_JMJD6KO <- MQ_PSM_JMJD6KO$coverage_plot_g
-
-# MQ_DI - BRD4 JMJD6KO - PTM
-MQ_PTM_JMJD6KO <- plot_ptm_stoichiometry(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaJMJD6KO_derivatised"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-
-# Combine PSM and PTM plot together using ggarrange
-# JMJD6KO
-ggarrange(
-  MQ_PSM_JMJD6KO, MQ_PTM_JMJD6KO,
-  ncol = 1, nrow = 2,
-  align = "hv", 
-  legend = "none"
-)
 
 
 ```
 
-# 2.1.1.4 Comparing PSM coverage between m2, m5, and m7 miscleavages
 
 ```{r MQ_Std_PSM_miscleavages}
 
@@ -258,19 +165,24 @@ ggarrange(
 # m2
 MQ_PSM_WT <- plot_psm_coverage(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m2_v2_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA) 
-MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350)) +
+m2.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350)) +
     labs(title = "BRD4 PSM miscleavages m2")
 
 # m5
 MQ_PSM_WT <- plot_psm_coverage(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m5_v5_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+m5.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
 
 # m7
 MQ_PSM_WT <- plot_psm_coverage(
   MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
-MQ_PSM_WT <- MQ_PSM_WT$coverage_plot_g
+m7.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+
+library("patchwork")
+m2.g / m5.g / m7.g
+
+plot_ptm_stoichiometry(MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs)
+
 
 ```
 
