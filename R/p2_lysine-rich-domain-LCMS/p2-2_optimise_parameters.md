@@ -147,9 +147,13 @@ library(ptm.stoichiometry)
 library("readxl")
 
 # Define path to result directory 
-p2_results_dir <- file.path(project.dir,
-                        "results",
-                        "p2_analysis_setting")
+results.dir <- file.path(project.dir, "results")
+
+### To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
+
+p2_results_dir <- file.path(results.dir,
+                        "p2-analysis-setting")
 ```
 
 # 2.2.1 Import basic data
@@ -199,9 +203,8 @@ read_evidence <- function(prefix, dir_path){
 evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
   all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
-  dir_path = p2_results_dir
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
 ) %>% rbindlist
-
 
 data.count.dt <- evidence.dt[, list(
   total_peptide_count = .N, # Count total number of rows (peptides)
@@ -255,14 +258,14 @@ rel_count_stat.dt[, `:=`(
 
 
 ggplot(
-  rel_count_stat.dt,
+  rel_count_stat.dt[type == "MULTI-MSMS"],
   aes(
     x = MQ_setting,
     y = mean_rel_msms_count,
     fill = type
   )
 ) +
-  geom_bar(stat = "identity", position = "dodge") +
+  geom_bar(stat = "identity") +
   geom_errorbar(aes(
     ymin = mean_rel_msms_count - sd_rel_msms_count,
     ymax = mean_rel_msms_count + sd_rel_msms_count
@@ -271,7 +274,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   ylab("Relative MS/MS count") +
-  scale_fill_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE")) #+
+  scale_fill_manual(values = c("MULTI-MSMS" = "#4477AA")) #+
 ```
 
 ![](p2-2_optimise_parameters_files/figure-gfm/MS_MS_count-1.png)<!-- -->
@@ -295,7 +298,7 @@ read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
 all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
-  dir_path = p2_results_dir
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
 ) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(
@@ -368,7 +371,7 @@ all_stoic_pos.dt <- lapply(
       !is.na(prefix), prefix
   ],
   read_stoic_data,
-  dir_path = p2_results_dir
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS")
 ) %>% rbindlist
 
 all_stoic_pos.dt[, `:=`(
