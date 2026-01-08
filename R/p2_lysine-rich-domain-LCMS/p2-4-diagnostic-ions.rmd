@@ -363,6 +363,21 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
 
+ggplot(
+  data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
+  aes(
+    x = JMJD6KO,
+    y = WT,
+    color = is_diagnostic_peak
+  )
+) + geom_point() +
+  ggrepel::geom_text_repel(aes(label = ifelse(
+    is_diagnostic_peak == TRUE &
+    grepl("^H", gene_name), paste0(gene_name, "\n(", aa_pos, ")"), NA)), max.overlaps = 1000) +
+  theme(aspect.ratio = 1) +
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
+
+
 ```
 
 # 2.4.6 Comparison of data without and with DI consideration

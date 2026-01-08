@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-07 January, 2026
+08 January, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -175,9 +175,8 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
-### To be deleted
-results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
-
+## To be deleted
+results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains", "results")
 
 # Import human protein reference data from specified file path 
 ref_protein_dt <- import_reference_fasta(
@@ -532,6 +531,30 @@ ggplot(
     ## (`geom_text_repel()`).
 
 ![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_JMJD6KO_noH20loss-1.png)<!-- -->
+
+``` r
+ggplot(
+  data = MQ_DI_d.hydroxyK_dt[order(is_diagnostic_peak)],
+  aes(
+    x = JMJD6KO,
+    y = WT,
+    color = is_diagnostic_peak
+  )
+) + geom_point() +
+  ggrepel::geom_text_repel(aes(label = ifelse(
+    is_diagnostic_peak == TRUE &
+    grepl("^H", gene_name), paste0(gene_name, "\n(", aa_pos, ")"), NA)), max.overlaps = 1000) +
+  theme(aspect.ratio = 1) +
+  scale_color_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD"))
+```
+
+    ## Warning: Removed 497 rows containing missing values or values outside the scale range
+    ## (`geom_point()`).
+
+    ## Warning: Removed 1858 rows containing missing values or values outside the scale range
+    ## (`geom_text_repel()`).
+
+![](p2-4-diagnostic-ions_files/figure-gfm/hydroxylation_sites_DI_JMJD6KO_noH20loss-2.png)<!-- -->
 
 # 2.4.6 Comparison of data without and with DI consideration
 
@@ -1085,7 +1108,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-01-07
+    ##  date     2026-01-08
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
