@@ -1,0 +1,373 @@
+---
+title: "2-7. Lysine hydroxylations in normoxia and hypoxia 4% and 1%"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+# Overview
+
+This script examines the oxygen sensitivity of lysine hydroxylations in different BRD proteins and their respective sites. 
+
+# Environment setup
+
+```{r setup_environment}
+
+## Initialize renv (first time only) - re-installed 24.09.2025
+# Creates project specific library and renv.lock file. 
+# Use 'renv::init(filepath)' to create project library
+# renv::init(
+#        "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#    )
+
+# Define project directory - contains the R scripts, data and result folders
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+#renv::restore completed 24.09.2025
+#renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+# 2.5.1 Install,load essential functions and libraries
+
+```{r load_essential_functions_current_session}
+
+## Load all R scripts from the 'functions' folder into the current session
+P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+
+## Install private package 
+# Install ptm.stiochiometry package
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries
+library("readxl")
+library("janitor")
+library("ptm.stoichiometry")
+
+```
+
+
+# 2.5.2 Import human protein reference data 
+
+```{r import_data, warning=FALSE}
+
+# Import human protein reference data from specified file path 
+ref_protein_dt <- import_reference_fasta(file.path
+                                         ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                           "UP000005640_9606.fasta")) 
+
+```
+
+# 2.5.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia 
+
+```{r data_directory_MS_KR_1}
+
+# Define path to data directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
+# Load data into environment
+MS_SS_data <- file.path(
+  project.dir,
+  "data/MQ_with_DI_no_waterloss/MS_SS" 
+)
+
+# Create file path for results
+MS_SS_dir <- file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O")
+create.dir(MS_SS_dir)
+
+# Define file path common PTM mapping file
+ptm_mapping_file <- file.path(
+  project.dir,
+  "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
+)
+```
+
+
+```{r calculate_stoichiometry_MS_SS}
+  
+# Define file path to MaxQuant evidence files
+mq_evidence_data <- file.path(MS_SS_data, 
+                              "MS_SS_evidence.txt")
+
+# Print which sample id is being processed
+message("Processing: ", basename(mq_evidence_data)) 
+
+# Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
+if (file.exists(mq_evidence_data)) {
+  
+  # Locate and fetch all PTM site files within the ptm folder
+  ptm_files <- list.files(file.path(
+    MS_SS_data, "ptm"), 
+    full.names = TRUE)
+  
+  # Generate PTM names based on file names, add brackets and remove "Sites.txt"
+  ptm_names <- paste0(
+    "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+  )
+  
+  # Run the stoichiometry calculation
+  stoic.dt <- calculate_stoichiometry2(
+    mq_evidence_data = mq_evidence_data,
+    sample_info_file = file.path(
+      MS_SS_data,
+      "sample_info.csv"
+    ),
+    ref_protein_dt = ref_protein_dt,
+    ptm_files = ptm_files,
+    ptm_names = ptm_names,
+    output_prefix = file.path(MS_SS_dir, "MS_SS"),
+    ptm_mapping_file = ptm_mapping_file,
+    K_only = FALSE,
+    selected_type = "MULTI-MSMS",
+    parse_protein_accession_function = NA
+  )
+} else { # If evidence.txt does not exist, skip the function and print below message
+  print(paste0("File does not exist: ", mq_evidence_data))
+}
+
+# Garbage collection - to free up memory
+gc()
+
+
+```
+
+# 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
+
+```{r hydroxylation_hypoxia_vs_normoxia}
+
+# Read FASTA data 
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
+  return(dt)
+}
+
+## Read stoichiometry data for MS_KR1 data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# categorize data according to sample names 
+MS_KR1_stoic_dt[, `:=`(
+  sample_name =  
+    factor(sample_name, levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA"))
+)]
+
+# BRD4 
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
+)
+
+# BRD3
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "Q15059", plot_range = c(483, 533), all.protein.bs, sample_colors = NA
+)
+
+# BRD2
+plot_ptm_stoichiometry(
+  MS_KR1_stoic_dt[sample_name %in% c("HeLaWT_NA_N_NA","HeLaiJMJD6_noDox_N_NA", "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA")], accession = "P25440", plot_range = c(540, 590), all.protein.bs, sample_colors = NA
+)
+```
+
+# 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic peak)
+
+```{r JMJD6_reexpression_vs_hypoxia}
+
+
+# Remove non JMJD6 re expression data (HeLaWT_NA_N_NA, HeLaiJMJD6_noDox_N_NA)
+MS_KR1_stoic_dt <-  droplevels(MS_KR1_stoic_dt[!sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA")])
+
+
+# categorize data according to sample names 
+MS_KR1_stoic_dt[, `:=`(
+  sample_name =  
+    factor(sample_name, levels = c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA"))
+)]
+
+
+# Filter MS_KR_1 data to retain only BRD2, 3, 4 data
+MS_KR1_stoic_dt <-  MS_KR1_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4")]
+
+MS_KR1_stoic_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("^HeLaiJMJD6_Dox_N_NA", sample_name),
+        "HeLaNormoxia_JMJD6KO_reexp",
+        grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name),
+        "HeLaHypoxia",
+        default = NA_character_
+      ),
+      levels = c("HeLaNormoxia_JMJD6KO_reexp", "HeLaHypoxia")
+    )
+)]
+
+# Define function - 'contrast_hydroxylation_by_oxygen_stat'
+contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
+  wt_ko_dt <- all_stoic_dt
+  
+  # Add new columns into metadata
+  wt_ko_dt[, `:=`(
+    oxygen_stat = str_extract(oxygen_levels, "(?<=HeLa)(Normoxia|Hypoxia)"), # new column - oxygen status, extract Normoxia or Hypoxia from oxygen_levels column
+    pos_id = paste0(protein_accession, "_", aa_pos), 
+    sample_pos_id = paste0(oxygen_levels, "_", protein_accession, "_", aa_pos)
+  )]
+  
+  # Identify position with at least one oxidation event
+  oxidation_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE), # checks for oxidation event
+    unique(pos_id) # Returns unique pos_id with oxidation event
+  ]
+  oxidation_sample_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE),
+    unique(sample_pos_id)
+  ]
+  
+  # Collect non hydroxylated K information for the sites with hydroxylation
+  no_hydroxyK_dt <- copy(wt_ko_dt[aa == "K"])
+  no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
+    {.[!sample_pos_id %in% oxidation_sample_ids]} # If hydroxylation data exist, this is not necessary
+  
+  # Set stoichiometry and PSM count to zero for these positions and update the PTM label
+  no_hydroxyK_dt[, `:=`(
+    sum_psm_mapped = 0,
+    stoichiometry = 0,
+    ptm = "[Oxidation (K)]"
+  )]
+  
+  # Combine oxidation data from both original and the newly flagged unmodified K data
+  hydroxyK_dt <- rbind(
+    wt_ko_dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+    no_hydroxyK_dt
+  )
+  
+  # Filter psm mapped greater than 2 for higher confidence 
+  hydroxyK_dt <- hydroxyK_dt[
+    sum_psm_mapped_per_position > 2
+  ]
+  
+  # Sort stoichiometry column from highest to lowest
+  hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
+    !duplicated(paste0(protein_accession, gene_name, aa_pos, oxygen_stat)) # Remove duplicate rows
+  ]
+  
+  # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
+  d.hydroxyK_dt <- dcast(
+    hydroxyK_dt,
+    protein_accession + gene_name + aa_pos ~ oxygen_stat, # values in oxygen_stat become into separate columns (Normoxia & Hypoxia)
+    value.var = "stoichiometry"
+  )
+  
+  return(d.hydroxyK_dt)
+}
+
+# Use contrast function on 'MS_KR1_stoic_dt' to set NA to 0, only if the sample contains an [oxidation K] 
+MS_KR_1_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_KR1_stoic_dt)
+
+# Generate data table with WT and JMJD6KO with diagnostic peaks
+DI_info <- MS_KR1_stoic_dt[
+  , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
+][
+  order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
+][                                              
+  !duplicated(paste(protein_accession, aa_pos)) # Keep only the first row for each unique protein and amino acid position,
+  # removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
+]
+
+# merge the modified data table 'DI_info' with the metadata 'MS_KR_1_hydroxy_dt'
+MS_KR_1_hydroxy_dt <- merge(MS_KR_1_hydroxy_dt, DI_info, by = c("protein_accession", "aa_pos"))
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR_1_hydroxy_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# filter data to have hydroxylysine with diagnostic ion 
+MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE]
+
+# Calculate the difference in stoichiometric values of JMJD6 re expression and Hypoxia
+MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[, `:=`(
+  Stoic_diff = (Normoxia - Hypoxia)
+)]
+
+# Factor the gene names
+MS_KR_1_hydroxy_dt[, `:=`(
+  gene_name =  
+    factor(gene_name)
+)]
+
+```
+
+```{r ANOVA_ttest}
+
+# Normoxia set at 0.1
+MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.1)
+
+MS_KR_1_hydroxy_dt[, table(gene_name)]
+
+# ANOVA
+anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+
+summary(anova_MS_KR_1)
+
+```
+
+
+```{r boxplots_stoic_diff_ratio}
+
+# Plot - Stoic difference between BRD2, 3 and 4
+ggplot(
+  data = MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE],
+  aes(
+    x = gene_name,
+    y = Stoic_diff
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point() +
+  labs(title = "Stoichiometry difference (Normoxia 0.1 between BRD2, 3 and 4") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="none")
+
+
+```
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```
