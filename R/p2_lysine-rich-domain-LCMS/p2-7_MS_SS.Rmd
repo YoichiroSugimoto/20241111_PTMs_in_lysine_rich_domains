@@ -165,76 +165,6 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   return(dt)
 }
 
-## Read stoichiometry data for MS_KR1 data (noH2O loss)
- MS_KR1_stoic_dt <- read_stoic_data(
-  prefix = "MS_KR_1_noH2O_",
-  pre_prefix = "",
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
-
-
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MS_KR1_stoic_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" 
-)]
-
-# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
-MS_KR1_stoic_dt <- MS_KR1_stoic_dt[sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & gene_name %in% c("BRD2", "BRD3", "BRD4") & aa == "K"]
-
-# Create a new column 'stoichiometry_MS_KR_1' and assign it the values of 'stoichiometry'
-MS_KR1_stoic_dt[, stoichiometry_MS_KR_1 := stoichiometry]
-
-```
-
-# 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic peak)
-
-```{r Normoxia_vs_Hypoxia_in_different_O2%}
-
-## Read stoichiometry data for MS_SS data 
- MS_SS_stoic_dt <- read_stoic_data(
-  prefix = "MS_SS_",
-  pre_prefix = "",
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
-
- #[Oxidation (K)] 
-
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MS_SS_stoic_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" 
-)]
-
-# BRD4 
-plot_ptm_stoichiometry(
-  MS_SS_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
-)
-
-#accession = "Q15059", plot_range = c(483, 533) BRD3
-#accession = "P25440", plot_range = c(540, 590) BRD2
-
-
-# Filter MS_SS data to retain only BRD2, 3, 4 data
-MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                  & grepl("^18h_", sample_name)
-                                  & aa == "K"]
-
-#Add new columns to simplify sample names into hypoxia and normoxia
-MS_SS_stoic_dt[, `:=`(
-  oxygen_levels =
-    factor(
-      fcase(
-        grepl("^18h_1pc", sample_name),
-        "HeLaHypoxia_18h_1pc",
-        grepl("^18h_4pc", sample_name),
-        "HeLaHypoxia_18h_4pc",
-        grepl("^18h_21pc", sample_name),
-        "HeLaNormoxia_18h",
-        default = NA_character_
-      ),
-      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc")
-    )
-)]
-
 # Define function - 'contrast_hydroxylation_by_oxygen_stat'
 contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
   wt_ko_dt <- all_stoic_dt
@@ -293,6 +223,82 @@ contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
   
   return(d.hydroxyK_dt)
 }
+
+## Read stoichiometry data for MS_KR1 data (noH2O loss)
+ MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_noH2O_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
+MS_KR1_stoic_dt <- MS_KR1_stoic_dt[sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & gene_name %in% c("BRD2", "BRD3", "BRD4") & aa == "K"]
+
+# Create a new column 'stoichiometry_MS_KR_1' and assign it the values of 'stoichiometry'
+MS_KR1_stoic_dt[, stoichiometry_MS_KR_1 := stoichiometry]
+
+```
+
+# 2.5.5 Plotting Stoichiometry of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic peak)
+
+```{r Normoxia_vs_Hypoxia_in_different_O2%}
+
+## Read stoichiometry data for MS_SS data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_SS_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
+
+ #[Oxidation (K)] 
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_SS_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data
+MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & grepl("^18h_", sample_name)
+                                  & aa == "K"]
+
+MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
+                         MS_KR1_stoic_dt),
+                         use.names = TRUE)
+
+# BRD4 
+plot_ptm_stoichiometry(
+  MS_SS_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
+)
+
+#accession = "Q15059", plot_range = c(483, 533) BRD3
+#accession = "P25440", plot_range = c(540, 590) BRD2
+
+
+
+
+#Add new columns to simplify sample names into hypoxia and normoxia
+MS_SS_KR_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("^18h_1pc", sample_name),
+        "HeLaHypoxia_18h_1pc",
+        grepl("^18h_4pc", sample_name),
+        "HeLaHypoxia_18h_4pc",
+        grepl("^18h_21pc", sample_name),
+        "HeLaNormoxia_18h",
+        default = NA_character_
+      ),
+      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc")
+    )
+)]
 
 # Use contrast function on 'MS_KR1_stoic_dt' to set NA to 0, only if the sample contains an [oxidation K] 
 MS_KR_1_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_KR1_stoic_dt)
