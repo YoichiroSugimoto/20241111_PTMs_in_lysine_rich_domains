@@ -262,15 +262,17 @@ MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
-# Filter MS_SS data to retain only BRD2, 3, 4 data
+# Filter MS_SS data to retain only BRD2, 3, 4 data at 18h dox incubation
 MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                  & grepl("^18h_", sample_name)
                                   & aa == "K"]
 
 # Combine MS_KR_1 and MS_SS data
 MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
                          MS_KR1_stoic_dt),
                          use.names = TRUE)
+
+
+MS_SS_KR_dt <- MS_SS_KR_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4")]
 
 ```
 
@@ -286,12 +288,13 @@ plot_ptm_stoichiometry(
 #accession = "Q15059", plot_range = c(483, 533) BRD3
 #accession = "P25440", plot_range = c(540, 590) BRD2
 
-
 #Add new columns to simplify sample names into hypoxia and normoxia
 MS_SS_KR_dt[, `:=`(
   oxygen_levels =
     factor(
       fcase(
+        grepl("^HeLai", sample_name),
+        "HelaHypoxia_24h_0.1pc",
         grepl("^18h_1pc", sample_name),
         "HeLaHypoxia_18h_1pc",
         grepl("^18h_4pc", sample_name),
@@ -300,12 +303,12 @@ MS_SS_KR_dt[, `:=`(
         "HeLaNormoxia_18h",
         default = NA_character_
       ),
-      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc")
+      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc", "HelaHypoxia_24h_0.1pc")
     )
 )]
 
-# Use contrast function on 'MS_KR1_stoic_dt' to set NA to 0, only if the sample contains an [oxidation K] 
-MS_KR_1_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_KR1_stoic_dt)
+# Use contrast function on 'MS_SS_KR_dt' to set NA to 0, only if the sample contains an [oxidation K] 
+MS_SS_KR_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_dt)
 
 # Generate data table with WT and JMJD6KO with diagnostic peaks
 DI_info <- MS_KR1_stoic_dt[
