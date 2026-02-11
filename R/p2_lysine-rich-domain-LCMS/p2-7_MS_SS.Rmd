@@ -171,7 +171,7 @@ contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
   
   # Add new columns into metadata
   wt_ko_dt[, `:=`(
-    oxygen_stat = str_extract(oxygen_levels, "(?<=HeLa)(Normoxia|Hypoxia)"), # new column - oxygen status, extract Normoxia or Hypoxia from oxygen_levels column
+    oxygen_stat = str_extract(oxygen_levels, "(?<=HeLa)(Normoxia|Hypoxia_18h_4pc|Hypoxia_18h_1pc|Hypoxia_24h_0.1pc)"), # new column - oxygen status, extract Normoxia or Hypoxia from oxygen_levels column
     pos_id = paste0(protein_accession, "_", aa_pos), 
     sample_pos_id = paste0(oxygen_levels, "_", protein_accession, "_", aa_pos)
   )]
@@ -257,14 +257,16 @@ MS_KR1_stoic_dt <- MS_KR1_stoic_dt[sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & 
 
  #[Oxidation (K)] 
 
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
 MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
-# Filter MS_SS data to retain only BRD2, 3, 4 data at 18h dox incubation
+# Filter MS_SS data to retain only BRD2, 3, 4 data 
 MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                  & aa == "K"]
+                                  & aa == "K"
+                                  & grepl("^18h_", sample_name)]
 
 # Combine MS_KR_1 and MS_SS data
 MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
@@ -280,11 +282,9 @@ MS_SS_KR_dt <- MS_SS_KR_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4"
 ```{r Normoxia_vs_Hypoxia_in_different_O2%}
 
 # Plotting stoichiometry of BRD4 in different O2% 
-plot_ptm_stoichiometry(
-  MS_SS_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA,
-)
-
-
+#plot_ptm_stoichiometry(
+ # MS_SS_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors #= NA,
+#)
 #accession = "Q15059", plot_range = c(483, 533) BRD3
 #accession = "P25440", plot_range = c(540, 590) BRD2
 
@@ -293,25 +293,25 @@ MS_SS_KR_dt[, `:=`(
   oxygen_levels =
     factor(
       fcase(
-        grepl("^HeLai", sample_name),
-        "HelaHypoxia_24h_0.1pc",
-        grepl("^18h_1pc", sample_name),
-        "HeLaHypoxia_18h_1pc",
-        grepl("^18h_4pc", sample_name),
-        "HeLaHypoxia_18h_4pc",
         grepl("^18h_21pc", sample_name),
         "HeLaNormoxia_18h",
+        grepl("^18h_4pc", sample_name),
+        "HeLaHypoxia_18h_4pc",
+        grepl("^18h_1pc", sample_name),
+        "HeLaHypoxia_18h_1pc",
+        grepl("^HeLai", sample_name),
+        "HeLaHypoxia_24h_0.1pc",
         default = NA_character_
       ),
-      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc", "HelaHypoxia_24h_0.1pc")
+      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc", "HeLaHypoxia_24h_0.1pc")
     )
 )]
 
-# Use contrast function on 'MS_SS_KR_dt' to set NA to 0, only if the sample contains an [oxidation K] 
+# Use contrast function on 'MS_SS_KR_dt' to set NA to 0, only if the sample contains an #[oxidation K] 
 MS_SS_KR_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_dt)
 
 # Generate data table with WT and JMJD6KO with diagnostic peaks
-DI_info <- MS_KR1_stoic_dt[
+DI_info <- MS_SS_KR_dt[
   , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
 ][
   order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
@@ -321,23 +321,25 @@ DI_info <- MS_KR1_stoic_dt[
 ]
 
 # merge the modified data table 'DI_info' with the metadata 'MS_KR_1_hydroxy_dt'
-MS_KR_1_hydroxy_dt <- merge(MS_KR_1_hydroxy_dt, DI_info, by = c("protein_accession", "aa_pos"))
+MS_SS_KR_hydroxy_dt <- merge(MS_SS_KR_hydroxy_dt, DI_info, by = c("protein_accession", "aa_pos"))
 
 #Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MS_KR_1_hydroxy_dt[, `:=`(
+MS_SS_KR_hydroxy_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
 # filter data to have hydroxylysine with diagnostic ion 
-MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE]
+MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE]
 
 # Calculate the difference in stoichiometric values of JMJD6 re expression and Hypoxia
-MS_KR_1_hydroxy_dt <- MS_KR_1_hydroxy_dt[, `:=`(
-  Stoic_diff = (Normoxia - Hypoxia)
+MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
+  Stoic_diff = (Normoxia - Hypoxia_18h_1pc),
+  Stoic_diff1 = (Normoxia - Hypoxia_18h_4pc),
+  Stoic_diff2 = (Normoxia - Hypoxia_24h_0.1pc)
 )]
 
 # Factor the gene names
-MS_KR_1_hydroxy_dt[, `:=`(
+MS_SS_KR_hydroxy_dt[, `:=`(
   gene_name =  
     factor(gene_name)
 )]
@@ -347,9 +349,9 @@ MS_KR_1_hydroxy_dt[, `:=`(
 ```{r ANOVA_ttest}
 
 # Normoxia set at 0.1
-MS_KR_1_hydroxy_dt <- subset(MS_KR_1_hydroxy_dt, Normoxia >= 0.1)
+MS_SS_KR_hydroxy_dt <- subset(MS_SS_KR_hydroxy_dt, Normoxia >= 0.1)
 
-MS_KR_1_hydroxy_dt[, table(gene_name)]
+MS_SS_KR_hydroxy_dt[, table(gene_name)]
 
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
@@ -361,9 +363,15 @@ summary(anova_MS_KR_1)
 
 ```{r boxplots_stoic_diff_ratio}
 
+
+
+
+MS_hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name"),
+                measure.vars = c("Stoic_diff", "Stoic_diff1", "Stoic_diff2"))
+
 # Plot - Stoic difference between BRD2, 3 and 4
-ggplot(
-  data = MS_KR_1_hydroxy_dt[is_diagnostic_peak == TRUE],
+p <- ggplot(
+  data = MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE],
   aes(
     x = gene_name,
     y = Stoic_diff
@@ -373,8 +381,10 @@ ggplot(
   geom_boxplot() +
   geom_point() +
   labs(title = "Stoichiometry difference (Normoxia 0.1 between BRD2, 3 and 4") +
+  theme_classic()+
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
+
 
 
 ```
