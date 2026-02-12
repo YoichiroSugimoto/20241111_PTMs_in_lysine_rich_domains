@@ -276,6 +276,8 @@ MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
 
 MS_SS_KR_dt <- MS_SS_KR_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4")]
 
+MS_SS_KR_dt <- na.omit(MS_SS_KR_dt)
+
 ```
 
 
@@ -363,29 +365,120 @@ summary(anova_MS_KR_1)
 
 ```{r boxplots_stoic_diff_ratio}
 
-
-
-
 MS_hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name"),
-                measure.vars = c("Stoic_diff", "Stoic_diff1", "Stoic_diff2"))
+                measure.vars = c("Normoxia", "Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
+                variable.name = "sample_name", value.name = "Stoichiometry")
+
+hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name"),
+                measure.vars = c("Normoxia"), 
+                variable.name = "sample_name_1", value.name = "Normoxia_Stoic")
+
+# Plot 1
+ggplot(
+  data = MS_hydroxy_dt,
+  aes(
+    x = gene_name,
+    y = Stoichiometry,
+    fill = sample_name
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "Stoichiometry difference") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# Plot 2
+ggplot(
+  data = MS_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ gene_name, space = "free") +
+  labs(title = "Stoichiometry difference") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# Plot 3
+ggplot(
+  data = MS_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "Stoichiometry difference") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="right") 
+
 
 # Plot - Stoic difference between BRD2, 3 and 4
 p <- ggplot(
-  data = MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE],
+  data = MS_SS_KR_hydroxy_dt,
   aes(
     x = gene_name,
-    y = Stoic_diff
+    y = Normoxia
   )
 ) +
   stat_boxplot(geom = "errorbar", width = 0.25) + 
   geom_boxplot() +
   geom_point() +
-  labs(title = "Stoichiometry difference (Normoxia 0.1 between BRD2, 3 and 4") +
+  labs(title = "Normoxia") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
   theme(legend.position="none")
 
+p1 <- p + ggplot(
+  data = MS_SS_KR_hydroxy_dt,
+  aes(
+    x = gene_name,
+    y = Hypoxia_18h_4pc
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point() +
+  labs(title = "Hypoxia_18h_4pc") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="none")
+  
+  
+p2 <- p1 + ggplot(
+  data = MS_SS_KR_hydroxy_dt,
+  aes(
+    x = gene_name,
+    y = Hypoxia_18h_1pc
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point() +
+  labs(title = "Hypoxia_18h_1pc") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="none")
 
+ p2 + ggplot(
+  data = MS_SS_KR_hydroxy_dt,
+  aes(
+    x = gene_name,
+    y = Hypoxia_24h_0.1pc
+  )
+) +
+  stat_boxplot(geom = "errorbar", width = 0.25) + 
+  geom_boxplot() +
+  geom_point() +
+  labs(title = "Hypoxia_24h_0.1pc") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
+  theme(legend.position="none")
 
 ```
 
