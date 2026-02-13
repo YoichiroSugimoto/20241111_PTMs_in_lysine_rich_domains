@@ -332,13 +332,6 @@ MS_SS_KR_hydroxy_dt[, `:=`(
 # filter data to have hydroxylysine with diagnostic ion 
 MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE]
 
-# Calculate the difference in stoichiometric values of JMJD6 re expression and Hypoxia
-#MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
- # Stoic_diff = (Normoxia - Hypoxia_18h_1pc),
-  #Stoic_diff1 = (Normoxia - Hypoxia_18h_4pc),
-  #Stoic_diff2 = (Normoxia - Hypoxia_24h_0.1pc)
-#)]
-
 # Factor the gene names
 MS_SS_KR_hydroxy_dt[, `:=`(
   gene_name =  
@@ -350,7 +343,7 @@ MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
 
 ```
 
-```{r ANOVA_ttest}
+```{r ANOVA_test}
 
 MS_SS_KR_hydroxy_dt[, table(gene_name)]
 
@@ -366,7 +359,15 @@ summary(anova_MS_KR_1)
 ```
 
 
-```{r boxplots_stoic_diff_ratio}
+```{r boxplots_stoic_diff_percent}
+
+# Calculating oxygen sensitivity from normoxia percentage 
+MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
+  Stoic_percent = (Normoxia - Hypoxia_18h_4pc/Normoxia)*100,
+  Stoic_percent_1 = (Normoxia - Hypoxia_18h_1pc/Normoxia)*100,
+  Stoic_percent_2 = (Normoxia - Hypoxia_24h_0.1pc/Normoxia)*100,
+  Normoxia_percent = (Normoxia/1)*100
+)]
 
 # Data converted from wide to long format 
 MS_hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name"),
@@ -379,22 +380,7 @@ MS_hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_
   Stoic_percent = (Stoichiometry/1)*100
 )]
 
-# Plot 1
-ggplot(
-  data = MS_hydroxy_dt,
-  aes(
-    x = gene_name,
-    y = Stoichiometry,
-    fill = sample_name
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  labs(title = "Stoichiometry difference") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
-  theme(legend.position="right") 
-
-# Plot 2
+# Box Plot - using just stoichiometry values
 ggplot(
   data = MS_hydroxy_dt,
   aes(
@@ -409,37 +395,35 @@ ggplot(
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") 
 
-
-# Plot - Stoic difference between BRD2, 3 and 4
-p <- ggplot(
-  data = MS_SS_KR_hydroxy_dt,
+# Box Plot - using stoichiometry percentage values
+ggplot(
+  data = MS_hydroxy_dt,
   aes(
-    x = gene_name,
-    y = Normoxia
+    x = sample_name,
+    y = Stoichiometry
   )
 ) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point() +
-  labs(title = "Normoxia") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ gene_name, space = "free") +
+  labs(title = "Stoichiometry percentage") +
   theme_classic()+
-  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
-  theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
 
-p1 <- p + ggplot(
-  data = MS_SS_KR_hydroxy_dt,
+# Scatter plot 
+ggplot(
+  data = MS_hydroxy_dt,
   aes(
-    x = gene_name,
-    y = Hypoxia_18h_4pc
+    x = sample_name,
+    y = Stoichiometry
   )
 ) +
-  stat_boxplot(geom = "errorbar", width = 0.25) + 
-  geom_boxplot() +
-  geom_point() +
-  labs(title = "Hypoxia_18h_4pc") +
+  geom_point(shape = 21, colour = "black", fill = "steelblue", size = 2, stroke = 1) +
+  facet_grid(~ gene_name, space = "free") +
+  labs(title = "Stoichiometry") +
   theme_classic()+
-  theme(axis.text.x = element_text(angle = 0, hjust = 1)) + 
-  theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
 
 
 ```
