@@ -353,7 +353,6 @@ m_MS_hydroxy_dt <- melt(
   measure.vars = c("Normoxia","Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
   variable.name = "sample_name", value.name = "Stoichiometry")
 
-
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
 ggplot(
   data = m_MS_hydroxy_dt,
@@ -364,7 +363,7 @@ ggplot(
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry in varying O2 levels") +
+  ylab("Stoichiometry") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -446,6 +445,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
+# Scatter plot - 
 ggplot(
   data = MS_SS_KR_hydroxy_dt, 
   aes(
@@ -465,87 +465,6 @@ cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_1pc_rat
 
 ```
 
-
-```{r boxplots_stoic_diff_percent}
-
-# Normoxia set to 0.1
-# Calculating oxygen sensitivity from normoxia percentage 
-MS_hydroxy_N0.1_dt <- MS_SS_KR_hydroxy_N0.1_dt[, `:=`(
-  Hypo_18h_4pc = (Normoxia - Hypoxia_18h_4pc/Normoxia)*100,
-  Hypo_18h_1pc = (Normoxia - Hypoxia_18h_1pc/Normoxia)*100,
-  Hypo_24h_0.1pc = (Normoxia - Hypoxia_24h_0.1pc/Normoxia)*100,
-  Normoxia_percent = (Normoxia/1)*100
-)]
-
-# Data converted from wide to long format 
-MS_hydroxy_N0.1_dt <- melt(MS_hydroxy_N0.1_dt, id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia_percent"),
-                measure.vars = c("Hypo_18h_4pc", "Hypo_18h_1pc", "Hypo_24h_0.1pc"), 
-                variable.name = "sample_name", value.name = "Stoichiometry_percentage")
-
-
-# all normoxia values considered
-# Calculating oxygen sensitivity from normoxia percentage 
-MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
-  Stoic_percent = (Normoxia - Hypoxia_18h_4pc/Normoxia)*100,
-  Stoic_percent_1 = (Normoxia - Hypoxia_18h_1pc/Normoxia)*100,
-  Stoic_percent_2 = (Normoxia - Hypoxia_24h_0.1pc/Normoxia)*100,
-  Normoxia_percent = (Normoxia/1)*100
-)]
-
-# Data converted from wide to long format 
-MS_hydroxy_pc_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia_percent"),
-                measure.vars = c("Stoic_percent", "Stoic_percent_1", "Stoic_percent_2"), 
-                variable.name = "sample_name", value.name = "Stoichiometry_percentage")
-
-
-# Box Plot - using just stoichiometry values
-ggplot(
-  data = MS_hydroxy_dt,
-  aes(
-    x = sample_name,
-    y = Stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ gene_name, space = "free") +
-  labs(title = "Stoichiometry") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") 
-
-# Scatter plot 
-ggplot(
-  data = MS_hydroxy_N0.1_dt,
-  aes(
-    x = Normoxia_percent,
-    y = Stoichiometry_percentage
-  )
-) +
-  geom_point(aes(colour = gene_name)) +
-  facet_grid(~ sample_name, space = "free") +
-  labs(title = "Stoichiometry") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") 
-
-
-# Box Plot - using just stoichiometry values
-ggplot(
-  data = MS_SS_KR_hydroxy_N0.1_dt,
-  aes(
-    x = Normoxia_percent,
-    y = Stoichiometry_percentage
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ gene_name, space = "free") +
-  labs(title = "Stoichiometry") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") 
-
-
-```
 
 # Session information
 
