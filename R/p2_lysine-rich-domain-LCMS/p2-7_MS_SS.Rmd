@@ -375,22 +375,6 @@ ggplot(
 ```
 
 
-
-```{r ANOVA_test}
-
-MS_SS_KR_hydroxy_dt[, table(gene_name)]
-
-# Normoxia set at 0.1
-# MS_SS_KR_hydroxy_N0.1_dt <- subset(MS_SS_KR_hydroxy_dt, Normoxia >= 0.1)
-# MS_SS_KR_hydroxy_N0.1_dt[, table(gene_name)]
-
-# ANOVA
-# anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
-# summary(anova_MS_KR_1)
-
-```
-
-
 ```{r normoxia_non_subsetting_and_subsetting}
 
 # Calculate the ratio of hypoxic stoichiometry relative to normoxia
