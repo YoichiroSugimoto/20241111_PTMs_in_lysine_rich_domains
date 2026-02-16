@@ -73,7 +73,7 @@ ref_protein_dt <- import_reference_fasta(file.path
 
 # 2.7.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia
 
-```{r data_directory_MS_KR_1}
+```{r data_directory_MS_SS}
 
 # Define path to data directory
 data.dir <- file.path(project.dir, "data")
@@ -343,6 +343,39 @@ MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
 
 ```
 
+
+```{r plot_stoic_normoxia_diffpc_hypoxia}
+
+# Convert the wide format data into long format for plotting 
+m_MS_hydroxy_dt <- melt(
+  MS_SS_KR_hydroxy_dt, 
+  id.vars = c("protein_accession", "aa_pos", "gene_name"),
+  measure.vars = c("Normoxia","Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
+  variable.name = "sample_name", value.name = "Stoichiometry")
+
+
+# Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
+ggplot(
+  data = m_MS_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry in varying O2 levels") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+
 ```{r ANOVA_test}
 
 MS_SS_KR_hydroxy_dt[, table(gene_name)]
@@ -352,21 +385,22 @@ MS_SS_KR_hydroxy_dt[, table(gene_name)]
 # MS_SS_KR_hydroxy_N0.1_dt[, table(gene_name)]
 
 # ANOVA
-anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
-
-summary(anova_MS_KR_1)
+# anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
+# summary(anova_MS_KR_1)
 
 ```
 
 
-```{r non_subsetting}
+```{r normoxia_non_subsetting_and_subsetting}
 
+# Calculate the ratio of hypoxic stoichiometry relative to normoxia
 MS_SS_KR_hydroxy_dt[, `:=`(
   Hypo_18h_4pc_ratio = Hypoxia_18h_4pc/Normoxia,
   Hypo_18h_1pc_ratio = Hypoxia_18h_1pc/Normoxia,
   Hypo_24h_0.1pc_ratio = Hypoxia_24h_0.1pc/Normoxia
 )]
 
+# Convert the wide format data into long format for plotting 
 m_MS_SS_KR_hydroxy_dt <- melt(
   MS_SS_KR_hydroxy_dt, 
   id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia"),
@@ -374,6 +408,7 @@ m_MS_SS_KR_hydroxy_dt <- melt(
   variable.name = "sample_name", value.name = "Stoichiometry_percentage"
 )
 
+# Boxplot - hypoxia stoic pc relative to normoxia pc - facet gene name 
 ggplot(
   data = m_MS_SS_KR_hydroxy_dt,
   aes(
@@ -389,6 +424,7 @@ ggplot(
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2))
 
+# Boxplot - hypoxia stoic pc relative to normoxia pc
 ggplot(
   data = m_MS_SS_KR_hydroxy_dt,
   aes(
@@ -406,6 +442,7 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+# Boxplot - hypoxia stoic pc relative to normoxia pc - normoxia subset 0.1
 ggplot(
   data = subset(m_MS_SS_KR_hydroxy_dt, Normoxia >= 0.1),
   aes(
