@@ -289,7 +289,7 @@ MS_SS_KR_dt <- MS_SS_KR_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4"
 #accession = "Q15059", plot_range = c(483, 533) BRD3
 #accession = "P25440", plot_range = c(540, 590) BRD2
 
-#Add new columns to simplify sample names into hypoxia and normoxia
+#Add new columns to simplify sample names into hypoxia and normoxia category
 MS_SS_KR_dt[, `:=`(
   oxygen_levels =
     factor(
@@ -348,8 +348,8 @@ MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
 MS_SS_KR_hydroxy_dt[, table(gene_name)]
 
 # Normoxia set at 0.1
-# MS_SS_KR_hydroxy_N0.1_dt <- subset(MS_SS_KR_hydroxy_dt, Normoxia >= 0.1)
-# MS_SS_KR_hydroxy_N0.1_dt[, table(gene_name)]
+MS_SS_KR_hydroxy_N0.1_dt <- subset(MS_SS_KR_hydroxy_dt, Normoxia >= 0.1)
+MS_SS_KR_hydroxy_N0.1_dt[, table(gene_name)]
 
 # ANOVA
 anova_MS_KR_1 <- aov(Stoic_diff ~ gene_name, data = MS_KR_1_hydroxy_dt)
@@ -362,6 +362,21 @@ summary(anova_MS_KR_1)
 ```{r boxplots_stoic_diff_percent}
 
 # Calculating oxygen sensitivity from normoxia percentage 
+MS_hydroxy_N0.1_dt <- MS_SS_KR_hydroxy_N0.1_dt[, `:=`(
+  Stoic_percent = (Normoxia - Hypoxia_18h_4pc/Normoxia)*100,
+  Stoic_percent_1 = (Normoxia - Hypoxia_18h_1pc/Normoxia)*100,
+  Stoic_percent_2 = (Normoxia - Hypoxia_24h_0.1pc/Normoxia)*100,
+  Normoxia_percent = (Normoxia/1)*100
+)]
+
+# Data converted from wide to long format 
+MS_hydroxy_N0.1_dt <- melt(MS_hydroxy_N0.1_dt, id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia_percent"),
+                measure.vars = c("Stoic_percent", "Stoic_percent_1", "Stoic_percent_2"), 
+                variable.name = "sample_name", value.name = "Stoichiometry_percentage")
+
+
+
+# Calculating oxygen sensitivity from normoxia percentage 
 MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
   Stoic_percent = (Normoxia - Hypoxia_18h_4pc/Normoxia)*100,
   Stoic_percent_1 = (Normoxia - Hypoxia_18h_1pc/Normoxia)*100,
@@ -370,15 +385,14 @@ MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[, `:=`(
 )]
 
 # Data converted from wide to long format 
-MS_hydroxy_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name"),
-                measure.vars = c("Normoxia", "Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
-                variable.name = "sample_name", value.name = "Stoichiometry")
-
+MS_hydroxy_pc_dt <- melt(MS_SS_KR_hydroxy_dt, id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia_percent"),
+                measure.vars = c("Stoic_percent", "Stoic_percent_1", "Stoic_percent_2"), 
+                variable.name = "sample_name", value.name = "Stoichiometry_percentage")
 
 # Calculate the percentage of stoichiometric values of normoxia and hypoxia samples
- MS_hydroxy_dt <- MS_hydroxy_dt[, `:=`(
-  Stoic_percent = (Stoichiometry/1)*100
-)]
+# MS_hydroxy_dt <- MS_hydroxy_dt[, `:=`(
+#  Stoic_percent = (Stoichiometry/1)*100
+#)]
 
 # Box Plot - using just stoichiometry values
 ggplot(
@@ -412,13 +426,28 @@ ggplot(
 
 # Scatter plot 
 ggplot(
-  data = MS_hydroxy_dt,
+  data = MS_SS_KR_hydroxy_N0.1_dt,
   aes(
-    x = sample_name,
-    y = Stoichiometry
+    x = Normoxia_percent,
+    y = Stoichiometry_percentage
   )
 ) +
-  geom_point(shape = 21, colour = "black", fill = "steelblue", size = 2, stroke = 1) +
+  geom_point(aes(colour = gene_name)) +
+  labs(title = "Stoichiometry") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+
+# Box Plot - using just stoichiometry values
+ggplot(
+  data = MS_SS_KR_hydroxy_N0.1_dt,
+  aes(
+    x = Normoxia_percent,
+    y = Stoichiometry_percentage
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
   facet_grid(~ gene_name, space = "free") +
   labs(title = "Stoichiometry") +
   theme_classic()+
@@ -430,7 +459,7 @@ ggplot(
 
 # Session information
 
-```{r sessionInfo}
+```{r session_Info}
 
 sessioninfo::session_info()
 
