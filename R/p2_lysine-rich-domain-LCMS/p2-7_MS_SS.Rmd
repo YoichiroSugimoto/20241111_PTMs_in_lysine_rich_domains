@@ -241,7 +241,10 @@ MS_KR1_stoic_dt[, `:=`(
 )]
 
 # Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
-MS_KR1_stoic_dt <- MS_KR1_stoic_dt[sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & gene_name %in% c("BRD2", "BRD3", "BRD4") & aa == "K"]
+MS_KR1_stoic_dt <- MS_KR1_stoic_dt[
+  sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & 
+    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
+    aa == "K"]
 
 ```
 
@@ -273,9 +276,12 @@ MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
                          MS_KR1_stoic_dt),
                          use.names = TRUE)
 
-# Remove BRD2/3 samples reporting BRD4 stoichiomtery 
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
 # These samples are removed as it could false positives reported by the system 
-MS_SS_KR_dt <- MS_SS_KR_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4")]
+MS_SS_KR_dt <- MS_SS_KR_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+]
 
 ```
 
@@ -445,7 +451,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
-# Scatter plot - 
+# Scatter plot
 ggplot(
   data = MS_SS_KR_hydroxy_dt, 
   aes(
@@ -545,14 +551,21 @@ pnas2022_stoic_dt <- merge(
   by = "protein_accession" #combine both data.table by protein accession ID
 )
 
-## Add columns to pnas2022.stoic.dt metadata
-# new columns: accession_position, ptm, sample_name 
+# Adding columns to pnas2022_stoic_dt metadata
 pnas2022_stoic_dt[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
-  ptm = "[Oxidation (K)]", 
+  accession_position = paste0(protein_accession, "_", aa_pos), # combines data from protein_accession and aa_pos
+  ptm = fifelse(curated_oxK_site, "[Oxidation (K)]", ""), # add the "[Oxidation (K)]" in ptm column, if curated oxK site is TRUE
   sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
-    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} # Take response from previous line and change accordingly 
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} 
 )]
+
+# subset the data to curated_oxK_site = TRUE, aa = K and BRD proteins
+pnas2022_stoic_dt <-  pnas2022_stoic_dt[
+  curated_oxK_site == TRUE &
+  ptm == "[Oxidation (K)]" &
+  gene_name %in% c("BRD2", "BRD3", "BRD4") &
+  aa == "K"
+]
 
 # Contrast non hydroxylated and hydroxylated lysines
 # Take only the HeLa samples with JQ1 or J6 peptide pull-down
@@ -562,6 +575,117 @@ pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
   ]
 )
 
+## Read stoichiometry data for MS_KR1 data (noH2O loss)
+ MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_noH2O_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
+MS_KR1_stoic_dt <- MS_KR1_stoic_dt[
+  is_diagnostic_peak == TRUE &
+    sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA") &
+    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
+    aa == "K"
+]
+
+# Add new columns to simplify sample names 
+MS_KR1_stoic_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("HeLaWT_NA_N_NA", sample_name),
+        "WT_JMJD6",
+        grepl("HeLaiJMJD6_Dox_N_NA", sample_name),
+        "24h_JMJD6",
+        default = NA_character_
+      ),
+      levels = c("WT_JMJD6", "24h_JMJD6")
+    )
+)]
+
+
+## Read stoichiometry data for MS_SS data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_SS_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_SS_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery 
+# These samples are removed as it could false positives reported by the system 
+MS_SS_stoic_dt <- MS_SS_stoic_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4")]
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data at 21pc of O2
+MS_SS_stoic_dt <-  MS_SS_stoic_dt[
+  is_diagnostic_peak == TRUE &
+    grepl("21pc", sample_name) &
+    gene_name %in% c("BRD2", "BRD3", "BRD4") &
+    aa == "K"
+]
+
+# Add new columns to simplify sample names 
+MS_SS_stoic_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("^18h", sample_name),
+        "18h_JMJD6",
+        grepl("^8h", sample_name),
+        "8h_JMJD6",
+        grepl("^4h", sample_name),
+        "4h_JMJD6",
+        default = NA_character_
+      ),
+      levels = c("18h_JMJD6", "8h_JMJD6","4h_JMJD6")
+    )
+)]
+
+
+# Combine MS_KR_1 and MS_SS data
+MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
+                         MS_KR1_stoic_dt),
+                         use.names = TRUE)
+# levels the 
+MS_SS_KR_dt[, oxygen_levels := factor(
+  oxygen_levels,
+  levels = c("WT_JMJD6", "4h_JMJD6", "8h_JMJD6", "18h_JMJD6", "24h_JMJD6")
+)]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_SS_KR_dt <- MS_SS_KR_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+]
+
+# Boxplot
+ggplot(
+  data = MS_SS_KR_dt,
+  aes(
+    x = oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "Comparing normoxia stoic in different dox incubation") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")
+#coord_cartesian(ylim = c(0, 1.0))
 
 
 ```
