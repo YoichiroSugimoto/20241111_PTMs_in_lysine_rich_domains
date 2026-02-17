@@ -466,6 +466,55 @@ cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_1pc_rat
 ```
 
 
+```{r comparing_21pcO2_Dox_incubation}
+
+# Load PNAS stoichiometry data
+pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022.stoic.dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022.stoic.dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022.stoic.dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+## Add columns to pnas2022.stoic.dt metadata
+# new columns: accession_position, ptm, sample_name 
+pnas2022.stoic.dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
+  ptm = "[Oxidation (K)]", 
+  sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} # Take response from previous line and change accordingly 
+)]
+
+# Hydroxylations sites identified in PNAS2022 - 153 sites
+pnas2022.stoic.dt[
+  curated_oxK_site == TRUE & aa == "K" & ptm == "[Oxidation (K)]"
+][
+  order(curated_oxK_site, decreasing = TRUE)
+][
+  !duplicated(paste(protein_accession, aa_pos))
+]
+
+# Contrast non hydroxylated and hydroxylated lysines
+# Take only the HeLa samples with JQ1 or J6 peptide pull-down
+d.pnas.hydroxyK_dt <- contrast_hydroxylation_by_genotype(
+  pnas2022.stoic.dt[
+    grepl("HeLa", sample_name) & (grepl("JQ1", sample_name) | grepl("J6pep", sample_name))
+  ]
+)
+
+
+```
+
+
 # Session information
 
 ```{r session_Info}
