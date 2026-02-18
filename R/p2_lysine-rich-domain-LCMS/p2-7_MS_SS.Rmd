@@ -87,7 +87,7 @@ MS_SS_data <- file.path(
 
 # Create file path for results
 MS_SS_dir <- file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O")
-create.dir(MS_SS_dir)
+# create.dir(MS_SS_dir)
 
 # Define file path common PTM mapping file
 ptm_mapping_file <- file.path(
@@ -241,7 +241,7 @@ MS_KR1_stoic_dt[, `:=`(
 )]
 
 # Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
-MS_KR1_stoic_dt <- MS_KR1_stoic_dt[
+MS_KR1_24h0.1pc <- MS_KR1_stoic_dt[
   sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & 
     gene_name %in% c("BRD2", "BRD3", "BRD4") & 
     aa == "K"]
@@ -273,7 +273,7 @@ MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4")
 
 # Combine MS_KR_1 and MS_SS data
 MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
-                         MS_KR1_stoic_dt),
+                         MS_KR1_24h0.1pc),
                          use.names = TRUE)
 
 # Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
@@ -286,14 +286,39 @@ MS_SS_KR_dt <- MS_SS_KR_dt[
 ```
 
 
-```{r Normoxia_vs_Hypoxia_in_different_O2%_ 18h_dox}
+```{r stoichiometry_BRD_proteins}
 
 # Plotting stoichiometry of BRD4 in different O2% 
-#plot_ptm_stoichiometry(
- # MS_SS_stoic_dt, accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors #= NA,
-#)
-#accession = "Q15059", plot_range = c(483, 533) BRD3
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "O60885",
+  plot_range = c(531, 581), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
+# accession = "Q15059", plot_range = c(483, 533) BRD3
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "Q15059",
+  plot_range = c(483, 533), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
 #accession = "P25440", plot_range = c(540, 590) BRD2
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "P25440",
+  plot_range = c(540, 590), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
+```
+
+
+```{r Normoxia_vs_Hypoxia_in_different_O2%_ 18h_dox}
 
 #Add new columns to simplify sample names into hypoxia and normoxia category
 MS_SS_KR_dt[, `:=`(
@@ -353,7 +378,7 @@ MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
 ```{r plot_stoic_normoxia_diffpc_hypoxia}
 
 # Convert the wide format data into long format for plotting 
-m_MS_hydroxy_dt <- melt(
+MS_hydroxy_dt <- melt(
   MS_SS_KR_hydroxy_dt, 
   id.vars = c("protein_accession", "aa_pos", "gene_name"),
   measure.vars = c("Normoxia","Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
@@ -367,7 +392,6 @@ ggplot(
     y = Stoichiometry
   )
 ) +
-  #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry") +
   theme_classic()+
@@ -394,7 +418,7 @@ m_MS_SS_KR_hydroxy_dt <- melt(
   MS_SS_KR_hydroxy_dt, 
   id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia"),
   measure.vars = c("Hypo_18h_4pc_ratio", "Hypo_18h_1pc_ratio", "Hypo_24h_0.1pc_ratio"), 
-  variable.name = "sample_name", value.name = "Stoichiometry_percentage"
+  variable.name = "sample_name", value.name = "Stoichiometry_ratio"
 )
 
 # Boxplot - hypoxia stoic pc relative to normoxia pc - facet gene name 
@@ -402,7 +426,7 @@ ggplot(
   data = m_MS_SS_KR_hydroxy_dt,
   aes(
     x = sample_name,
-    y = Stoichiometry_percentage
+    y = Stoichiometry_ratio
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
@@ -418,7 +442,7 @@ ggplot(
   data = m_MS_SS_KR_hydroxy_dt,
   aes(
     x = sample_name,
-    y = Stoichiometry_percentage
+    y = Stoichiometry_ratio
   )
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
@@ -436,7 +460,7 @@ ggplot(
   data = subset(m_MS_SS_KR_hydroxy_dt, Normoxia >= 0.1),
   aes(
     x = sample_name,
-    y = Stoichiometry_percentage
+    y = Stoichiometry_ratio
   )
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
@@ -450,8 +474,30 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+```
 
-# Scatter plot
+
+```{r normoxia_vs_hypoxia_scatterplot}
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
+ggplot(
+  data = MS_SS_KR_hydroxy_dt, 
+  aes(
+    x = Normoxia,
+    y = Hypo_18h_4pc_ratio
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# correlation test 
+cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_4pc_ratio], method = "spearma")
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 1% - 18h dox incubation
 ggplot(
   data = MS_SS_KR_hydroxy_dt, 
   aes(
@@ -460,14 +506,33 @@ ggplot(
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-  # facet_grid(~ gene_name, space = "free")+
+  facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1.2)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") 
 
-
+# correlation test 
 cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_1pc_ratio], method = "spearma")
+
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 0.1% - 24h dox incubation
+ggplot(
+  data = MS_SS_KR_hydroxy_dt, 
+  aes(
+    x = Normoxia,
+    y = Hypo_24h_0.1pc_ratio
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")
+
+# correlation test 
+cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_24h_0.1pc_ratio], method = "spearma")
 
 ```
 
@@ -534,7 +599,10 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt, min.psm = 2){
   return(d.hydroxyK_dt)
 }
 
-## Load PNAS stoichiometry data
+#-----------------------------
+# Load PNAS stoichiometry data
+#-----------------------------
+
 pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
 # Replace old column names with new ones
@@ -575,7 +643,12 @@ pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
   ]
 )
 
-## Read stoichiometry data for MS_KR1 data (noH2O loss)
+
+#--------------------------------
+# Load MS_KR_1 stoichiometry data
+#--------------------------------
+
+# Read stoichiometry data for MS_KR1 data (noH2O loss)
  MS_KR1_stoic_dt <- read_stoic_data(
   prefix = "MS_KR_1_noH2O_",
   pre_prefix = "",
@@ -611,8 +684,11 @@ MS_KR1_stoic_dt[, `:=`(
     )
 )]
 
+#--------------------------------
+# Load MS_SS stoichiometry data
+#--------------------------------
 
-## Read stoichiometry data for MS_SS data 
+# Read stoichiometry data for MS_SS data 
  MS_SS_stoic_dt <- read_stoic_data(
   prefix = "MS_SS_",
   pre_prefix = "",
@@ -624,10 +700,6 @@ MS_KR1_stoic_dt[, `:=`(
 MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
-
-# Remove BRD2/3 samples reporting BRD4 stoichiomtery 
-# These samples are removed as it could false positives reported by the system 
-MS_SS_stoic_dt <- MS_SS_stoic_dt[!(grepl("_BRD23$", sample_name) & gene_name == "BRD4")]
 
 # Filter MS_SS data to retain only BRD2, 3, 4 data at 21pc of O2
 MS_SS_stoic_dt <-  MS_SS_stoic_dt[
@@ -654,8 +726,9 @@ MS_SS_stoic_dt[, `:=`(
     )
 )]
 
-
-# Combine MS_KR_1 and MS_SS data
+#---------------------------------
+## Combine MS_KR_1 and MS_SS data
+#---------------------------------
 MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
                          MS_KR1_stoic_dt),
                          use.names = TRUE)
