@@ -225,6 +225,7 @@ contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
 }
 ```
 
+
 ```{r load_MS_KR_1_data}
 
 ## Read stoichiometry data for MS_KR1 data (noH2O loss)
@@ -267,12 +268,12 @@ MS_SS_stoic_dt[, `:=`(
 )]
 
 # Filter MS_SS data to retain only BRD2, 3, 4 data 
-MS_SS_stoic_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
+MS_SS_18h_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
                                   & aa == "K"
                                   & grepl("^18h_", sample_name)]
 
 # Combine MS_KR_1 and MS_SS data
-MS_SS_KR_dt <- rbindlist(list(MS_SS_stoic_dt,
+MS_SS_KR_dt <- rbindlist(list(MS_SS_18h_dt,
                          MS_KR1_24h0.1pc),
                          use.names = TRUE)
 
@@ -318,7 +319,7 @@ plot_ptm_stoichiometry(
 ```
 
 
-```{r Normoxia_vs_Hypoxia_in_different_O2%_ 18h_dox}
+```{r Normoxia_vs_Hypoxia_in_different_O2%_18h_dox}
 
 #Add new columns to simplify sample names into hypoxia and normoxia category
 MS_SS_KR_dt[, `:=`(
@@ -490,11 +491,12 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   facet_grid(~ gene_name, space = "free") +
-  labs(title = "Stoichiometry") +
+  ylab("Stoichiometry [% to normoxia]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2))
+  coord_cartesian(ylim = c(0, 1.2))+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 # Boxplot - hypoxia stoic pc relative to normoxia pc
 ggplot(
@@ -647,20 +649,8 @@ pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
 # Load MS_KR_1 stoichiometry data
 #--------------------------------
 
-# Read stoichiometry data for MS_KR1 data (noH2O loss)
- MS_KR1_stoic_dt <- read_stoic_data(
-  prefix = "MS_KR_1_noH2O_",
-  pre_prefix = "",
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
-
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MS_KR1_stoic_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" 
-)]
-
 # Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
-MS_KR1_stoic_dt <- MS_KR1_stoic_dt[
+MS_KR1_WT_dox_dt <- MS_KR1_stoic_dt[
   is_diagnostic_peak == TRUE &
     sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA") &
     gene_name %in% c("BRD2", "BRD3", "BRD4") & 
@@ -668,7 +658,7 @@ MS_KR1_stoic_dt <- MS_KR1_stoic_dt[
 ]
 
 # Add new columns to simplify sample names 
-MS_KR1_stoic_dt[, `:=`(
+MS_KR1_WT_dox_dt[, `:=`(
   oxygen_levels =
     factor(
       fcase(
@@ -686,21 +676,8 @@ MS_KR1_stoic_dt[, `:=`(
 # Load MS_SS stoichiometry data
 #--------------------------------
 
-# Read stoichiometry data for MS_SS data 
- MS_SS_stoic_dt <- read_stoic_data(
-  prefix = "MS_SS_",
-  pre_prefix = "",
-  post_fix = "_DI",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
-
-# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
-# present "+", logical vector is "TRUE", or else "FALSE"
-MS_SS_stoic_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" 
-)]
-
 # Filter MS_SS data to retain only BRD2, 3, 4 data at 21pc of O2
-MS_SS_stoic_dt <-  MS_SS_stoic_dt[
+MS_SS_21pc_dt <-  MS_SS_stoic_dt[
   is_diagnostic_peak == TRUE &
     grepl("21pc", sample_name) &
     gene_name %in% c("BRD2", "BRD3", "BRD4") &
@@ -708,7 +685,7 @@ MS_SS_stoic_dt <-  MS_SS_stoic_dt[
 ]
 
 # Add new columns to simplify sample names 
-MS_SS_stoic_dt[, `:=`(
+MS_SS_21pc_dt[, `:=`(
   oxygen_levels =
     factor(
       fcase(
@@ -729,14 +706,14 @@ MS_SS_stoic_dt[, `:=`(
 
 ```{r comparing_21pcO2_Dox_incubation}
 
-#---------------------------------
-## Combine MS_KR_1 and MS_SS data
-#---------------------------------
-
-MS_normoxia_dt <- rbindlist(list(MS_SS_stoic_dt,
-                         MS_KR1_stoic_dt),
+#-----------------------------------------
+## Combine MS_KR_1 and MS_SS normoxia data
+#-----------------------------------------
+MS_normoxia_dt <- rbindlist(list(MS_SS_21pc_dt,
+                         MS_KR1_WT_dox_dt),
                          use.names = TRUE)
-# levels the 
+
+# reorder oxygen levels
 MS_normoxia_dt[, oxygen_levels := factor(
   oxygen_levels,
   levels = c("WT_JMJD6", "4h_JMJD6", "8h_JMJD6", "18h_JMJD6", "24h_JMJD6")
@@ -749,7 +726,7 @@ MS_normoxia_dt <- MS_normoxia_dt[
        (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
 ]
 
-# Boxplot
+# Boxplot - Comparing normoxia stoic in different dox incubation
 ggplot(
   data = MS_normoxia_dt,
   aes(
@@ -764,8 +741,71 @@ ggplot(
   theme(legend.position="right")
 #coord_cartesian(ylim = c(0, 1.0))
 
+```
+
+```{r MS_SS_hypoxia_analysis}
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data 
+MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
+                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & aa == "K"
+]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_SS_hypo_dt <- MS_SS_hypo_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+]
+
+# Subset the data 
+MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
+                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & aa == "K"
+]
+
+# Remove rows with NA values 
+MS_SS_hypo_dt <- na.omit(MS_SS_hypo_dt)
+
+# Categorize the samples based on O2 pc 
+MS_SS_hypo_dt[, `:=`(
+  O2_pc =
+    factor(
+      fcase(
+       grepl("21pc", sample_name),
+        "21pc",
+        grepl("4pc", sample_name),
+        "4pc",
+        grepl("1pc", sample_name),
+        "1pc",
+        default = NA_character_
+      ),
+      levels = c("1pc", "4pc", "21pc")
+    )
+)]
+
+
+MS_hypo_BRD2_dt <- MS_SS_hypo_dt[gene_name == "BRD2"]
+
+# box_plot
+ggplot(
+  data = MS_SS_hypo_dt,
+  aes(
+    x = sample_name,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ gene_name, space = "free")+
+  ggtitle("MS_SS") +
+  ylab("Stoichiometry values") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")
 
 ```
+
+
 
 
 
