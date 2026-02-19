@@ -735,11 +735,32 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  labs(title = "Comparing normoxia stoic in different dox incubation") +
+  labs(title = "N in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right")
+  theme(legend.position="right") +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 #coord_cartesian(ylim = c(0, 1.0))
+
+# Boxplot - Comparing normoxia stoic in different dox incubation
+ggplot(
+  data = MS_normoxia_dt[stoichiometry >= 0.1],
+  aes(
+    x = oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "(N >= 0.1) in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")+
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
 
 ```
 
@@ -754,18 +775,16 @@ MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE
 # Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
 # These samples are removed as it could false positives reported by the system 
 MS_SS_hypo_dt <- MS_SS_hypo_dt[
-  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
-       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+  !(
+    (grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+    (grepl("_BRD4$",  sample_name) & gene_name %in% c("BRD2", "BRD3"))
+  )
 ]
-
 # Subset the data 
 MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
                                   & gene_name %in% c("BRD2", "BRD3", "BRD4") 
                                   & aa == "K"
 ]
-
-# Remove rows with NA values 
-MS_SS_hypo_dt <- na.omit(MS_SS_hypo_dt)
 
 # Categorize the samples based on O2 pc 
 MS_SS_hypo_dt[, `:=`(
@@ -784,24 +803,81 @@ MS_SS_hypo_dt[, `:=`(
     )
 )]
 
+# Categorize the samples based on dox incubation 
+MS_SS_hypo_dt[, `:=`(
+  dox_incubation =
+    factor(
+      fcase(
+       grepl("^18h", sample_name),
+        "18h",
+        grepl("^8h", sample_name),
+        "8h",
+        grepl("^4h", sample_name),
+        "4h",
+        default = NA_character_
+      ),
+      levels = c("4h", "8h", "18h")
+    )
+)]
 
-MS_hypo_BRD2_dt <- MS_SS_hypo_dt[gene_name == "BRD2"]
+# Remove rows with NA values 
+MS_SS_hypo_dt <- na.omit(MS_SS_hypo_dt)
 
 # box_plot
 ggplot(
-  data = MS_SS_hypo_dt,
+  data = MS_SS_hypo_dt, 
   aes(
-    x = sample_name,
+    x = dox_incubation,
     y = stoichiometry
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ gene_name, space = "free")+
-  ggtitle("MS_SS") +
-  ylab("Stoichiometry values") +
+  facet_grid(~ O2_pc)+
+  ggtitle("MS_SS in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right")
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+
+MS_SS_hypo_Nsub_dt <- MS_SS_hypo_dt[
+  O2_pc == "21pc" & stoichiometry >= 0.1
+]
+
+MS_SS_hypo_Nsub_dt <- rbindlist(list(MS_SS_hypo_Nsub_dt,
+                                     MS_SS_hypo_dt[
+                                       !(O2_pc == "21pc" & stoichiometry >= 0.1)
+                                     ]),
+                                use.names = TRUE)
+
+# box_plot - N =>0.1
+ggplot(
+  data = MS_SS_hypo_Nsub_dt, 
+  aes(
+    x = dox_incubation,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ O2_pc)+
+  ggtitle("MS_SS in diff dox incubation (N subset)") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+
+
+
+
+
+
 
 ```
 
