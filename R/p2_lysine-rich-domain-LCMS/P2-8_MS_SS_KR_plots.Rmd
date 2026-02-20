@@ -1,0 +1,1050 @@
+---
+title: "2-8. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Bioconductor style for PDF documents}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+   github_document:
+     toc: yes
+     toc_depth: 2
+---
+
+# Overview
+
+This script examines the oxygen sensitivity of lysine hydroxylations in different BRD proteins and their respective sites. This script 
+
+# Environment setup
+
+```{r setup_environment}
+
+## Initialize renv (first time only) - re-installed 24.09.2025
+# Creates project specific library and renv.lock file. 
+# Use 'renv::init(filepath)' to create project library
+# renv::init(
+#        "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains/R"
+#    )
+
+# Define project directory - contains the R scripts, data and result folders
+project.dir <-
+  file.path(
+    "/fast/AG_Sugimoto/home/users/pallavi/projects/20241111_PTMs_in_lysine_rich_domains"
+  )
+
+# renv::snapshot(file.path(project.dir, "R"))
+
+#renv::restore completed 24.09.2025
+#renv::restore(file.path(project.dir, "R"))
+
+```
+
+
+# 2.7.1 Install,load essential functions and libraries
+
+```{r load_essential_functions_current_session}
+
+## Load all R scripts from the 'functions' folder into the current session
+P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+
+## Install private package 
+# Install ptm.stiochiometry package
+# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+
+# Load Libraries
+library("readxl")
+library("janitor")
+library("ptm.stoichiometry")
+
+```
+
+
+# 2.7.2 Import human protein reference data 
+
+```{r import_data, warning=FALSE}
+
+# Import human protein reference data from specified file path 
+ref_protein_dt <- import_reference_fasta(file.path
+                                         ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                           "UP000005640_9606.fasta")) 
+
+```
+
+# 2.7.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia
+
+```{r data_directory_MS_SS}
+
+# Define path to data directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
+```
+
+# 2.7.4 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+
+```{r Define_important_functions}
+
+# Read FASTA data 
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
+  return(dt)
+}
+
+# Contrast function - by oxygen_stat
+contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
+  wt_ko_dt <- all_stoic_dt
+  
+  # Add new columns into metadata
+  wt_ko_dt[, `:=`(
+    oxygen_stat = str_extract(oxygen_levels, "(?<=HeLa)(Normoxia|Hypoxia_18h_4pc|Hypoxia_18h_1pc|Hypoxia_24h_0.1pc)"), # new column - oxygen status, extract Normoxia or Hypoxia from oxygen_levels column
+    pos_id = paste0(protein_accession, "_", aa_pos), 
+    sample_pos_id = paste0(oxygen_levels, "_", protein_accession, "_", aa_pos)
+  )]
+  
+  # Identify position with at least one oxidation event
+  oxidation_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE), # checks for oxidation event
+    unique(pos_id) # Returns unique pos_id with oxidation event
+  ]
+  oxidation_sample_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE),
+    unique(sample_pos_id)
+  ]
+  
+  # Collect non hydroxylated K information for the sites with hydroxylation
+  no_hydroxyK_dt <- copy(wt_ko_dt[aa == "K"])
+  no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
+    {.[!sample_pos_id %in% oxidation_sample_ids]} # If hydroxylation data exist, this is not necessary
+  
+  # Set stoichiometry and PSM count to zero for these positions and update the PTM label
+  no_hydroxyK_dt[, `:=`(
+    sum_psm_mapped = 0,
+    stoichiometry = 0,
+    ptm = "[Oxidation (K)]"
+  )]
+  
+  # Combine oxidation data from both original and the newly flagged unmodified K data
+  hydroxyK_dt <- rbind(
+    wt_ko_dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+    no_hydroxyK_dt
+  )
+  
+  # Filter psm mapped greater than 2 for higher confidence 
+  hydroxyK_dt <- hydroxyK_dt[
+    sum_psm_mapped_per_position > 2
+  ]
+  
+  # Sort stoichiometry column from highest to lowest
+  hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
+    !duplicated(paste0(protein_accession, gene_name, aa_pos, oxygen_stat)) # Remove duplicate rows
+  ]
+  
+  # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
+  d.hydroxyK_dt <- dcast(
+    hydroxyK_dt,
+    protein_accession + gene_name + aa_pos ~ oxygen_stat, # values in oxygen_stat become into separate columns (Normoxia & Hypoxia)
+    value.var = "stoichiometry"
+  )
+  
+  return(d.hydroxyK_dt)
+}
+
+```
+
+
+```{r load_MS_KR_1_data}
+
+## Read stoichiometry data for MS_KR1 data (noH2O loss)
+ MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_noH2O_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
+
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
+MS_KR1_24h0.1pc <- MS_KR1_stoic_dt[
+  sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & 
+    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
+    aa == "K"]
+```
+
+
+```{r load_MS_SS_data}
+
+## Read stoichiometry data for MS_SS data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_SS_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
+
+ #[Oxidation (K)] 
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_SS_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data 
+MS_SS_18h_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & aa == "K"
+                                  & grepl("^18h_", sample_name)]
+
+# Combine MS_KR_1 and MS_SS data
+MS_SS_KR_dt <- rbindlist(list(MS_SS_18h_dt,
+                         MS_KR1_24h0.1pc),
+                         use.names = TRUE)
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_SS_KR_dt <- MS_SS_KR_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+]
+
+```
+
+
+```{r stoichiometry_BRD_proteins}
+
+# Plotting stoichiometry of BRD4 in different O2% 
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "O60885",
+  plot_range = c(531, 581), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
+# accession = "Q15059", plot_range = c(483, 533) BRD3
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "Q15059",
+  plot_range = c(483, 533), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
+#accession = "P25440", plot_range = c(540, 590) BRD2
+plot_ptm_stoichiometry(
+  MS_SS_KR_dt,
+  accession = "P25440",
+  plot_range = c(540, 590), 
+  all.protein.bs, 
+  sample_colors = NA,
+)
+
+```
+
+
+```{r Normoxia_vs_Hypoxia_in_different_O2%_18h_dox}
+
+#Add new columns to simplify sample names into hypoxia and normoxia category
+MS_SS_KR_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("^18h_21pc", sample_name),
+        "HeLaNormoxia_18h",
+        grepl("^18h_4pc", sample_name),
+        "HeLaHypoxia_18h_4pc",
+        grepl("^18h_1pc", sample_name),
+        "HeLaHypoxia_18h_1pc",
+        grepl("^HeLai", sample_name),
+        "HeLaHypoxia_24h_0.1pc",
+        default = NA_character_
+      ),
+      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc", "HeLaHypoxia_24h_0.1pc")
+    )
+)]
+
+# Use contrast function on 'MS_SS_KR_dt' to set NA to 0, only if the sample contains an #[oxidation K] 
+MS_SS_KR_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_dt)
+
+# Generate data table with WT and JMJD6KO with diagnostic peaks
+DI_info <- MS_SS_KR_dt[
+  , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
+][
+  order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
+][                                              
+  !duplicated(paste(protein_accession, aa_pos)) # Keep only the first row for each unique protein and amino acid position,
+  # removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
+]
+
+# merge the modified data table 'DI_info' with the metadata 'MS_KR_1_hydroxy_dt'
+MS_SS_KR_hydroxy_dt <- merge(MS_SS_KR_hydroxy_dt, DI_info, by = c("protein_accession", "aa_pos"))
+
+#Filter data table with presence of diagnostic_peak and WT stoichiometry values
+MS_SS_KR_hydroxy_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+# filter data to have hydroxylysine with diagnostic ion 
+MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE]
+
+# Factor the gene names
+MS_SS_KR_hydroxy_dt[, `:=`(
+  gene_name =  
+    factor(gene_name)
+)]
+
+# Remove rows with NA values 
+MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
+
+```
+
+
+```{r plot_stoic_normoxia_diffpc_hypoxia}
+
+# Convert the wide format data into long format for plotting 
+MS_hydroxy_dt <- melt(
+  MS_SS_KR_hydroxy_dt, 
+  id.vars = c("protein_accession", "aa_pos", "gene_name"),
+  measure.vars = c("Normoxia","Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
+  variable.name = "sample_name", value.name = "Stoichiometry")
+
+# Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
+ggplot(
+  data = MS_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+```{r normoxia_vs_hypoxia_scatterplot}
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
+ggplot(
+  data = MS_SS_KR_hydroxy_dt, 
+  aes(
+    x = Normoxia,
+    y = Hypo_18h_4pc_ratio
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# correlation test 
+cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_4pc_ratio], method = "spearma")
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 1% - 18h dox incubation
+ggplot(
+  data = MS_SS_KR_hydroxy_dt, 
+  aes(
+    x = Normoxia,
+    y = Hypo_18h_1pc_ratio
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# correlation test 
+cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_1pc_ratio], method = "spearma")
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 0.1% - 24h dox incubation
+ggplot(
+  data = MS_SS_KR_hydroxy_dt, 
+  aes(
+    x = Normoxia,
+    y = Hypo_24h_0.1pc_ratio
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")
+
+# correlation test 
+cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_24h_0.1pc_ratio], method = "spearma")
+
+```
+
+
+```{r normoxia_non_subsetting_and_subsetting}
+
+# Calculate the ratio of hypoxic stoichiometry relative to normoxia
+MS_SS_KR_hydroxy_dt[, `:=`(
+  Hypo_18h_4pc_ratio = Hypoxia_18h_4pc/Normoxia,
+  Hypo_18h_1pc_ratio = Hypoxia_18h_1pc/Normoxia,
+  Hypo_24h_0.1pc_ratio = Hypoxia_24h_0.1pc/Normoxia
+)]
+
+# Convert the wide format data into long format for plotting 
+m_MS_SS_KR_hydroxy_dt <- melt(
+  MS_SS_KR_hydroxy_dt, 
+  id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia"),
+  measure.vars = c("Hypo_18h_4pc_ratio", "Hypo_18h_1pc_ratio", "Hypo_24h_0.1pc_ratio"), 
+  variable.name = "sample_name", value.name = "Stoichiometry_ratio"
+)
+
+# Boxplot - hypoxia stoic pc relative to normoxia pc - facet gene name 
+ggplot(
+  data = m_MS_SS_KR_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry_ratio
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ gene_name) +
+  ylab("Stoichiometry [% to normoxia]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2))+
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+# Boxplot - hypoxia stoic pc relative to normoxia pc
+ggplot(
+  data = m_MS_SS_KR_hydroxy_dt,
+  aes(
+    x = sample_name,
+    y = Stoichiometry_ratio
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry [% to normoxia]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+# Boxplot - hypoxia stoic pc relative to normoxia pc - normoxia subset 0.1
+ggplot(
+  data = subset(m_MS_SS_KR_hydroxy_dt, Normoxia >= 0.1),
+  aes(
+    x = sample_name,
+    y = Stoichiometry_ratio
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  ggtitle("N% > 0.1") +
+  ylab("Stoichiometry [% to normoxia]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+```{r overall_MS_SS_KR_comparison}
+
+# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_N_NA","HeLaWT_NA_N_NA"
+MS_KR1_subset_dt <- MS_KR1_stoic_dt[
+    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
+    aa == "K"]
+
+# Filter MS_SS_stoic to BRD proteins with diagnostic ions only
+MS_SS_all_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                & aa == "K" &
+                                 !grepl("minusDox", sample_name) 
+                                ]
+
+# Select the sites to be analysed
+DI_sites <- rbind(
+  MS_KR1_subset_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
+  MS_SS_all_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
+)
+
+DI_sites <- DI_sites[!duplicated(paste(protein_accession, aa_pos))]
+
+# grepl("^8h_21pc", sample_name),"HeLaNormoxia_8h",
+
+# Combine MS_KR1_subset_dt and MS_SS_all_dt data
+MS_SS_KR_all_dt <- rbindlist(list(MS_SS_all_dt,
+                         MS_KR1_subset_dt),
+                         use.names = TRUE)
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_SS_KR_all_dt <- MS_SS_KR_all_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
+]
+
+MS_SS_KR_all_dt <- merge(
+  DI_sites,
+  MS_SS_KR_all_dt,
+  by = c("protein_accession", "aa_pos")
+)
+
+MS_SS_KR_all_dt[, `:=`(
+  sample_group = case_when(
+    condition == "MS_SS" & grepl("minusDox", sample_name) ~ paste0("iJ6_0h_21pc_SS"),
+    condition == "MS_SS"~ paste0("iJ6_", str_split_fixed(sample_name, "_", 3)[, 1], "_", str_split_fixed(sample_name, "_", 3)[, 2], "_SS"),
+    sample_name == "HeLaiJMJD6_noDox_N_NA" ~ "iJ6_0h_21pc_KR",
+    sample_name == "HeLaiJMJD6_Dox_N_NA" ~ "iJ6_24h_21pc_KR",
+    sample_name == "HeLaWT_NA_N_NA" ~ "WT_Inf_21pc_KR", 
+    sample_name == "HeLaiJMJD6_Dox_01O224h_NA" ~ "iJ6_24h_01pc_KR"
+  )
+)]
+
+# Contrast function - by oxygen_stat
+contrast_hydroxylation_by_oxygen_stat <- function(all_stoic_dt){
+  wt_ko_dt <- all_stoic_dt
+  
+  # Add new columns into metadata
+  wt_ko_dt[, `:=`(
+    pos_id = paste0(protein_accession, "_", aa_pos), 
+    sample_pos_id = paste0(sample_group, "_", protein_accession, "_", aa_pos)
+  )]
+  
+  # Identify position with at least one oxidation event
+  oxidation_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE), # checks for oxidation event
+    unique(pos_id) # Returns unique pos_id with oxidation event
+  ]
+  oxidation_sample_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE),
+    unique(sample_pos_id)
+  ]
+  
+  # Collect non hydroxylated K information for the sites with hydroxylation
+  no_hydroxyK_dt <- copy(wt_ko_dt[aa == "K"])
+  no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
+    {.[!sample_pos_id %in% oxidation_sample_ids]} # If hydroxylation data exist, this is not necessary
+  
+  # Set stoichiometry and PSM count to zero for these positions and update the PTM label
+  no_hydroxyK_dt[, `:=`(
+    sum_psm_mapped = 0,
+    stoichiometry = 0,
+    ptm = "[Oxidation (K)]"
+  )]
+  
+  # Combine oxidation data from both original and the newly flagged unmodified K data
+  hydroxyK_dt <- rbind(
+    wt_ko_dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+    no_hydroxyK_dt
+  )
+  
+  # Filter psm mapped greater than 2 for higher confidence 
+  hydroxyK_dt <- hydroxyK_dt[
+    sum_psm_mapped_per_position > 2
+  ]
+  
+  # Sort stoichiometry column from highest to lowest
+  hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
+    !duplicated(paste0(protein_accession, gene_name, aa_pos, sample_group)) # Remove duplicate rows
+  ]
+  
+  # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
+  d.hydroxyK_dt <- dcast(
+    hydroxyK_dt,
+    protein_accession + gene_name + aa_pos ~ sample_group, # values in oxygen_stat become into separate columns (Normoxia & Hypoxia)
+    value.var = "stoichiometry"
+  )
+  
+  return(d.hydroxyK_dt)
+}
+
+c_MS_SS_KR_all_dt <- contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_all_dt)
+
+# Change wide format to long format 
+long_c_MS_SS_KR_all_dt <- melt(
+  c_MS_SS_KR_all_dt,
+  id.vars = c("protein_accession", "gene_name", "aa_pos"),
+  value.name = "Stoichiometry", 
+  variable.name = "sample_group"
+  #value.var = grep("_", colnames(c_MS_SS_KR_all_dt), value = TRUE)
+)
+
+# Separate the contents of sample_group column into new columns 
+long_c_MS_SS_KR_all_dt[, `:=`(
+  cell = str_split_fixed(sample_group, "_", 4)[, 1],
+  induction = str_split_fixed(sample_group, "_", 4)[, 2] %>%
+    factor(levels = c("Inf", "0h", "4h", "8h", "18h", "24h")),
+  oxygen = str_split_fixed(sample_group, "_", 4)[, 3],
+  dataset = str_split_fixed(sample_group, "_", 4)[, 4]
+)]
+
+
+# reorder the oxygen levels
+long_c_MS_SS_KR_all_dt <-  long_c_MS_SS_KR_all_dt[, oxygen := factor(
+  oxygen,
+  levels = c("01pc", "1pc", "4pc", "21pc")
+)]
+
+# subset rows that do not contain NA values 
+long_c_MS_SS_KR_all_dt <- long_c_MS_SS_KR_all_dt[!is.na(Stoichiometry)]
+
+# counting the data per sample and size 
+long_c_MS_SS_KR_all_dt[, data_size_per_sample := .N, by = list(sample_group)]
+long_c_MS_SS_KR_all_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
+
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
+ggplot(
+  data = long_c_MS_SS_KR_all_dt[data_size_per_site == max(long_c_MS_SS_KR_all_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ oxygen) +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+#---------------------------------------------
+# Normoxia samples under varying dox induction
+#---------------------------------------------
+
+# subset data to WT normoxia (MS_KR_1 sample)
+wt_21pc <- long_c_MS_SS_KR_all_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
+setnames(wt_21pc, old = "Stoichiometry", "WT_stioichiomtry")
+
+# Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
+pc2wt_21pc <- merge(
+  long_c_MS_SS_KR_all_dt[
+    cell == "iJ6" &
+    oxygen == "21pc"
+  ],
+  wt_21pc,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Boxplot - comparing normoxia in different dox incubation timings
+ggplot(
+  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry / WT_stioichiomtry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  # facet_grid(~ oxygen) +
+  ylab("Stoichiometry [% to WT]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+#-------------
+# XIC vs stoic
+#-------------
+
+# Load XIC data
+xic_MS_SS <- fread(file.path(data.dir, "xic_MS_SS.csv"))
+
+# Merge XIC data and stoichiometry data
+xic_stoic <- merge(long_c_MS_SS_KR_all_dt, 
+                   xic_MS_SS,
+                   by = c("induction", "oxygen", "gene_name", "aa_pos"))
+
+# Scatter plot - XIC vs stoichiometry
+ggplot(
+  xic_stoic,
+  aes(
+    x = XIC,
+    y = Stoichiometry
+  )
+) + 
+  geom_point() +
+  theme_classic()
+
+```
+
+
+# 2.7.5 Comparing normoxia samples under varying dox incubation (+ diagnostic ion)
+
+```{r load_contrast_data}
+
+## contrast function - by genotype
+contrast_hydroxylation_by_genotype <- function(all_stoic_dt, min.psm = 2){
+  wt_ko_dt <- all_stoic_dt
+  
+  # Add new columns into metadata
+  wt_ko_dt[, `:=`(
+    genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)"), # new column - Genotype, extract WT or JMJD6KO from sample_name column
+    pos_id = paste0(protein_accession, "_", aa_pos), 
+    sample_pos_id = paste0(sample_name, "_", protein_accession, "_", aa_pos)
+  )]
+  
+  # Identify position with at least one oxidation event
+  oxidation_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE), # checks for oxidation event
+    unique(pos_id) # Returns unique pos_id with oxidation event
+  ]
+  oxidation_sample_ids <- wt_ko_dt[
+    grepl("[Oxidation (K)]", ptm, fixed = TRUE),
+    unique(sample_pos_id)
+  ]
+  
+  # Collect non hydroxylated K information for the sites with hydroxylation
+  no_hydroxyK_dt <- copy(wt_ko_dt[aa == "K"])
+  no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
+    {.[!sample_pos_id %in% oxidation_sample_ids]} # If hydroxylation data exist, this is not necessary
+  
+  # Set stoichiometry and PSM count to zero for these positions and update the PTM label
+  no_hydroxyK_dt[, `:=`(
+    sum_psm_mapped = 0,
+    stoichiometry = 0,
+    ptm = "[Oxidation (K)]"
+  )]
+  
+  # Combine oxidation data from both original and the newly flagged unmodified K data
+  hydroxyK_dt <- rbind(
+    wt_ko_dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+    no_hydroxyK_dt
+  )
+  
+  # Filter psm mapped greater than min.psm (def. 2) for higher confidence 
+  hydroxyK_dt <- hydroxyK_dt[
+    sum_psm_mapped_per_position > min.psm
+  ]
+  
+  # Sort stoichiometry column from highest to lowest
+  hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
+    !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype)) # Remove duplicate rows
+  ]
+  
+  # Reshape 'd.hydroxyK_dt' from long to wide based on stoichiometry values  
+  d.hydroxyK_dt <- dcast(
+    hydroxyK_dt,
+    protein_accession + gene_name + aa_pos ~ genotype, # values in genotype become into separate columns (WT & JMJD6KO)
+    value.var = "stoichiometry"
+  )
+  
+  return(d.hydroxyK_dt)
+}
+
+#-----------------------------
+# Load PNAS stoichiometry data
+#-----------------------------
+
+pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022_stoic_dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022_stoic_dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022_stoic_dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+# Adding columns to pnas2022_stoic_dt metadata
+pnas2022_stoic_dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos), # combines data from protein_accession and aa_pos
+  ptm = fifelse(curated_oxK_site, "[Oxidation (K)]", ""), # add the "[Oxidation (K)]" in ptm column, if curated oxK site is TRUE
+  sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} 
+)]
+
+# subset the data to curated_oxK_site = TRUE, aa = K and BRD proteins
+pnas2022_stoic_dt <-  pnas2022_stoic_dt[
+  curated_oxK_site == TRUE &
+  ptm == "[Oxidation (K)]" &
+  gene_name %in% c("BRD2", "BRD3", "BRD4") &
+  aa == "K"
+]
+
+# Contrast non hydroxylated and hydroxylated lysines
+# Take only the HeLa samples with JQ1 or J6 peptide pull-down
+pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
+  pnas2022_stoic_dt[
+    grepl("HeLa", sample_name) & (grepl("JQ1", sample_name) | grepl("J6pep", sample_name))
+  ]
+)
+
+
+#--------------------------------
+# Load MS_KR_1 stoichiometry data
+#--------------------------------
+
+# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
+MS_KR1_WT_dox_dt <- MS_KR1_stoic_dt[
+  is_diagnostic_peak == TRUE &
+    sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA") &
+    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
+    aa == "K"
+]
+
+# Add new columns to simplify sample names 
+MS_KR1_WT_dox_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("HeLaWT_NA_N_NA", sample_name),
+        "WT_JMJD6",
+        grepl("HeLaiJMJD6_Dox_N_NA", sample_name),
+        "24h_JMJD6",
+        default = NA_character_
+      ),
+      levels = c("WT_JMJD6", "24h_JMJD6")
+    )
+)]
+
+#--------------------------------
+# Load MS_SS stoichiometry data
+#--------------------------------
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data at 21pc of O2
+MS_SS_21pc_dt <-  MS_SS_stoic_dt[
+  is_diagnostic_peak == TRUE &
+    grepl("21pc", sample_name) &
+    gene_name %in% c("BRD2", "BRD3", "BRD4") &
+    aa == "K"
+]
+
+# Add new columns to simplify sample names 
+MS_SS_21pc_dt[, `:=`(
+  oxygen_levels =
+    factor(
+      fcase(
+        grepl("^18h", sample_name),
+        "18h_JMJD6",
+        grepl("^8h", sample_name),
+        "8h_JMJD6",
+        grepl("^4h", sample_name),
+        "4h_JMJD6",
+        default = NA_character_
+      ),
+      levels = c("18h_JMJD6", "8h_JMJD6","4h_JMJD6")
+    )
+)]
+
+```
+
+
+```{r MS_SS_KR_normoxia_vs_dox_incubation}
+
+#-----------------------------------------
+## Combine MS_KR_1 and MS_SS normoxia data
+#-----------------------------------------
+MS_normoxia_dt <- rbindlist(list(MS_SS_21pc_dt,
+                         MS_KR1_WT_dox_dt),
+                         use.names = TRUE)
+
+# reorder oxygen levels
+MS_normoxia_dt[, oxygen_levels := factor(
+  oxygen_levels,
+  levels = c("WT_JMJD6", "4h_JMJD6", "8h_JMJD6", "18h_JMJD6", "24h_JMJD6")
+)]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_normoxia_dt <- MS_normoxia_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+]
+
+# Boxplot - Comparing normoxia stoic in different dox incubation
+ggplot(
+  data = MS_normoxia_dt,
+  aes(
+    x = oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "N in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+#coord_cartesian(ylim = c(0, 1.0))
+
+# Boxplot - Comparing normoxia stoic in different dox incubation
+ggplot(
+  data = MS_normoxia_dt[stoichiometry >= 0.1],
+  aes(
+    x = oxygen_levels,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "(N >= 0.1) in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")+
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+```
+
+# 2.7.6 Comparing hypoxia samples under varying dox incubation (+ diagnostic ion)
+
+```{r MS_SS_hypoxia_vs_dox_incubation}
+
+# Filter MS_SS data to retain only BRD2, 3, 4 data 
+MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
+                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & aa == "K"
+]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
+# These samples are removed as it could false positives reported by the system 
+MS_SS_hypo_dt <- MS_SS_hypo_dt[
+  !(
+    (grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+    (grepl("_BRD4$",  sample_name) & gene_name %in% c("BRD2", "BRD3"))
+  )
+]
+# Subset the data 
+MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
+                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
+                                  & aa == "K"
+]
+
+# Categorize the samples based on O2 pc 
+MS_SS_hypo_dt[, `:=`(
+  O2_pc =
+    factor(
+      fcase(
+       grepl("21pc", sample_name),
+        "21pc",
+        grepl("4pc", sample_name),
+        "4pc",
+        grepl("1pc", sample_name),
+        "1pc",
+        default = NA_character_
+      ),
+      levels = c("1pc", "4pc", "21pc")
+    )
+)]
+
+# Categorize the samples based on dox incubation 
+MS_SS_hypo_dt[, `:=`(
+  dox_incubation =
+    factor(
+      fcase(
+       grepl("^18h", sample_name),
+        "18h",
+        grepl("^8h", sample_name),
+        "8h",
+        grepl("^4h", sample_name),
+        "4h",
+        default = NA_character_
+      ),
+      levels = c("4h", "8h", "18h")
+    )
+)]
+
+# Remove rows with NA values 
+MS_SS_hypo_dt <- na.omit(MS_SS_hypo_dt)
+
+# box_plot - MS_SS in diff dox incubation
+ggplot(
+  data = MS_SS_hypo_dt, 
+  aes(
+    x = dox_incubation,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ O2_pc)+
+  ggtitle("MS_SS in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+
+MS_SS_hypo_Nsub_dt <- MS_SS_hypo_dt[
+  O2_pc == "21pc" & stoichiometry >= 0.1
+]
+
+MS_SS_hypo_Nsub_dt <- rbindlist(list(MS_SS_hypo_Nsub_dt,
+                                     MS_SS_hypo_dt[
+                                       !(O2_pc == "21pc" & stoichiometry >= 0.1)
+                                     ]),
+                                use.names = TRUE)
+
+# box_plot - MS_SS in diff dox incubation N =>0.1
+ggplot(
+  data = MS_SS_hypo_Nsub_dt, 
+  aes(
+    x = dox_incubation,
+    y = stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ O2_pc)+
+  ggtitle("MS_SS in diff dox incubation (N subset)") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+# Session information
+
+```{r session_Info}
+
+sessioninfo::session_info()
+
+```
