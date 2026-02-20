@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script examines the oxygen sensitivity of lysine hydroxylations in different BRD proteins and their respective sites. This script 
+This script examines the oxygen sensitivity of lysine hydroxylations in BRD proteins and their respective sites. This script is for visualising the calculated stoichiometry. 
 
 # Environment setup
 
@@ -46,7 +46,11 @@ project.dir <-
 ```{r load_essential_functions_current_session}
 
 ## Load all R scripts from the 'functions' folder into the current session
-P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern="*.R", full.names = TRUE), source)
+P2_functions <- sapply(list.files
+                       (file.path(project.dir, "R/functions"), 
+                         pattern="*.R", 
+                         full.names = TRUE), 
+                       source)
 
 ## Install private package 
 # Install ptm.stiochiometry package
@@ -258,28 +262,57 @@ MS_SS_stoic_dt[, `:=`(
 
 ```{r merge_MS_SS_KR_data}
 
-# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA"
-MS_KR1_24h0.1pc <- MS_KR1_stoic_dt[
-  sample_name == "HeLaiJMJD6_Dox_01O224h_NA" & 
+# Filter MS_KR_1 data to retain only BRD2, 3, 4 data
+MS_KR1_BRD_dt <- MS_KR1_stoic_dt[
     gene_name %in% c("BRD2", "BRD3", "BRD4") & 
     aa == "K"]
 
 # Filter MS_SS data to retain only BRD2, 3, 4 data 
-MS_SS_18h_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
+MS_SS_BRD_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
                                   & aa == "K"
                                   & grepl("^18h_", sample_name)]
 
-# Combine MS_KR_1 and MS_SS data
-MS_SS_KR_dt <- rbindlist(list(MS_SS_18h_dt,
-                         MS_KR1_24h0.1pc),
+# subset rows with diagnostic ion from MS_SS and MS_KR data
+DI_sites <- rbind(
+  MS_KR1_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
+  MS_SS_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
+)
+
+# remove duplicate sites 
+DI_sites <- DI_sites[!duplicated(paste(protein_accession, aa_pos))]
+
+# Combine MS_KR1_subset_dt and MS_SS_all_dt data
+MS_SS_KR_dt <- rbindlist(list(MS_SS_BRD_dt,
+                         MS_KR1_BRD_dt),
                          use.names = TRUE)
 
 # Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
-# These samples are removed as it could false positives reported by the system 
+# These samples are removed as it could be false positives reported by the system 
 MS_SS_KR_dt <- MS_SS_KR_dt[
   !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
-       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
+       (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
 ]
+
+# Merge MS_SS_KR data to only have unique diagnostic ion sites
+MS_SS_KR_dt <- merge(
+  DI_sites,
+  MS_SS_KR_dt,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Column "sample group" created to simpilfy sample names
+MS_SS_KR_dt[, `:=`(
+  sample_group = case_when(
+    condition == "MS_SS" & grepl("minusDox", sample_name) ~ paste0("iJ6_0h_21pc_SS"),
+    condition == "MS_SS"~ paste0("iJ6_", str_split_fixed(sample_name, "_", 3)[, 1], "_", str_split_fixed(sample_name, "_", 3)[, 2], "_SS"),
+    sample_name == "HeLaiJMJD6_noDox_N_NA" ~ "iJ6_0h_21pc_KR",
+    sample_name == "HeLaiJMJD6_Dox_N_NA" ~ "iJ6_24h_21pc_KR",
+    sample_name == "HeLaWT_NA_N_NA" ~ "WT_Inf_21pc_KR", 
+    sample_name == "HeLaiJMJD6_Dox_01O224h_NA" ~ "iJ6_24h_01pc_KR"
+  )
+)]
+
+
 
 ```
 
@@ -583,56 +616,6 @@ ggplot(
 ```
 
 ```{r overall_MS_SS_KR_comparison}
-
-# Filter MS_KR_1 data to only contain sample name = "HeLaiJMJD6_Dox_01O224h_NA", "HeLaiJMJD6_Dox_N_NA","HeLaWT_NA_N_NA"
-MS_KR1_subset_dt <- MS_KR1_stoic_dt[
-    gene_name %in% c("BRD2", "BRD3", "BRD4") & 
-    aa == "K"]
-
-# Filter MS_SS_stoic to BRD proteins with diagnostic ions only
-MS_SS_all_dt <-  MS_SS_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                & aa == "K" &
-                                 !grepl("minusDox", sample_name) 
-                                ]
-
-# Select the sites to be analysed
-DI_sites <- rbind(
-  MS_KR1_subset_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
-  MS_SS_all_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
-)
-
-DI_sites <- DI_sites[!duplicated(paste(protein_accession, aa_pos))]
-
-# grepl("^8h_21pc", sample_name),"HeLaNormoxia_8h",
-
-# Combine MS_KR1_subset_dt and MS_SS_all_dt data
-MS_SS_KR_all_dt <- rbindlist(list(MS_SS_all_dt,
-                         MS_KR1_subset_dt),
-                         use.names = TRUE)
-
-# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
-# These samples are removed as it could false positives reported by the system 
-MS_SS_KR_all_dt <- MS_SS_KR_all_dt[
-  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
-       (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
-]
-
-MS_SS_KR_all_dt <- merge(
-  DI_sites,
-  MS_SS_KR_all_dt,
-  by = c("protein_accession", "aa_pos")
-)
-
-MS_SS_KR_all_dt[, `:=`(
-  sample_group = case_when(
-    condition == "MS_SS" & grepl("minusDox", sample_name) ~ paste0("iJ6_0h_21pc_SS"),
-    condition == "MS_SS"~ paste0("iJ6_", str_split_fixed(sample_name, "_", 3)[, 1], "_", str_split_fixed(sample_name, "_", 3)[, 2], "_SS"),
-    sample_name == "HeLaiJMJD6_noDox_N_NA" ~ "iJ6_0h_21pc_KR",
-    sample_name == "HeLaiJMJD6_Dox_N_NA" ~ "iJ6_24h_21pc_KR",
-    sample_name == "HeLaWT_NA_N_NA" ~ "WT_Inf_21pc_KR", 
-    sample_name == "HeLaiJMJD6_Dox_01O224h_NA" ~ "iJ6_24h_01pc_KR"
-  )
-)]
 
 # contrast 
 c_MS_SS_KR_all_dt <- contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_all_dt)
