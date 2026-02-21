@@ -267,31 +267,33 @@ c_MS_SS_KR_dt[, `:=`(
 
 ```{r stoichiometry_BRD_proteins}
 
-# subset 
+# Plotting stoichiometry of BRD proteins in different O2% 
+# Note: the amino acid region of the proteins is that of the ones represented 
+# in the PNAS2022 paper. 
 
-# Plotting stoichiometry of BRD4 in different O2% 
+#accession = "P25440", plot_range = c(540, 590) BRD2
 plot_ptm_stoichiometry(
-  MS_SS_KR_dt[grepl("18h|24h", sample_group) & gene_name == "BRD4"],
-  accession = "O60885",
-  plot_range = c(531, 581), 
+  MS_SS_KR_dt[grepl("18h|24h|WT|0h", sample_group) & gene_name == "BRD2"],
+  accession = "P25440",
+  plot_range = c(540, 590), 
   all.protein.bs, 
   sample_colors = NA,
 )
 
 # accession = "Q15059", plot_range = c(483, 533) BRD3
 plot_ptm_stoichiometry(
-  MS_SS_KR_dt[grepl("18h|24h", sample_group)],
+  MS_SS_KR_dt[grepl("18h|24h|WT|0h", sample_group) & gene_name == "BRD3"],
   accession = "Q15059",
   plot_range = c(483, 533), 
   all.protein.bs, 
   sample_colors = NA,
 )
 
-#accession = "P25440", plot_range = c(540, 590) BRD2
+# accession = "O60885", plot_range = c(531, 581) BRD4 
 plot_ptm_stoichiometry(
-  MS_SS_KR_dt[grepl("18h|24h", sample_group)],
-  accession = "P25440",
-  plot_range = c(540, 590), 
+  MS_SS_KR_dt[grepl("18h|24h|WT|0h", sample_group) & gene_name == "BRD4"],
+  accession = "O60885",
+  plot_range = c(531, 581), 
   all.protein.bs, 
   sample_colors = NA,
 )
