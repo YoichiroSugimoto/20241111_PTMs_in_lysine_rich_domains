@@ -232,6 +232,10 @@ contrast_hydroxylation_by_genotype <- function(all_stoic_dt, min.psm = 2){
 
 ```{r load_MS_KR_1_MS_SS_data}
 
+#-----------------------------
+# Load MS_KR_1 stoichiometry data
+#-----------------------------
+
 ## Read stoichiometry data for MS_KR1 data (noH2O loss)
  MS_KR1_stoic_dt <- read_stoic_data(
   prefix = "MS_KR_1_noH2O_",
@@ -246,6 +250,9 @@ MS_KR1_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
+#-----------------------------
+# Load MS_SS stoichiometry data
+#-----------------------------
 
 ## Read stoichiometry data for MS_SS data 
  MS_SS_stoic_dt <- read_stoic_data(
@@ -262,6 +269,35 @@ MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
+
+#-----------------------------
+# Load PNAS stoichiometry data
+#-----------------------------
+
+pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022_stoic_dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022_stoic_dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022_stoic_dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+# Adding columns to pnas2022_stoic_dt metadata
+pnas2022_stoic_dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos), # combines data from protein_accession and aa_pos
+  ptm = fifelse(curated_oxK_site, "[Oxidation (K)]", ""), # add the "[Oxidation (K)]" in ptm column, if curated oxK site is TRUE
+  sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
+    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} 
+)]
+
 ```
 
 
@@ -276,6 +312,14 @@ MS_KR1_BRD_dt <- MS_KR1_stoic_dt[
 MS_SS_BRD_dt <-  MS_SS_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")&
     aa == "K"]
+
+# subset the data to curated_oxK_site = TRUE, aa = K and BRD proteins
+pnas2022_stoic_dt <-  pnas2022_stoic_dt[
+  curated_oxK_site == TRUE &
+  ptm == "[Oxidation (K)]" &
+  gene_name %in% c("BRD2", "BRD3", "BRD4") &
+  aa == "K"
+]
 
 # subset rows with diagnostic ion from MS_SS and MS_KR data
 DI_sites <- rbind(
@@ -368,8 +412,8 @@ plot_ptm_stoichiometry(
 ```{r overall_MS_SS_KR_comparison}
 
 # Change wide format to long format 
-long_c_MS_SS_KR_all_dt <- melt(
-  c_MS_SS_KR_all_dt,
+long_c_MS_SS_KR_dt <- melt(
+  c_MS_SS_KR_dt,
   id.vars = c("protein_accession", "gene_name", "aa_pos"),
   value.name = "Stoichiometry", 
   variable.name = "sample_group"
@@ -377,7 +421,7 @@ long_c_MS_SS_KR_all_dt <- melt(
 )
 
 # Separate the contents of sample_group column into new columns 
-long_c_MS_SS_KR_all_dt[, `:=`(
+long_c_MS_SS_KR_dt[, `:=`(
   cell = str_split_fixed(sample_group, "_", 4)[, 1],
   induction = str_split_fixed(sample_group, "_", 4)[, 2] %>%
     factor(levels = c("Inf", "0h", "4h", "8h", "18h", "24h")),
@@ -387,23 +431,24 @@ long_c_MS_SS_KR_all_dt[, `:=`(
 
 
 # reorder the oxygen levels
-long_c_MS_SS_KR_all_dt <-  long_c_MS_SS_KR_all_dt[, oxygen := factor(
+long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
   oxygen,
   levels = c("01pc", "1pc", "4pc", "21pc")
 )]
 
 # subset rows that do not contain NA values 
-long_c_MS_SS_KR_all_dt <- long_c_MS_SS_KR_all_dt[!is.na(Stoichiometry)]
+long_c_MS_SS_KR_dt <- long_c_MS_SS_KR_dt[!is.na(Stoichiometry)]
 
 # counting the data per sample and size 
-long_c_MS_SS_KR_all_dt[, data_size_per_sample := .N, by = list(sample_group)]
-long_c_MS_SS_KR_all_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
+long_c_MS_SS_KR_dt[, data_size_per_sample := .N, by = list(sample_group)]
+long_c_MS_SS_KR_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
+# Data subset to overnight (18/24h) dox induction
 ggplot(
-  data = MS_hydroxy_dt,
+  data = long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)],
   aes(
-    x = sample_name,
+    x = sample_group,
     y = Stoichiometry
   )
 ) +
