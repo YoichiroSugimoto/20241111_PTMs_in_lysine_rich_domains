@@ -75,8 +75,6 @@ ref_protein_dt <- import_reference_fasta(file.path
 
 ```
 
-# 2.7.3 Calculation of Stoichiometry with diagnostic ion in hypoxia and normoxia
-
 ```{r data_directory_MS_SS}
 
 # Define path to data directory
@@ -85,7 +83,7 @@ results.dir <- file.path(project.dir, "results")
 
 ```
 
-# 2.7.4 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# 2.7.3 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ```{r Define_important_functions}
 
@@ -632,8 +630,84 @@ ggplot(
 
 ```
 
+```{r normoxia_vs_hypoxia_scatterplot}
 
-# 2.7. XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data. 
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
+ggplot(
+  data = c_MS_SS_KR_dt, 
+  aes(
+    x = iJ6_18h_21pc_SS,
+    y = iJ6_18h_4pc_SS
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  #facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# correlation test 
+cor.test(c_MS_SS_KR_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_dt[, iJ6_18h_4pc_SS], method = "spearma")
+
+wilcox.test(
+  c_MS_SS_KR_dt[, iJ6_18h_4pc_SS],
+  c_MS_SS_KR_dt[, iJ6_18h_21pc_SS],
+  paired = TRUE
+)
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 1% - 18h dox incubation
+ggplot(
+  data = c_MS_SS_KR_dt, 
+  aes(
+    x = iJ6_18h_21pc_SS,
+    y = iJ6_18h_1pc_SS
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+#  facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") 
+
+# correlation test 
+cor.test(c_MS_SS_KR_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_dt[, iJ6_18h_1pc_SS], method = "spearma")
+
+wilcox.test(
+  c_MS_SS_KR_dt[, iJ6_18h_1pc_SS],
+  c_MS_SS_KR_dt[, iJ6_18h_21pc_SS],
+  paired = TRUE
+)
+
+# Scatter plot - Normoxia stoichiometry versus hypoxia at 0.1% - 24h dox incubation
+ggplot(
+  data = c_MS_SS_KR_dt, 
+  aes(
+    x = iJ6_24h_21pc_KR,
+    y = iJ6_24h_01pc_KR
+  )
+) +
+  geom_point(aes(colour = gene_name)) +
+  #facet_grid(~ gene_name, space = "free")+
+  theme_classic() +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right")
+
+# correlation test 
+cor.test(c_MS_SS_KR_dt[, iJ6_24h_21pc_KR], c_MS_SS_KR_dt[, iJ6_24h_01pc_KR], method = "spearma")
+
+wilcox.test(
+  c_MS_SS_KR_dt[, iJ6_24h_01pc_KR],
+  c_MS_SS_KR_dt[, iJ6_24h_21pc_KR],
+  paired = TRUE
+)
+
+```
+
+
+# 2.7.4 XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -661,125 +735,6 @@ ggplot(
   theme_classic()
 
 ```
-
-# 2.7. Plotting 
-
-```{r normoxia_vs_hypoxia_scatterplot}
-
-# Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
-ggplot(
-  data = long_MS_SS_KR_dt, 
-  aes(
-    x = Normoxia,
-    y = Hypo_18h_4pc_ratio
-  )
-) +
-  geom_point(aes(colour = gene_name)) +
-  facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") 
-
-# correlation test 
-cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_4pc_ratio], method = "spearma")
-
-# Scatter plot - Normoxia stoichiometry versus hypoxia at 1% - 18h dox incubation
-ggplot(
-  data = MS_SS_KR_hydroxy_dt, 
-  aes(
-    x = Normoxia,
-    y = Hypo_18h_1pc_ratio
-  )
-) +
-  geom_point(aes(colour = gene_name)) +
-  facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") 
-
-# correlation test 
-cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_18h_1pc_ratio], method = "spearma")
-
-# Scatter plot - Normoxia stoichiometry versus hypoxia at 0.1% - 24h dox incubation
-ggplot(
-  data = MS_SS_KR_hydroxy_dt, 
-  aes(
-    x = Normoxia,
-    y = Hypo_24h_0.1pc_ratio
-  )
-) +
-  geom_point(aes(colour = gene_name)) +
-  facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right")
-
-# correlation test 
-cor.test(MS_SS_KR_hydroxy_dt[, Normoxia], MS_SS_KR_hydroxy_dt[, Hypo_24h_0.1pc_ratio], method = "spearma")
-
-```
-
-
-```{r normoxia_non_subsetting_and_subsetting}
-
-# Calculate the ratio of hypoxic stoichiometry relative to normoxia
-MS_SS_KR_hydroxy_dt[, `:=`(
-  Hypo_18h_4pc_ratio = Hypoxia_18h_4pc/Normoxia,
-  Hypo_18h_1pc_ratio = Hypoxia_18h_1pc/Normoxia,
-  Hypo_24h_0.1pc_ratio = Hypoxia_24h_0.1pc/Normoxia
-)]
-
-# Convert the wide format data into long format for plotting 
-m_MS_SS_KR_hydroxy_dt <- melt(
-  MS_SS_KR_hydroxy_dt, 
-  id.vars = c("protein_accession", "aa_pos", "gene_name", "Normoxia"),
-  measure.vars = c("Hypo_18h_4pc_ratio", "Hypo_18h_1pc_ratio", "Hypo_24h_0.1pc_ratio"), 
-  variable.name = "sample_name", value.name = "Stoichiometry_ratio"
-)
-
-# Boxplot - hypoxia stoic pc relative to normoxia pc
-ggplot(
-  data = m_MS_SS_KR_hydroxy_dt,
-  aes(
-    x = sample_name,
-    y = Stoichiometry_ratio
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  #facet_grid(~ gene_name) +
-  ylab("Stoichiometry [% to normoxia]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-# Boxplot - hypoxia stoic pc relative to normoxia pc - normoxia subset 0.1
-ggplot(
-  data = subset(m_MS_SS_KR_hydroxy_dt, Normoxia >= 0.1),
-  aes(
-    x = sample_name,
-    y = Stoichiometry_ratio
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  ggtitle("N% > 0.1") +
-  ylab("Stoichiometry [% to normoxia]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-```
-
 
 # 2.7.5 Comparing normoxia samples under varying dox incubation (+ diagnostic ion)
 
