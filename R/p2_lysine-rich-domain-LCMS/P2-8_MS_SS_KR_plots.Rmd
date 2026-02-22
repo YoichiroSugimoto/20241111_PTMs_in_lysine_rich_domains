@@ -487,6 +487,30 @@ ggplot(
 ```
 
 
+```{r Dox_plus_minus_JMJD6_O2_levels}
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
+ggplot(
+  data = long_c_MS_SS_KR_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ oxygen) +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
@@ -519,28 +543,6 @@ ggplot(
 ```
 
 
-```{r Dox_plus_minus_JMJD6_O2_levels}
-
-# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
-ggplot(
-  data = long_c_MS_SS_KR_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ oxygen) +
-  ylab("Stoichiometry [%]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-```
 
 
 # 2.7. Plotting XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data . 
