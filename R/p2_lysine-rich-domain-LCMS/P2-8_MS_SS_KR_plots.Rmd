@@ -312,7 +312,6 @@ pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
   ]
 )
 
-
 ```
 
 
@@ -462,7 +461,7 @@ long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
 wt_21pc <- long_c_MS_SS_KR_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stioichiomtry")
 
-# Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
+# Merge WT data with MS_SS_KR normoxia data
 pc2wt_21pc <- merge(
   long_c_MS_SS_KR_dt[
     cell == "iJ6" &
@@ -494,11 +493,11 @@ ggplot(
 #-----------------------------------
 
 # Normoxia subset to greater than 0.1 (N >= 0.1)
-pc2wt_21pc_N0.1 <- pc2wt_21pc[Stoichiometry >0.1]
+pc2wt_21pc_N01 <- pc2wt_21pc[Stoichiometry >0.1]
 
 # Boxplot - comparing normoxia in different dox incubation timings
 ggplot(
-  data = pc2wt_21pc_N0.1[data_size_per_site == max(pc2wt_21pc_N0.1[, data_size_per_site])],
+  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry / WT_stioichiomtry
@@ -542,7 +541,7 @@ ggplot(
 #---------------------
 
 # O2 levels subset to 21pc 
-long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_21pc_dt[oxygen == "21pc"]
+long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_dt[oxygen == "21pc"]
 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
@@ -604,8 +603,8 @@ long_MS_SS_KR_O2p_dt <- long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)]
 long_MS_SS_KR_O2p_dt[, sample_group :=
                        factor(sample_group,
                               levels = c("WT_Inf_21pc_KR",
-                                         "iJ6_18h_21pc_SS",
                                          "iJ6_24h_21pc_KR",
+                                         "iJ6_18h_21pc_SS",
                                          "iJ6_18h_4pc_SS",
                                          "iJ6_18h_1pc_SS",
                                          "iJ6_24h_01pc_KR"))
@@ -627,6 +626,24 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+
+#-----------------------------
+# binning normoxia values 
+
+# subset data to WT normoxia (MS_SS_KR sample)
+MS_SS_KR_21pc <- long_c_MS_SS_KR_dt[grepl("18h|24h", sample_group) & grepl("21pc", oxygen),  .(protein_accession, aa_pos, Stoichiometry)]
+
+MS_SS_KR_21pc[
+  ,
+  normoxia_bin := cut(
+    Stoichiometry,
+    breaks = c(0, 0.3, 0.6, 1),
+    labels = c("0–0.3", "0.3–0.6", "0.6–1"),
+    include.lowest = TRUE
+  )
+]
 
 ```
 
@@ -706,8 +723,61 @@ wilcox.test(
 
 ```
 
+# 2.7.4 Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
-# 2.7.4 XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data. 
+```{r hypoxia_vs_dox_incubation}
+
+# box_plot - hypoxia stoichiometry in diff dox incubation
+ggplot(
+  data = long_c_MS_SS_KR_dt[induction != "Inf" & oxygen != "21pc"], 
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  #facet_grid(~ oxygen)+
+  ggtitle("Hypoxia samples in diff dox incubation") +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+#--------------------
+
+# Subset normoxia data to >= 0.1
+O2_21pc_N01_dt <- long_c_MS_SS_KR_dt[
+  oxygen == "21pc" & Stoichiometry >= 0.1
+]
+  
+# Combine subset normoxia 
+MS_hypo_Nsub_dt <- rbindlist(list(O2_21pc_N01_dt,
+                                     long_c_MS_SS_KR_dt),
+                                use.names = TRUE)
+
+# box_plot - Hypoxia samples in diff dox incubation (N =>0.1)
+ggplot(
+  data = MS_hypo_Nsub_dt[induction != "Inf" & oxygen != "21pc"], 
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+ # facet_grid(~ oxygen)+
+  ggtitle("Hypoxia samples in diff dox incubation (N subset)") +
+  ylab("Stoichiometry [%] (N =>0.1)") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+# 2.7.5 XIC values against MS_SS and MS_KR_1 stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -736,116 +806,6 @@ ggplot(
 
 ```
 
-# 2.7.6 Comparing hypoxia samples under varying dox incubation (+ diagnostic ion)
-
-```{r MS_SS_hypoxia_vs_dox_incubation}
-
-# Filter MS_SS data to retain only BRD2, 3, 4 data 
-MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
-                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                  & aa == "K"
-]
-
-# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
-# These samples are removed as it could false positives reported by the system 
-MS_SS_hypo_dt <- MS_SS_hypo_dt[
-  !(
-    (grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
-    (grepl("_BRD4$",  sample_name) & gene_name %in% c("BRD2", "BRD3"))
-  )
-]
-# Subset the data 
-MS_SS_hypo_dt <-  MS_SS_stoic_dt[is_diagnostic_peak == TRUE 
-                                  & gene_name %in% c("BRD2", "BRD3", "BRD4") 
-                                  & aa == "K"
-]
-
-# Categorize the samples based on O2 pc 
-MS_SS_hypo_dt[, `:=`(
-  O2_pc =
-    factor(
-      fcase(
-       grepl("21pc", sample_name),
-        "21pc",
-        grepl("4pc", sample_name),
-        "4pc",
-        grepl("1pc", sample_name),
-        "1pc",
-        default = NA_character_
-      ),
-      levels = c("1pc", "4pc", "21pc")
-    )
-)]
-
-# Categorize the samples based on dox incubation 
-MS_SS_hypo_dt[, `:=`(
-  dox_incubation =
-    factor(
-      fcase(
-       grepl("^18h", sample_name),
-        "18h",
-        grepl("^8h", sample_name),
-        "8h",
-        grepl("^4h", sample_name),
-        "4h",
-        default = NA_character_
-      ),
-      levels = c("4h", "8h", "18h")
-    )
-)]
-
-# Remove rows with NA values 
-MS_SS_hypo_dt <- na.omit(MS_SS_hypo_dt)
-
-# box_plot - MS_SS in diff dox incubation
-ggplot(
-  data = MS_SS_hypo_dt, 
-  aes(
-    x = dox_incubation,
-    y = stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ O2_pc)+
-  ggtitle("MS_SS in diff dox incubation") +
-  ylab("Stoichiometry [%]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  theme(aspect.ratio = 3) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-
-
-MS_SS_hypo_Nsub_dt <- MS_SS_hypo_dt[
-  O2_pc == "21pc" & stoichiometry >= 0.1
-]
-
-MS_SS_hypo_Nsub_dt <- rbindlist(list(MS_SS_hypo_Nsub_dt,
-                                     MS_SS_hypo_dt[
-                                       !(O2_pc == "21pc" & stoichiometry >= 0.1)
-                                     ]),
-                                use.names = TRUE)
-
-# box_plot - MS_SS in diff dox incubation N =>0.1
-ggplot(
-  data = MS_SS_hypo_Nsub_dt, 
-  aes(
-    x = dox_incubation,
-    y = stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ O2_pc)+
-  ggtitle("MS_SS in diff dox incubation (N subset)") +
-  ylab("Stoichiometry [%]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  theme(aspect.ratio = 3) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-```
 
 
 # Session information
