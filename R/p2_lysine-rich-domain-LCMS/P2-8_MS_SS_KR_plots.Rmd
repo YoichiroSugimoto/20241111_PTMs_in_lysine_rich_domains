@@ -429,13 +429,6 @@ long_c_MS_SS_KR_dt[, `:=`(
   dataset = str_split_fixed(sample_group, "_", 4)[, 4]
 )]
 
-
-# reorder the oxygen levels
-long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
-  oxygen,
-  levels = c("01pc", "1pc", "4pc", "21pc")
-)]
-
 # subset rows that do not contain NA values 
 long_c_MS_SS_KR_dt <- long_c_MS_SS_KR_dt[!is.na(Stoichiometry)]
 
@@ -443,10 +436,20 @@ long_c_MS_SS_KR_dt <- long_c_MS_SS_KR_dt[!is.na(Stoichiometry)]
 long_c_MS_SS_KR_dt[, data_size_per_sample := .N, by = list(sample_group)]
 long_c_MS_SS_KR_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 
+
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
 # Data subset to overnight (18/24h) dox induction
+
+long_MS_SS_KR_O2p_dt <- long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)]
+
+# reorder the sample_group according to oxygen levels
+long_MS_SS_KR_O2p_dt[, sample_group :=
+  factor(sample_group,
+         levels = unique(sample_group[order(oxygen)]))
+]
+
 ggplot(
-  data = long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)],
+  data = long_MS_SS_KR_O2p_dt, 
   aes(
     x = sample_group,
     y = Stoichiometry
@@ -464,7 +467,7 @@ ggplot(
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
-  data = long_c_MS_SS_KR_all_dt[data_size_per_site == max(long_c_MS_SS_KR_all_dt[, data_size_per_site])],
+  data = long_c_MS_SS_KR_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -487,12 +490,12 @@ ggplot(
 #---------------------------------------------
 
 # subset data to WT normoxia (MS_KR_1 sample)
-wt_21pc <- long_c_MS_SS_KR_all_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
+wt_21pc <- long_c_MS_SS_KR_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stioichiomtry")
 
 # Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
 pc2wt_21pc <- merge(
-  long_c_MS_SS_KR_all_dt[
+  long_c_MS_SS_KR_dt[
     cell == "iJ6" &
     oxygen == "21pc"
   ],
@@ -519,6 +522,36 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+
+######################
+
+
+# Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
+pc2wt_21pc <- merge(
+  long_c_MS_SS_KR_dt,
+  wt_21pc,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
+# Data subset to overnight (18/24h) dox induction
+ggplot(
+  data = long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)],
+  aes(
+    x = sample_group,
+    y = Stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
 #-------------
 # XIC vs stoic
 #-------------
@@ -527,7 +560,7 @@ ggplot(
 xic_MS_SS <- fread(file.path(data.dir, "xic_MS_SS.csv"))
 
 # Merge XIC data and stoichiometry data
-xic_stoic <- merge(long_c_MS_SS_KR_all_dt, 
+xic_stoic <- merge(long_c_MS_SS_KR_dt, 
                    xic_MS_SS,
                    by = c("induction", "oxygen", "gene_name", "aa_pos"))
 
@@ -543,6 +576,18 @@ ggplot(
   theme_classic()
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r Normoxia_vs_Hypoxia_in_different_O2%_18h_dox}
 
