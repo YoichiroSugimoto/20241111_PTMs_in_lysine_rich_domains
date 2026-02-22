@@ -633,7 +633,7 @@ ggplot(
 ```
 
 
-# 2.7. Plotting XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data . 
+# 2.7. XIC values against MS_SS, MS_KR_1 and PNAS2022 stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -662,7 +662,7 @@ ggplot(
 
 ```
 
-
+# 2.7. Plotting 
 
 ```{r normoxia_vs_hypoxia_scatterplot}
 
@@ -887,7 +887,6 @@ MS_SS_21pc_dt[, `:=`(
 )]
 
 ```
-
 
 
 # 2.7.6 Comparing hypoxia samples under varying dox incubation (+ diagnostic ion)
