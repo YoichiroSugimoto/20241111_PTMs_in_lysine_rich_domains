@@ -410,7 +410,6 @@ plot_ptm_stoichiometry(
 
 
 ```{r overall_MS_SS_KR_comparison}
-
 # Change wide format to long format 
 long_c_MS_SS_KR_dt <- melt(
   c_MS_SS_KR_dt,
@@ -436,6 +435,11 @@ long_c_MS_SS_KR_dt <- long_c_MS_SS_KR_dt[!is.na(Stoichiometry)]
 long_c_MS_SS_KR_dt[, data_size_per_sample := .N, by = list(sample_group)]
 long_c_MS_SS_KR_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 
+# reorder the oxygen levels
+long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
+  oxygen,
+  levels = c("01pc", "1pc", "4pc", "21pc")
+)]
 
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
 # Data subset to overnight (18/24h) dox induction
@@ -445,7 +449,7 @@ long_MS_SS_KR_O2p_dt <- long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)]
 # reorder the sample_group according to oxygen levels
 long_MS_SS_KR_O2p_dt[, sample_group :=
   factor(sample_group,
-         levels = unique(sample_group[order(oxygen)]))
+         levels = c("WT_Inf_21pc_KR","iJ6_24h_01pc_KR","iJ6_18h_1pc_SS","iJ6_18h_4pc_SS","iJ6_18h_21pc_SS","iJ6_24h_21pc_KR"))
 ]
 
 ggplot(
@@ -550,7 +554,10 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+
+```{r XIC_vs_stoic}
 
 #-------------
 # XIC vs stoic
@@ -576,17 +583,6 @@ ggplot(
   theme_classic()
 
 ```
-
-
-
-
-
-
-
-
-
-
-
 
 
 ```{r Normoxia_vs_Hypoxia_in_different_O2%_18h_dox}
