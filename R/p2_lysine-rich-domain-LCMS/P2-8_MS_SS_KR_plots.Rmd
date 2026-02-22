@@ -484,6 +484,32 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+
+#-----------------------------------
+
+# Normoxia subset to greater than 0.1 (N >= 0.1)
+pc2wt_21pc <- pc2wt_21pc[Stoichiometry >0.1]
+
+# Boxplot - comparing normoxia in different dox incubation timings
+ggplot(
+  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry / WT_stioichiomtry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  # facet_grid(~ oxygen) +
+  ylab("(N >= 0.1) Stoichiometry [% to WT]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
 ```
 
 
@@ -508,8 +534,9 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+#---------------------
 
-
+# O2 levels subset to 21pc 
 long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_21pc_dt[oxygen == "21pc"]
 
 
@@ -525,6 +552,32 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+#------------------------
+
+# O2 levels subset to 21pc and (N >= 0.1)
+long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_21pc_dt[oxygen == "21pc" & Stoichiometry >= 0.1]
+
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
+ggplot(
+  data = long_c_MS_SS_KR_21pc_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ oxygen) +
+  ylab("(N >= 0.1) Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
