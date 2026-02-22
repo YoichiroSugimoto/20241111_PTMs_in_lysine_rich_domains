@@ -298,6 +298,23 @@ pnas2022_stoic_dt[, `:=`(
     {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} 
 )]
 
+# subset the data to curated_oxK_site = TRUE, aa = K and BRD proteins
+pnas2022_stoic_dt <-  pnas2022_stoic_dt[
+  curated_oxK_site == TRUE &
+  ptm == "[Oxidation (K)]" &
+  gene_name %in% c("BRD2", "BRD3", "BRD4") &
+  aa == "K"
+]
+
+# Contrast non hydroxylated and hydroxylated lysines
+# Take only the HeLa samples with JQ1 or J6 peptide pull-down
+pnas_hydroxy_dt <- contrast_hydroxylation_by_genotype(
+  pnas2022_stoic_dt[
+    grepl("HeLa", sample_name) & (grepl("JQ1", sample_name) | grepl("J6pep", sample_name))
+  ]
+)
+
+
 ```
 
 
@@ -312,14 +329,6 @@ MS_KR1_BRD_dt <- MS_KR1_stoic_dt[
 MS_SS_BRD_dt <-  MS_SS_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")&
     aa == "K"]
-
-# subset the data to curated_oxK_site = TRUE, aa = K and BRD proteins
-pnas2022_stoic_dt <-  pnas2022_stoic_dt[
-  curated_oxK_site == TRUE &
-  ptm == "[Oxidation (K)]" &
-  gene_name %in% c("BRD2", "BRD3", "BRD4") &
-  aa == "K"
-]
 
 # subset rows with diagnostic ion from MS_SS and MS_KR data
 DI_sites <- rbind(
@@ -484,15 +493,14 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-
 #-----------------------------------
 
 # Normoxia subset to greater than 0.1 (N >= 0.1)
-pc2wt_21pc <- pc2wt_21pc[Stoichiometry >0.1]
+pc2wt_21pc_N0.1 <- pc2wt_21pc[Stoichiometry >0.1]
 
 # Boxplot - comparing normoxia in different dox incubation timings
 ggplot(
-  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
+  data = pc2wt_21pc_N0.1[data_size_per_site == max(pc2wt_21pc_N0.1[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry / WT_stioichiomtry
@@ -508,7 +516,6 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
 
 ```
 
@@ -597,10 +604,16 @@ long_MS_SS_KR_O2p_dt <- long_c_MS_SS_KR_dt[grepl("18h|24h|WT", sample_group)]
 
 # reorder the sample_group according to oxygen levels
 long_MS_SS_KR_O2p_dt[, sample_group :=
-  factor(sample_group,
-         levels = c("WT_Inf_21pc_KR","iJ6_24h_01pc_KR","iJ6_18h_1pc_SS","iJ6_18h_4pc_SS","iJ6_18h_21pc_SS","iJ6_24h_21pc_KR"))
+                       factor(sample_group,
+                              levels = c("WT_Inf_21pc_KR",
+                                         "iJ6_18h_21pc_SS",
+                                         "iJ6_24h_21pc_KR",
+                                         "iJ6_18h_4pc_SS",
+                                         "iJ6_18h_1pc_SS",
+                                         "iJ6_24h_01pc_KR"))
 ]
 
+# Plot
 ggplot(
   data = long_MS_SS_KR_O2p_dt, 
   aes(
@@ -651,107 +664,11 @@ ggplot(
 
 
 
-
-
-
-
-
-
-
-
-
-
-```{r Normoxia_vs_Hypoxia_in_different_O2%_18h_dox}
-
-#Add new columns to simplify sample names into hypoxia and normoxia category
-MS_SS_KR_dt[, `:=`(
-  oxygen_levels =
-    factor(
-      fcase(
-        grepl("^18h_21pc", sample_name),
-        "HeLaNormoxia_18h",
-        grepl("^18h_4pc", sample_name),
-        "HeLaHypoxia_18h_4pc",
-        grepl("^18h_1pc", sample_name),
-        "HeLaHypoxia_18h_1pc",
-        grepl("^HeLai", sample_name),
-        "HeLaHypoxia_24h_0.1pc",
-        default = NA_character_
-      ),
-      levels = c("HeLaNormoxia_18h", "HeLaHypoxia_18h_4pc", "HeLaHypoxia_18h_1pc", "HeLaHypoxia_24h_0.1pc")
-    )
-)]
-
-# Use contrast function on 'MS_SS_KR_dt' to set NA to 0, only if the sample contains an #[oxidation K] 
-MS_SS_KR_hydroxy_dt <-  contrast_hydroxylation_by_oxygen_stat(MS_SS_KR_dt)
-
-# Generate data table with WT and JMJD6KO with diagnostic peaks
-DI_info <- MS_SS_KR_dt[
-  , .(protein_accession, aa_pos, diagnostic_peak) # filter these columns and create a separate data table 
-][
-  order(protein_accession, aa_pos, -diagnostic_peak) # order the data based on the highest diagnostic peak 
-][                                              
-  !duplicated(paste(protein_accession, aa_pos)) # Keep only the first row for each unique protein and amino acid position,
-  # removing duplicates while preserving the row with the highest diagnostic_peak (from previous sorting)
-]
-
-# merge the modified data table 'DI_info' with the metadata 'MS_KR_1_hydroxy_dt'
-MS_SS_KR_hydroxy_dt <- merge(MS_SS_KR_hydroxy_dt, DI_info, by = c("protein_accession", "aa_pos"))
-
-#Filter data table with presence of diagnostic_peak and WT stoichiometry values
-MS_SS_KR_hydroxy_dt[, `:=`(
-  is_diagnostic_peak = diagnostic_peak == "+" 
-)]
-
-# filter data to have hydroxylysine with diagnostic ion 
-MS_SS_KR_hydroxy_dt <- MS_SS_KR_hydroxy_dt[is_diagnostic_peak == TRUE]
-
-# Factor the gene names
-MS_SS_KR_hydroxy_dt[, `:=`(
-  gene_name =  
-    factor(gene_name)
-)]
-
-# Remove rows with NA values 
-MS_SS_KR_hydroxy_dt <- na.omit(MS_SS_KR_hydroxy_dt)
-
-```
-
-
-```{r plot_stoic_normoxia_diffpc_hypoxia}
-
-# Convert the wide format data into long format for plotting 
-MS_hydroxy_dt <- melt(
-  MS_SS_KR_hydroxy_dt, 
-  id.vars = c("protein_accession", "aa_pos", "gene_name"),
-  measure.vars = c("Normoxia","Hypoxia_18h_4pc", "Hypoxia_18h_1pc", "Hypoxia_24h_0.1pc"), 
-  variable.name = "sample_name", value.name = "Stoichiometry")
-
-# Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
-ggplot(
-  data = MS_hydroxy_dt,
-  aes(
-    x = sample_name,
-    y = Stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-```
-
-
 ```{r normoxia_vs_hypoxia_scatterplot}
 
 # Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
 ggplot(
-  data = MS_SS_KR_hydroxy_dt, 
+  data = long_MS_SS_KR_dt, 
   aes(
     x = Normoxia,
     y = Hypo_18h_4pc_ratio
@@ -972,65 +889,6 @@ MS_SS_21pc_dt[, `:=`(
 ```
 
 
-```{r MS_SS_KR_normoxia_vs_dox_incubation}
-
-#-----------------------------------------
-## Combine MS_KR_1 and MS_SS normoxia data
-#-----------------------------------------
-MS_normoxia_dt <- rbindlist(list(MS_SS_21pc_dt,
-                         MS_KR1_WT_dox_dt),
-                         use.names = TRUE)
-
-# reorder oxygen levels
-MS_normoxia_dt[, oxygen_levels := factor(
-  oxygen_levels,
-  levels = c("WT_JMJD6", "4h_JMJD6", "8h_JMJD6", "18h_JMJD6", "24h_JMJD6")
-)]
-
-# Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
-# These samples are removed as it could false positives reported by the system 
-MS_normoxia_dt <- MS_normoxia_dt[
-  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
-       (grepl("_BRD4$", sample_name)  & gene_name %in% c("BRD2", "BRD3")))
-]
-
-# Boxplot - Comparing normoxia stoic in different dox incubation
-ggplot(
-  data = MS_normoxia_dt,
-  aes(
-    x = oxygen_levels,
-    y = stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  labs(title = "N in diff dox incubation") +
-  ylab("Stoichiometry [%]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-#coord_cartesian(ylim = c(0, 1.0))
-
-# Boxplot - Comparing normoxia stoic in different dox incubation
-ggplot(
-  data = MS_normoxia_dt[stoichiometry >= 0.1],
-  aes(
-    x = oxygen_levels,
-    y = stoichiometry
-  )
-) +
-  geom_boxplot(outlier.shape = NA) +
-  labs(title = "(N >= 0.1) in diff dox incubation") +
-  ylab("Stoichiometry [%]") +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right")+
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-
-```
 
 # 2.7.6 Comparing hypoxia samples under varying dox incubation (+ diagnostic ion)
 
