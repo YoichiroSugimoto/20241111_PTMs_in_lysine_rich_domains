@@ -1,5 +1,5 @@
 ---
-title: "2-7. Lysine hydroxylations in normoxia and hypoxia 4% and 1%"
+title: "2-7. Lysine hydroxylations in varying O2 pc and dox induction time"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script examines the oxygen sensitivity of lysine hydroxylations in different BRD proteins and their respective sites. 
+This script examines the oxygen sensitivity of lysine hydroxylations in different BRD proteins and their respective sites in varying percentage of O2. 
 
 # Environment setup
 
@@ -668,6 +668,13 @@ long_c_MS_SS_KR_all_dt[, `:=`(
   dataset = str_split_fixed(sample_group, "_", 4)[, 4]
 )]
 
+
+# reorder the oxygen levels
+long_c_MS_SS_KR_all_dt <-  long_c_MS_SS_KR_all_dt[, oxygen := factor(
+  oxygen,
+  levels = c("01pc", "1pc", "4pc", "21pc")
+)]
+
 # subset rows that do not contain NA values 
 long_c_MS_SS_KR_all_dt <- long_c_MS_SS_KR_all_dt[!is.na(Stoichiometry)]
 
@@ -676,7 +683,7 @@ long_c_MS_SS_KR_all_dt[, data_size_per_sample := .N, by = list(sample_group)]
 long_c_MS_SS_KR_all_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 
 
-# 
+# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
   data = long_c_MS_SS_KR_all_dt[data_size_per_site == max(long_c_MS_SS_KR_all_dt[, data_size_per_site])],
   aes(
@@ -695,9 +702,16 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+
+#----------------------
+# Normoxia samples under varying dox induction
+#----------------------
+
+# subset data to WT normoxia (MS_KR_1 sample)
 wt_21pc <- long_c_MS_SS_KR_all_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stioichiomtry")
 
+# Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
 pc2wt_21pc <- merge(
   long_c_MS_SS_KR_all_dt[
     cell == "iJ6" &
@@ -707,6 +721,7 @@ pc2wt_21pc <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
+# Boxplot - comparing normoxia in different dox incubation timings
 ggplot(
   data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
   aes(
