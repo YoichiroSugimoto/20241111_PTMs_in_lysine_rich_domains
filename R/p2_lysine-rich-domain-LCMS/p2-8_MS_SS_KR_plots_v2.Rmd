@@ -40,7 +40,6 @@ project.dir <-
 
 ```
 
-
 # 2.7.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
@@ -62,7 +61,6 @@ library("janitor")
 library("ptm.stoichiometry")
 
 ```
-
 
 # 2.7.2 Import human protein reference data 
 
@@ -206,12 +204,21 @@ MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
-
-#-----------------------------
+#--------------------------------------------------------------
 # Load PNAS stoichiometry data analysed by MaxQuant (dataset A)
-#-----------------------------
+#--------------------------------------------------------------
 
-## pnas2022_stoic_dt <-
+ pnas2022_stoic_dt <- read_stoic_data(
+  prefix = "DI_noH2O_data-A_trp_m7_v7_def_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+pnas2022_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
   
 ```
 
@@ -227,14 +234,18 @@ MS_SS_BRD_dt <-  MS_SS_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
+# Filter PNAS2022 data to retain only BRD2, 3, 4 data 
+pnas2022_BRD_dt <-  pnas2022_stoic_dt[
+  gene_name %in% c("BRD2", "BRD3", "BRD4")
+]
+
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
-MS_SS_KR_dt <- rbindlist(list(MS_SS_BRD_dt,
-                         MS_KR1_BRD_dt),
+MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
+                         MS_KR1_BRD_dt,
+                         pnas2022_BRD_dt),
                          use.names = TRUE)
 
 ```
-
-
 
 ```{r stoichiometry_BRD_proteins}
 
