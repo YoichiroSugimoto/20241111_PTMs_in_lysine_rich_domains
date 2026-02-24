@@ -423,7 +423,7 @@ lc_MS_SS_KR_PNAS_dt <- melt(
 )
 
 # Separate the contents of sample_group column into new columns 
-long_c_MS_SS_KR_dt[, `:=`(
+lc_MS_SS_KR_PNAS_dt[, `:=`(
   cell = str_split_fixed(sample_group, "_", 4)[, 1],
   induction = str_split_fixed(sample_group, "_", 4)[, 2] %>%
     factor(levels = c("Inf", "0h", "4h", "8h", "18h", "24h")),
@@ -432,17 +432,53 @@ long_c_MS_SS_KR_dt[, `:=`(
 )]
 
 # subset rows that do not contain NA values 
-long_c_MS_SS_KR_dt <- long_c_MS_SS_KR_dt[!is.na(Stoichiometry)]
+lc_MS_SS_KR_PNAS_dt <- lc_MS_SS_KR_PNAS_dt[!is.na(Stoichiometry)]
 
 # counting the data per sample and size 
-long_c_MS_SS_KR_dt[, data_size_per_sample := .N, by = list(sample_group)]
-long_c_MS_SS_KR_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
+lc_MS_SS_KR_PNAS_dt[, data_size_per_sample := .N, by = list(sample_group)]
+lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 
 # reorder the oxygen levels
-long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
+lc_MS_SS_KR_PNAS_dt <-  lc_MS_SS_KR_PNAS_dt[, oxygen := factor(
   oxygen,
   levels = c("01pc", "1pc", "4pc", "21pc")
 )]
+
+
+# subset data to WT normoxia (MS_KR_1 sample)
+wt_21pc <- lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
+setnames(wt_21pc, old = "Stoichiometry", "WT_stoichiometry")
+
+wt_21pc <- wt_21pc[WT_stoichiometry > 0]
+
+# Merge WT data with lc_MS_SS_KR_PNAS_dt dtata
+lc_MS_SS_KR_PNAS_WT_dt <- merge(
+  lc_MS_SS_KR_PNAS_dt[
+    cell %in% c("iJ6", "WT")
+  ],
+  wt_21pc,
+  by = c("protein_accession", "aa_pos")
+)
+
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
+ggplot(
+  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ oxygen) +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 ```
 
@@ -450,7 +486,7 @@ long_c_MS_SS_KR_dt <-  long_c_MS_SS_KR_dt[, oxygen := factor(
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
-  data = long_c_MS_SS_KR_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -470,12 +506,12 @@ ggplot(
 #---------------------
 
 # O2 levels subset to 21pc 
-long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_dt[oxygen == "21pc"]
+lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_dt[oxygen == "21pc"]
 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
-  data = long_c_MS_SS_KR_21pc_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_21pc_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -483,7 +519,7 @@ ggplot(
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ oxygen) +
+ # facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
