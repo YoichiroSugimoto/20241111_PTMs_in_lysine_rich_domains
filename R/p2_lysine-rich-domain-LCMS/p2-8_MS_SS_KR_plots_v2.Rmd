@@ -396,13 +396,16 @@ MS_SS_KR_PNAS_dt <- MS_SS_KR_PNAS_dt[
 ]
 
 # Using contrast function on MS_SS_KR raw stoic data
-c_MS_SS_KR_dt <- contrast_hydroxylation_by_sample_group(MS_SS_KR_dt)
+c_MS_SS_KR_PNAS_dt <- contrast_hydroxylation_by_sample_group(MS_SS_KR_PNAS_dt)
 
 # Factor the gene names
-c_MS_SS_KR_dt[, `:=`(
+c_MS_SS_KR_PNAS_dt[, `:=`(
   gene_name =  
     factor(gene_name)
 )]
+
+# WT values subset to greater than 0 
+c_MS_SS_KR_PNAS_dt <- c_MS_SS_KR_PNAS_dt[WT_Inf_21pc_KR > 0 & WT_Inf_21pc_PNAS > 0]
 
 ```
 
@@ -411,8 +414,8 @@ c_MS_SS_KR_dt[, `:=`(
 ```{r overall_MS_SS_KR_comparison}
 
 # Change wide format to long format 
-long_c_MS_SS_KR_dt <- melt(
-  c_MS_SS_KR_dt,
+lc_MS_SS_KR_PNAS_dt <- melt(
+  c_MS_SS_KR_PNAS_dt,
   id.vars = c("protein_accession", "gene_name", "aa_pos"),
   value.name = "Stoichiometry", 
   variable.name = "sample_group"
