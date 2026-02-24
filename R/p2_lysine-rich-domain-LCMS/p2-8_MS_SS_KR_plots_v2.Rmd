@@ -405,7 +405,7 @@ c_MS_SS_KR_PNAS_dt[, `:=`(
 )]
 
 # WT values subset to greater than 0 
-c_MS_SS_KR_PNAS_dt <- c_MS_SS_KR_PNAS_dt[WT_Inf_21pc_KR > 0 & WT_Inf_21pc_PNAS > 0]
+c_MS_SS_KR_PNAS_dt <- c_MS_SS_KR_PNAS_dt[WT_Inf_21pc_KR > 0]
 
 ```
 
@@ -486,7 +486,7 @@ ggplot(
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
-  data = lc_MS_SS_KR_PNAS_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -506,7 +506,7 @@ ggplot(
 #---------------------
 
 # O2 levels subset to 21pc 
-lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_dt[oxygen == "21pc"]
+lc_MS_SS_KR_PNAS_WT_dt <- lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc"]
 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
@@ -532,12 +532,12 @@ ggplot(
 #------------------------
 
 # O2 levels subset to 21pc and (N >= 0.1)
-long_c_MS_SS_KR_21pc_dt <- long_c_MS_SS_KR_21pc_dt[oxygen == "21pc" & Stoichiometry >= 0.1]
+lc_MS_SS_KR_PNAS_21pc_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
-  data = long_c_MS_SS_KR_21pc_dt[data_size_per_site == max(long_c_MS_SS_KR_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -545,7 +545,7 @@ ggplot(
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ oxygen) +
+  # facet_grid(~ oxygen) +
   ylab("(N >= 0.1) Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
