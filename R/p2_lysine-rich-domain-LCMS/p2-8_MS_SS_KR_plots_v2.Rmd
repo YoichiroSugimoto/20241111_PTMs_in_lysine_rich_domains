@@ -623,19 +623,32 @@ ggplot(
 # Normoxia samples under varying dox induction
 #---------------------------------------------
 
-# subset data to WT normoxia (MS_KR_1 sample)
-wt_21pc <- long_c_MS_SS_KR_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
-setnames(wt_21pc, old = "Stoichiometry", "WT_stioichiomtry")
-
 # Merge WT data with MS_SS_KR normoxia data
-pc2wt_21pc <- merge(
-  lc_MS_SS_KR_PNAS_dt[
+pc2wt_21pc <- 
+  lc_MS_SS_KR_PNAS_WT_dt[
     cell == "iJ6" &
-    oxygen == "21pc"
-  ],
-  wt_21pc,
-  by = c("protein_accession", "aa_pos")
-)
+    oxygen == "21pc" &
+      induction != "Inf"
+  ]
+
+# Boxplot - comparing normoxia in different dox incubation timings
+ggplot(
+  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  # facet_grid(~ oxygen) +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 # Boxplot - comparing normoxia in different dox incubation timings
 ggplot(
@@ -659,14 +672,34 @@ ggplot(
 #-----------------------------------
 
 # Normoxia subset to greater than 0.1 (N >= 0.1)
-pc2wt_21pc_N01 <- pc2wt_21pc[Stoichiometry >0.1]
+pc2wt_21pc_N01 <- pc2wt_21pc[WT_stoichiometry >0.1]
 
-# Boxplot - comparing normoxia in different dox incubation timings
+# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
 ggplot(
   data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
   aes(
     x = induction,
-    y = Stoichiometry / WT_stioichiomtry
+    y = Stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  # facet_grid(~ oxygen) +
+  ylab("(N >= 0.1) Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
+ggplot(
+  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry / WT_stoichiometry
   )
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
