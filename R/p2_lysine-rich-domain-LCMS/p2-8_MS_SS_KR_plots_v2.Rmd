@@ -81,7 +81,7 @@ results.dir <- file.path(project.dir, "results")
 
 ```
 
-# 2.7.3 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# 2.7.3 Defining functions and data preprocessing
 
 ```{r Define_important_functions}
 
@@ -268,6 +268,8 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 ```
 
+# 2.7.4 Plotting Stoichiometry values of normoxia data with re-expression of JMJD6 
+
 ```{r stoichiometry_BRD_proteins_at_21pc}
 
 # Plotting stoichiometry of BRD proteins in different O2% 
@@ -367,15 +369,15 @@ plot_ptm_stoichiometry(
 
 ```
 
+# 2.7.5 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
-```{r merge_MS_SS_KR_data}
+```{r merge_MS_SS_KR_PNAS_data}
 
 # subset rows with diagnostic ion from MS_SS and MS_KR data
 DI_sites <- rbind(
   MS_KR1_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
   MS_SS_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
   pnas2022_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
-  ############ Add DI sites of dataset A
 )
 
 # remove duplicate sites 
@@ -410,7 +412,7 @@ c_MS_SS_KR_PNAS_dt <- c_MS_SS_KR_PNAS_dt[WT_Inf_21pc_KR > 0]
 ```
 
 
-```{r overall_MS_SS_KR_comparison}
+```{r overall_MS_SS_KR_PNAS_comparison}
 
 # Change wide format to long format 
 lc_MS_SS_KR_PNAS_dt <- melt(
@@ -537,7 +539,6 @@ ggplot(
 ```
 
 
-
 ```{r Dox_plus_minus_JMJD6_O2_levels_relative_WT}
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 pc levels
@@ -614,8 +615,6 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 ```
-
-
 
 ```{r normoxia_varying_dox_induction}
 
@@ -715,10 +714,9 @@ ggplot(
 
 ```
 
-# 2.7.5 XIC values against MS_SS and MS_KR_1 stoichiometry data. 
+# 2.7.5 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
 
 ```{r XIC_vs_stoic}
-
 #-------------
 # XIC vs stoic
 #-------------
@@ -745,8 +743,7 @@ theme_classic()
 
 ```
 
-# Oxygen sensitivity
-
+# 2.7.6 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
@@ -786,27 +783,6 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-
-
-#-----------------------------
-
-
-
-# binning normoxia values 
-
-# subset data to WT normoxia (MS_SS_KR sample)
-MS_SS_KR_21pc <- long_c_MS_SS_KR_dt[grepl("18h|24h", sample_group) & grepl("21pc", oxygen),  .(protein_accession, aa_pos, Stoichiometry)]
-
-MS_SS_KR_21pc[
-  ,
-  normoxia_bin := cut(
-    Stoichiometry,
-    breaks = c(0, 0.3, 0.6, 1),
-    labels = c("0–0.3", "0.3–0.6", "0.6–1"),
-    include.lowest = TRUE
-  )
-]
 
 ```
 
