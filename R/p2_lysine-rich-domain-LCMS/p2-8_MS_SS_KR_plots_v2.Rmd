@@ -463,6 +463,36 @@ lc_MS_SS_KR_PNAS_WT_dt <- merge(
 
 ```
 
+# 2.7.6 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
+
+```{r XIC_vs_stoic}
+
+#-------------
+# XIC vs stoic
+#-------------
+
+# Load XIC data
+xic_MS_SS <- fread(file.path(data.dir, "xic_MS_SS.csv"))
+
+# Merge XIC data and stoichiometry data
+xic_stoic <- merge(lc_MS_SS_KR_PNAS_dt, 
+                   xic_MS_SS,
+                   by = c("induction", "oxygen", "gene_name", "aa_pos"))
+
+# Scatter plot - XIC vs stoichiometry
+ggplot(
+  xic_stoic,
+  aes(
+    x = XIC,
+    y = Stoichiometry
+  )
+) + 
+  geom_point() +
+  geom_smooth(method=lm , color="red", se=FALSE) +
+theme_classic()
+
+```
+
 
 ```{r Dox_plus_minus_JMJD6_O2_levels}
 
@@ -616,6 +646,7 @@ ggplot(
 
 ```
 
+
 ```{r normoxia_varying_dox_induction}
 
 #---------------------------------------------
@@ -714,37 +745,7 @@ ggplot(
 
 ```
 
-# 2.7.5 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
-
-```{r XIC_vs_stoic}
-
-#-------------
-# XIC vs stoic
-#-------------
-
-# Load XIC data
-xic_MS_SS <- fread(file.path(data.dir, "xic_MS_SS.csv"))
-
-# Merge XIC data and stoichiometry data
-xic_stoic <- merge(lc_MS_SS_KR_PNAS_dt, 
-                   xic_MS_SS,
-                   by = c("induction", "oxygen", "gene_name", "aa_pos"))
-
-# Scatter plot - XIC vs stoichiometry
-ggplot(
-  xic_stoic,
-  aes(
-    x = XIC,
-    y = Stoichiometry
-  )
-) + 
-  geom_point() +
-  geom_smooth(method=lm , color="red", se=FALSE) +
-theme_classic()
-
-```
-
-# 2.7.6 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.7.7 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
@@ -843,6 +844,8 @@ ggplot(
 
 ```
 
+# 2.7.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation - Re-exp J6 (+ diagnostic ion)
+
 ```{r reexp_J6_normoxia_vs_varying_hypoxia_pc_overnightdox}
 
 #--------------------------------------
@@ -939,12 +942,13 @@ ggplot(
 
 ```
 
+# 2.7.9 Oxygen sensitivity - Comparing hypoxia stoichiometry vs normoxia stoichiometry (+ diagnostic ion)
 
 ```{r normoxia_vs_hypoxia_scatterplot}
 
 # Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
 ggplot(
-  data = c_MS_SS_KR_dt, 
+  data = c_MS_SS_KR_PNAS_dt, 
   aes(
     x = iJ6_18h_21pc_SS,
     y = iJ6_18h_4pc_SS
@@ -958,17 +962,17 @@ ggplot(
   theme(legend.position="right") 
 
 # correlation test 
-cor.test(c_MS_SS_KR_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_dt[, iJ6_18h_4pc_SS], method = "spearma")
+cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_PNAS_dt[, iJ6_18h_4pc_SS], method = "spearma")
 
 wilcox.test(
-  c_MS_SS_KR_dt[, iJ6_18h_4pc_SS],
-  c_MS_SS_KR_dt[, iJ6_18h_21pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_18h_4pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS],
   paired = TRUE
 )
 
 # Scatter plot - Normoxia stoichiometry versus hypoxia at 1% - 18h dox incubation
 ggplot(
-  data = c_MS_SS_KR_dt, 
+  data = c_MS_SS_KR_PNAS_dt, 
   aes(
     x = iJ6_18h_21pc_SS,
     y = iJ6_18h_1pc_SS
@@ -982,11 +986,11 @@ ggplot(
   theme(legend.position="right") 
 
 # correlation test 
-cor.test(c_MS_SS_KR_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_dt[, iJ6_18h_1pc_SS], method = "spearma")
+cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_PNAS_dt[, iJ6_18h_1pc_SS], method = "spearma")
 
 wilcox.test(
-  c_MS_SS_KR_dt[, iJ6_18h_1pc_SS],
-  c_MS_SS_KR_dt[, iJ6_18h_21pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_18h_1pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS],
   paired = TRUE
 )
 
