@@ -950,11 +950,12 @@ ggplot(
 ggplot(
   data = c_MS_SS_KR_PNAS_dt, 
   aes(
-    x = iJ6_18h_21pc_SS,
+    x = iJ6_24h_21pc_KR,
     y = iJ6_18h_4pc_SS
   )
 ) +
   geom_point(aes(colour = gene_name)) +
+  geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
   #facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
@@ -962,11 +963,11 @@ ggplot(
   theme(legend.position="right") 
 
 # correlation test 
-cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_PNAS_dt[, iJ6_18h_4pc_SS], method = "spearma")
+cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR], c_MS_SS_KR_PNAS_dt[, iJ6_18h_4pc_SS], method = "spearma")
 
 wilcox.test(
   c_MS_SS_KR_PNAS_dt[, iJ6_18h_4pc_SS],
-  c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR],
   paired = TRUE
 )
 
@@ -974,35 +975,37 @@ wilcox.test(
 ggplot(
   data = c_MS_SS_KR_PNAS_dt, 
   aes(
-    x = iJ6_18h_21pc_SS,
+    x = iJ6_24h_21pc_KR,
     y = iJ6_18h_1pc_SS
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-#  facet_grid(~ gene_name, space = "free")+
+  geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
+  #  facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") 
 
 # correlation test 
-cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS], c_MS_SS_KR_PNAS_dt[, iJ6_18h_1pc_SS], method = "spearma")
+cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR], c_MS_SS_KR_PNAS_dt[, iJ6_18h_1pc_SS], method = "spearma")
 
 wilcox.test(
   c_MS_SS_KR_PNAS_dt[, iJ6_18h_1pc_SS],
-  c_MS_SS_KR_PNAS_dt[, iJ6_18h_21pc_SS],
+  c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR],
   paired = TRUE
 )
 
 # Scatter plot - Normoxia stoichiometry versus hypoxia at 0.1% - 24h dox incubation
 ggplot(
-  data = c_MS_SS_KR_dt, 
+  data = c_MS_SS_KR_PNAS_dt, 
   aes(
     x = iJ6_24h_21pc_KR,
     y = iJ6_24h_01pc_KR
   )
 ) +
   geom_point(aes(colour = gene_name)) +
+    geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
@@ -1010,17 +1013,17 @@ ggplot(
   theme(legend.position="right")
 
 # correlation test 
-cor.test(c_MS_SS_KR_dt[, iJ6_24h_21pc_KR], c_MS_SS_KR_dt[, iJ6_24h_01pc_KR], method = "spearma")
+cor.test(c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR], c_MS_SS_KR_PNAS_dt[, iJ6_24h_01pc_KR], method = "spearma")
 
 wilcox.test(
-  c_MS_SS_KR_dt[, iJ6_24h_01pc_KR],
-  c_MS_SS_KR_dt[, iJ6_24h_21pc_KR],
+  c_MS_SS_KR_PNAS_dt[, iJ6_24h_01pc_KR],
+  c_MS_SS_KR_PNAS_dt[, iJ6_24h_21pc_KR],
   paired = TRUE
 )
 
 ```
 
-# 2.7.4 Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.7.10 Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r hypoxia_vs_dox_incubation}
 
