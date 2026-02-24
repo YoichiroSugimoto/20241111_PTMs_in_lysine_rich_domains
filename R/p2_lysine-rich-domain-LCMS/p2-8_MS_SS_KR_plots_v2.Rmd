@@ -410,7 +410,6 @@ c_MS_SS_KR_PNAS_dt <- c_MS_SS_KR_PNAS_dt[WT_Inf_21pc_KR > 0]
 ```
 
 
-
 ```{r overall_MS_SS_KR_comparison}
 
 # Change wide format to long format 
@@ -486,7 +485,7 @@ ggplot(
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
-  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
