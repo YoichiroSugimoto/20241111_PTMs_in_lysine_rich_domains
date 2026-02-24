@@ -537,6 +537,85 @@ ggplot(
 ```
 
 
+```{r Dox_plus_minus_JMJD6_O2_levels_relative_WT}
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 pc levels
+ggplot(
+  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry/WT_stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ oxygen) +
+  labs(title = "Stoichiometry of Dox +/- JMJD6 at O2pc levels") + 
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 2.5)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+#---------------------
+
+# O2 levels subset to 21pc 
+lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc"]
+
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
+ggplot(
+  data = lc_MS_SS_KR_PNAS_21pc_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry/WT_stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2") + 
+ # facet_grid(~ oxygen) +
+  ylab("Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 2.5)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+#------------------------
+
+# O2 levels subset to 21pc and (N >= 0.1)
+lc_MS_SS_KR_PNAS_21pc_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
+
+
+# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
+ggplot(
+  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
+  aes(
+    x = induction,
+    y = Stoichiometry/WT_stoichiometry
+  )
+) +
+  #geom_hline(yintercept = 1, color = "gray60") +
+  geom_boxplot(outlier.shape = NA) +
+  # facet_grid(~ oxygen) +
+  labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2 (N >= 0.1)") + 
+  ylab("(N >= 0.1) Stoichiometry [%]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 2.5)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+
 ```{r normoxia_varying_dox_induction}
 
 #---------------------------------------------
