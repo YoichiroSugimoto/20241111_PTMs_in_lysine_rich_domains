@@ -471,6 +471,7 @@ MS_SS_KR_PNAS_BRD4_O2pc_dt <- MS_SS_KR_PNAS_dt[  grepl("Inf|18h|24h|0h", sample_
     gene_name == "BRD4"]
 
 
+#iJ6_0h_21pc_SS
 # reorder sample names
 MS_SS_KR_PNAS_BRD4_O2pc_dt <-  MS_SS_KR_PNAS_BRD4_O2pc_dt[, sample_name := factor(
   sample_name, 
@@ -478,8 +479,8 @@ MS_SS_KR_PNAS_BRD4_O2pc_dt <-  MS_SS_KR_PNAS_BRD4_O2pc_dt[, sample_name := facto
              "JQ1_HeLaWT_derivatised",
              "JQ1_HeLaJMJD6KO_derivatised",
              "HeLaiJMJD6_Dox_N_NA",
-             "18h_4pc_BRD23",
-             "18h_1pc_BRD23",
+             "18h_4pc_BRD4",
+             "18h_1pc_BRD4",
              "HeLaiJMJD6_Dox_01O224h_NA",
              "HeLaiJMJD6_noDox_N_NA")
 )
