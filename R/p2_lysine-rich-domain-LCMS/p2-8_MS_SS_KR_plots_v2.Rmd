@@ -373,94 +373,121 @@ plot_ptm_stoichiometry(
 ```{r stoichiometry_BRD_proteins_at_hypoxia_pc}
 
 # Plotting stoichiometry of BRD proteins in different O2% 
-# Note: the amino acid region of the proteins is that of the ones represented 
-# in the PNAS2022 paper. 
+# Note: the amino acid region of the proteins is that of the ones represented in the PNAS2022 paper. 
 
+# HeLaWT_NA_N_NA - WT_Inf_21pc_KR
+# JQ1_HeLaWT_derivatised - WT_Inf_21pc_PNAS
+# JQ1_HeLaJMJD6KO_derivatised - iJ6_Inf_21pc_PNAS
+# HeLaiJMJD6_Dox_N_NA - iJ6_24h_21pc_KR
+# 18h_4pc_BRD23 - iJ6_18h_4pc_SS
+# 18h_1pc_BRD23 - iJ6_18h_1pc_SS
+# HeLaiJMJD6_Dox_01O224h_NA - iJ6_24h_01pc_KR
+# minusDox_BRD23 - iJ6_0h_21pc_SS
+# HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
+
+
+# HeLaWT_NA_N_NA - WT_Inf_21pc_KR
+# JQ1_HeLaWT_derivatised - WT_Inf_21pc_PNAS
+# JQ1_HeLaJMJD6KO_derivatised - iJ6_Inf_21pc_PNAS
+# HeLaiJMJD6_Dox_N_NA - iJ6_24h_21pc_KR
+# 18h_4pc_BRD23 - iJ6_18h_4pc_SS
+# 18h_1pc_BRD23 - iJ6_18h_1pc_SS
+# HeLaiJMJD6_Dox_01O224h_NA - iJ6_24h_01pc_KR
+# HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
+
+#------
+# BRD2
+#------
 # subset data to specific BRD protein
-MS_SS_KR_PNAS_BRD2_O2pc_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|18h|24h", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD2"]
-
-#HeLaiJMJD6_noDox_N_NA iJ6_0h_21pc_KR
+MS_SS_KR_PNAS_BRD2_O2pc_dt <- MS_SS_KR_PNAS_dt[
+  grepl("Inf|18h|24h|0h", sample_group) & 
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23") & 
+    gene_name == "BRD2"]
 
 # reorder sample names
-MS_SS_KR_PNAS_BRD2_dt <-  MS_SS_KR_PNAS_BRD2_dt[, sample_name := factor(
+MS_SS_KR_PNAS_BRD2_O2pc_dt <-  MS_SS_KR_PNAS_BRD2_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
              "JQ1_HeLaWT_derivatised",
              "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD23",
-             "4h_21pc_BRD23",
-             "8h_21pc_BRD23",
-             "18h_21pc_BRD23",
-             "HeLaiJMJD6_Dox_N_NA")
+             "HeLaiJMJD6_Dox_N_NA",
+             "18h_4pc_BRD23",
+             "18h_1pc_BRD23",
+             "HeLaiJMJD6_Dox_01O224h_NA",
+             "HeLaiJMJD6_noDox_N_NA")
 )
-  ]
+]
 
 #accession = "P25440", plot_range = c(540, 590) BRD2
 plot_ptm_stoichiometry(
-  MS_SS_KR_PNAS_BRD2_dt,
+  MS_SS_KR_PNAS_BRD2_O2pc_dt,
   accession = "P25440",
   plot_range = c(540, 590), 
   all.protein.bs, 
   sample_colors = NA,
 )
 
-
+#------
+# BRD3
+#------
 # subset data to specific BRD protein
-MS_SS_KR_PNAS_BRD3_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
-                     grepl("21pc", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD3"]
+MS_SS_KR_PNAS_BRD3_O2pc_dt <- MS_SS_KR_PNAS_dt[
+  grepl("Inf|18h|24h|0h", sample_group) & 
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23") & 
+    gene_name == "BRD3"]
 
 
 # reorder sample names
-MS_SS_KR_PNAS_BRD3_dt <-  MS_SS_KR_PNAS_BRD3_dt[, sample_name := factor(
+MS_SS_KR_PNAS_BRD3_O2pc_dt <-  MS_SS_KR_PNAS_BRD3_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
              "JQ1_HeLaWT_derivatised",
              "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD23",
-             "4h_21pc_BRD23",
-             "8h_21pc_BRD23",
-             "18h_21pc_BRD23",
-             "HeLaiJMJD6_Dox_N_NA")
+             "HeLaiJMJD6_Dox_N_NA",
+             "18h_4pc_BRD23",
+             "18h_1pc_BRD23",
+             "HeLaiJMJD6_Dox_01O224h_NA",
+             "HeLaiJMJD6_noDox_N_NA")
 )
-  ]
+]
+
 
 # accession = "Q15059", plot_range = c(483, 533) BRD3
 plot_ptm_stoichiometry(
-  MS_SS_KR_PNAS_BRD3_dt,
+  MS_SS_KR_PNAS_BRD3_O2pc_dt,
   accession = "Q15059",
   plot_range = c(483, 533), 
   all.protein.bs, 
   sample_colors = NA,
 )
 
+#------
+# BRD4
+#------
+
 # subset data to specific BRD protein
-MS_SS_KR_PNAS_BRD4_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
-                     grepl("21pc", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD4"]
+MS_SS_KR_PNAS_BRD4_O2pc_dt <- MS_SS_KR_PNAS_dt[  grepl("Inf|18h|24h|0h", sample_group) & 
+    !sample_name %in% c("minusDox_BRD4", "18h_21pc_BRD4") & 
+    gene_name == "BRD4"]
 
 
 # reorder sample names
-MS_SS_KR_PNAS_BRD4_dt <-  MS_SS_KR_PNAS_BRD4_dt[, sample_name := factor(
+MS_SS_KR_PNAS_BRD4_O2pc_dt <-  MS_SS_KR_PNAS_BRD4_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
              "JQ1_HeLaWT_derivatised",
              "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD4",
-             "4h_21pc_BRD4",
-             "8h_21pc_BRD4",
-             "18h_21pc_BRD4",
-             "HeLaiJMJD6_Dox_N_NA")
+             "HeLaiJMJD6_Dox_N_NA",
+             "18h_4pc_BRD23",
+             "18h_1pc_BRD23",
+             "HeLaiJMJD6_Dox_01O224h_NA",
+             "HeLaiJMJD6_noDox_N_NA")
 )
   ]
 
 # accession = "O60885", plot_range = c(531, 581) BRD4 
 plot_ptm_stoichiometry(
-  MS_SS_KR_PNAS_BRD4_dt,
+  MS_SS_KR_PNAS_BRD4_O2pc_dt,
   accession = "O60885",
   plot_range = c(531, 581), 
   all.protein.bs, 
