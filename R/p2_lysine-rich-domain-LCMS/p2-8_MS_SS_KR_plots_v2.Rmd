@@ -1191,13 +1191,13 @@ ggplot(
   data = lc_MS_SS_KR_PNAS_WT_dt[induction != "Inf" & oxygen != "21pc"], 
   aes(
     x = induction,
-    y = Stoichiometry
+    y = Stoichiometry/WT_stoichiometry
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
   facet_grid(~ oxygen)+
   ggtitle("Hypoxia samples in diff dox incubation") +
-  ylab("Stoichiometry [%]") +
+  ylab("Stoichiometry [% to WT]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -1213,7 +1213,7 @@ ggplot(
   data = lc_hypo_WT_N01_dt[induction != "Inf" & oxygen != "21pc"], 
   aes(
     x = induction,
-    y = Stoichiometry
+    y = Stoichiometry/WT_stoichiometry
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
