@@ -881,7 +881,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry") +
+  ylab("Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -898,7 +898,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry") +
+  ylab("Stoichiometry [% to WT]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -908,6 +908,9 @@ ggplot(
 
 
 # Plot - Subset WT data - N >= 0.1
+
+lc_MS_SS_KR_PNAS_Hxpo_N01_dt <- lc_MS_SS_KR_PNAS_Hxpo_dt[WT_stoichiometry >= 0.1]
+
 ggplot(
   data = lc_MS_SS_KR_PNAS_Hxpo_N01_dt,
   aes(
@@ -916,7 +919,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry") +
+  ylab("(N >= 0.1) Stoichiometry [%]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -926,8 +929,6 @@ ggplot(
 
 # Plot - Subset WT data - N >= 0.1, relative to WT_stoichiometry
 
-lc_MS_SS_KR_PNAS_Hxpo_N01_dt <- lc_MS_SS_KR_PNAS_Hxpo_dt[WT_stoichiometry >= 0.1]
-
 ggplot(
   data = lc_MS_SS_KR_PNAS_Hxpo_N01_dt,
   aes(
@@ -936,7 +937,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry") +
+  ylab("(N >= 0.1) Stoichiometry [% to WT]") +
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
@@ -1004,7 +1005,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
-# Subset WT data - N >= 0.1, relative to WT_stoichiometry 
+# Subset WT data - N >= 0.1 
 lc_Hxpo_reexp_J6_N01_dt <- lc_Hxpo_reexp_J6_dt[WT_stoichiometry >= 0.1]
 
 # Plot
@@ -1025,7 +1026,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
-# Plot- relative to WT_stoichiometry
+# Plot- N >= 0.1 relative to WT_stoichiometry
 ggplot(
   data = lc_Hxpo_reexp_J6_N01_dt,
   aes(
@@ -1038,7 +1039,63 @@ ggplot(
   theme_classic()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 2)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+```{r reexp_J6_varying_hypoxia_pc_overnightdox}
+
+lc_Hxpo_J6_dt <- lc_MS_SS_KR_PNAS_WT_dt[
+  grepl("18h|24h", induction) &
+    !sample_group %in% c("iJ6_18h_21pc_SS", "iJ6_Inf_21pc_PNAS", "iJ6_24h_21pc_KR")
+]
+
+# reorder the sample_group according to oxygen levels
+lc_Hxpo_J6_dt[, sample_group :=
+                       factor(sample_group,
+                              levels = c("iJ6_18h_4pc_SS",
+                                         "iJ6_18h_1pc_SS",
+                                         "iJ6_24h_01pc_KR"))
+]
+
+
+# Plot- relative to WT_stoichiometry
+ggplot(
+  data = lc_Hxpo_J6_dt,
+  aes(
+    x = sample_group,
+    y = Stoichiometry/WT_stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry [% to WT]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.5)) +
+  theme(aspect.ratio = 2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+
+# Plot- Subset WT to >= 0.1
+lc_Hxpo_J6_dt <- lc_Hxpo_J6_dt[WT_stoichiometry >= 0.1]
+
+ggplot(
+  data = lc_Hxpo_J6_dt,
+  aes(
+    x = sample_group,
+    y = Stoichiometry/WT_stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("(N >= 0.1) Stoichiometry [% to WT]") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.5)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
@@ -1057,7 +1114,7 @@ ggplot(
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-  geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
+  geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
@@ -1082,7 +1139,7 @@ ggplot(
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-  geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
+  geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #  facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
@@ -1107,7 +1164,7 @@ ggplot(
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-    geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
+    geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
   #facet_grid(~ gene_name, space = "free")+
   theme_classic() +
   coord_cartesian(ylim = c(0, 1)) +
