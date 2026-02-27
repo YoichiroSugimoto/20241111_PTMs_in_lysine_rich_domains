@@ -632,15 +632,13 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-#-----------------------
-
-# O2 levels subset to 21pc 
-lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc"]
-
+#---------------------------------------------
+# Normoxia samples under varying dox induction
+#--------------------------------------------- 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_dt[induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_21pc_dt[oxygen == "21pc" & induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -648,7 +646,7 @@ ggplot(
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
- # facet_grid(~ oxygen) +
+  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
@@ -659,14 +657,9 @@ ggplot(
 
 
 #------------------------
-
-# O2 levels subset to 21pc and (N >= 0.1)
-lc_MS_SS_KR_PNAS_21pc_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
-
-
-# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
+# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -708,7 +701,9 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-#---------------------
+#---------------------------------------------
+# Normoxia samples under varying dox induction
+#---------------------------------------------
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
@@ -721,7 +716,7 @@ ggplot(
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
   labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2") + 
- # facet_grid(~ oxygen) +
+  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [% to WT]") +
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
@@ -731,7 +726,6 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 #------------------------
-
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
   data = lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf"& data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
@@ -749,105 +743,6 @@ ggplot(
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 2.5)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-```
-
-
-```{r normoxia_varying_dox_induction}
-
-#---------------------------------------------
-# Normoxia samples under varying dox induction
-#---------------------------------------------
-
-# Merge WT data with MS_SS_KR normoxia data
-pc2wt_21pc <- 
-  lc_MS_SS_KR_PNAS_WT_dt[
-    cell == "iJ6" &
-    oxygen == "21pc" &
-      induction != "Inf"
-  ]
-
-# Boxplot - comparing normoxia in different dox incubation timings
-ggplot(
-  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-# Boxplot - comparing normoxia in different dox incubation timings
-ggplot(
-  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry/WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-#-----------------------------------
-
-# Normoxia subset to greater than 0.1 (N >= 0.1)
-pc2wt_21pc_N01 <- pc2wt_21pc[WT_stoichiometry >0.1]
-
-# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
-ggplot(
-  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-
-# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
-ggplot(
-  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
