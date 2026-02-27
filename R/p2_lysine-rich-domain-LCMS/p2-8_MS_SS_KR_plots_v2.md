@@ -2,7 +2,7 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-25 February, 2026
+27 February, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -399,18 +399,16 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD2_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
-                     grepl("21pc", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD2"]
+                                            grepl("21pc", sample_group) & 
+                                            !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
+                                            gene_name == "BRD2"]
 
 
 # reorder sample names
 MS_SS_KR_PNAS_BRD2_dt <-  MS_SS_KR_PNAS_BRD2_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD23",
+             "HeLaiJMJD6_noDox_N_NA",
              "4h_21pc_BRD23",
              "8h_21pc_BRD23",
              "18h_21pc_BRD23",
@@ -433,18 +431,16 @@ plot_ptm_stoichiometry(
 ``` r
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD3_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
-                     grepl("21pc", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD3"]
+                                            grepl("21pc", sample_group) & 
+                                            !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised")&
+                                            gene_name == "BRD3"]
 
 
-# reorder sample names
+
 MS_SS_KR_PNAS_BRD3_dt <-  MS_SS_KR_PNAS_BRD3_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD23",
+             "HeLaiJMJD6_noDox_N_NA",
              "4h_21pc_BRD23",
              "8h_21pc_BRD23",
              "18h_21pc_BRD23",
@@ -467,18 +463,16 @@ plot_ptm_stoichiometry(
 ``` r
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD4_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
-                     grepl("21pc", sample_group) & 
-                     !sample_name %in% c("HeLaiJMJD6_noDox_N_NA") & 
-                     gene_name == "BRD4"]
+                                            grepl("21pc", sample_group) & 
+                                            !sample_name %in% c("minusDox_BRD4", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised")&
+                                            gene_name == "BRD4"]
 
 
 # reorder sample names
 MS_SS_KR_PNAS_BRD4_dt <-  MS_SS_KR_PNAS_BRD4_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
-             "minusDox_BRD4",
+             "HeLaiJMJD6_noDox_N_NA",
              "4h_21pc_BRD4",
              "8h_21pc_BRD4",
              "18h_21pc_BRD4",
@@ -528,20 +522,17 @@ plot_ptm_stoichiometry(
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD2_O2pc_dt <- MS_SS_KR_PNAS_dt[
   grepl("Inf|18h|24h|0h", sample_group) & 
-    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23") & 
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23","HeLaiJMJD6_noDox_N_NA", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
     gene_name == "BRD2"]
 
 # reorder sample names
 MS_SS_KR_PNAS_BRD2_O2pc_dt <-  MS_SS_KR_PNAS_BRD2_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
              "HeLaiJMJD6_Dox_N_NA",
              "18h_4pc_BRD23",
              "18h_1pc_BRD23",
-             "HeLaiJMJD6_Dox_01O224h_NA",
-             "HeLaiJMJD6_noDox_N_NA")
+             "HeLaiJMJD6_Dox_01O224h_NA")
 )
 ]
 
@@ -564,7 +555,7 @@ plot_ptm_stoichiometry(
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD3_O2pc_dt <- MS_SS_KR_PNAS_dt[
   grepl("Inf|18h|24h|0h", sample_group) & 
-    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23") & 
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23","HeLaiJMJD6_noDox_N_NA", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
     gene_name == "BRD3"]
 
 
@@ -572,13 +563,10 @@ MS_SS_KR_PNAS_BRD3_O2pc_dt <- MS_SS_KR_PNAS_dt[
 MS_SS_KR_PNAS_BRD3_O2pc_dt <-  MS_SS_KR_PNAS_BRD3_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
              "HeLaiJMJD6_Dox_N_NA",
              "18h_4pc_BRD23",
              "18h_1pc_BRD23",
-             "HeLaiJMJD6_Dox_01O224h_NA",
-             "HeLaiJMJD6_noDox_N_NA")
+             "HeLaiJMJD6_Dox_01O224h_NA")
 )
 ]
 
@@ -602,22 +590,21 @@ plot_ptm_stoichiometry(
 
 # subset data to specific BRD protein
 MS_SS_KR_PNAS_BRD4_O2pc_dt <- MS_SS_KR_PNAS_dt[  grepl("Inf|18h|24h|0h", sample_group) & 
-    !sample_name %in% c("minusDox_BRD4", "18h_21pc_BRD4") & 
+    !sample_name %in% c("minusDox_BRD4", "18h_21pc_BRD4","HeLaiJMJD6_noDox_N_NA", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
     gene_name == "BRD4"]
 
 
-#iJ6_0h_21pc_SS
+#iJ6_0h_21pc_SS - minusDox_BRD23
+# HeLaiJMJD6_noDox_N_NA
+
 # reorder sample names
 MS_SS_KR_PNAS_BRD4_O2pc_dt <-  MS_SS_KR_PNAS_BRD4_O2pc_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
-             "JQ1_HeLaWT_derivatised",
-             "JQ1_HeLaJMJD6KO_derivatised",
              "HeLaiJMJD6_Dox_N_NA",
              "18h_4pc_BRD4",
              "18h_1pc_BRD4",
-             "HeLaiJMJD6_Dox_01O224h_NA",
-             "HeLaiJMJD6_noDox_N_NA")
+             "HeLaiJMJD6_Dox_01O224h_NA")
 )
   ]
 
@@ -746,8 +733,8 @@ ggplot(
   )
 ) + 
   geom_point() +
-  geom_smooth(method=lm , color="red", se=FALSE) +
-theme_classic()
+  geom_smooth(method=lm , color="red", se=TRUE) +
+theme_classic_2()
 ```
 
     ## `geom_smooth()` using formula = 'y ~ x'
@@ -767,7 +754,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -796,7 +783,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -825,7 +812,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   # facet_grid(~ oxygen) +
   ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -849,7 +836,7 @@ ggplot(
   facet_grid(~ oxygen) +
   labs(title = "Stoichiometry of Dox +/- JMJD6 at O2pc levels") + 
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 2.5)) +
@@ -879,7 +866,7 @@ ggplot(
   labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2") + 
  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 2.5)) +
@@ -909,7 +896,7 @@ ggplot(
   # facet_grid(~ oxygen) +
   labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2 (N >= 0.1)") + 
   ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 2.5)) +
@@ -944,7 +931,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   # facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -967,7 +954,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   # facet_grid(~ oxygen) +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -995,7 +982,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   # facet_grid(~ oxygen) +
   ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1018,7 +1005,7 @@ ggplot(
   geom_boxplot(outlier.shape = NA) +
   # facet_grid(~ oxygen) +
   ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1062,7 +1049,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1083,7 +1070,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1107,7 +1094,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1129,7 +1116,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1170,7 +1157,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1191,7 +1178,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1215,7 +1202,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1236,7 +1223,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.2)) +
@@ -1271,7 +1258,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.5)) +
@@ -1294,7 +1281,7 @@ ggplot(
 ) +
   geom_boxplot(outlier.shape = NA) +
   ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   coord_cartesian(ylim = c(0, 1.5)) +
@@ -1318,7 +1305,7 @@ ggplot(
   geom_point(aes(colour = gene_name)) +
   geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
+  theme_classic_2() +
   coord_cartesian(ylim = c(0, 1)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") 
@@ -1382,7 +1369,7 @@ ggplot(
   geom_point(aes(colour = gene_name)) +
   geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #  facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
+  theme_classic_2() +
   coord_cartesian(ylim = c(0, 1)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") 
@@ -1440,7 +1427,7 @@ ggplot(
   geom_point(aes(colour = gene_name)) +
     geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
   #facet_grid(~ gene_name, space = "free")+
-  theme_classic() +
+  theme_classic_2() +
   coord_cartesian(ylim = c(0, 1)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right")
@@ -1501,7 +1488,7 @@ ggplot(
   facet_grid(~ oxygen)+
   ggtitle("Hypoxia samples in diff dox incubation") +
   ylab("Stoichiometry [% to WT]") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   theme(aspect.ratio = 3) +
@@ -1527,7 +1514,7 @@ ggplot(
   facet_grid(~ oxygen)+
   ggtitle("Hypoxia samples in diff dox incubation (N subset)") +
   ylab("Stoichiometry [%] (N =>0.1)") +
-  theme_classic()+
+  theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
   theme(aspect.ratio = 3) +
@@ -1552,7 +1539,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-02-25
+    ##  date     2026-02-27
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
