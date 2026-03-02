@@ -40,7 +40,6 @@ project.dir <-
 
 ```
 
-
 # 2.7.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
