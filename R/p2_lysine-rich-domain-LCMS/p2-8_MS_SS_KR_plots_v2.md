@@ -2,36 +2,39 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-27 February, 2026
+02 March, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
-- [2.7.1 Install,load essential functions and
-  libraries](#271-installload-essential-functions-and-libraries)
-- [2.7.2 Import human protein reference
-  data](#272-import-human-protein-reference-data)
-- [2.7.3 Defining functions and data
-  preprocessing](#273-defining-functions-and-data-preprocessing)
-- [2.7.4 Plotting raw Stoichiometry values of normoxia and hypoxia data
+- [2.8.1 Install,load essential functions and
+  libraries](#281-installload-essential-functions-and-libraries)
+- [2.8.2 Import human protein reference
+  data](#282-import-human-protein-reference-data)
+- [2.8.3 Defining functions and data
+  preprocessing](#283-defining-functions-and-data-preprocessing)
+- [2.8.4 Plotting raw stoichiometry values of normoxia data with
+  re-expression of
+  JMJD6](#284-plotting-raw-stoichiometry-values-of-normoxia-data-with-re-expression-of-jmjd6)
+- [2.8.5 Plotting raw stoichiometry values of normoxia and hypoxia data
   with re-expression of
-  JMJD6](#274-plotting-raw-stoichiometry-values-of-normoxia-and-hypoxia-data-with-re-expression-of-jmjd6)
-- [2.7.5 Plotting Stoichiometry values of hypoxia and normoxia data with
+  JMJD6](#285-plotting-raw-stoichiometry-values-of-normoxia-and-hypoxia-data-with-re-expression-of-jmjd6)
+- [2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with
   re-expression of JMJD6 (+ diagnostic
-  ion)](#275-plotting-stoichiometry-values-of-hypoxia-and-normoxia-data-with-re-expression-of-jmjd6--diagnostic-ion)
-- [2.7.6 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry
-  data.](#276-xic-values-against-ms_ss-ms_kr_1-and-pnas-stoichiometry-data)
-- [2.7.7 Oxygen sensitivity - Comparing hypoxia stoichiometry under
+  ion)](#286-plotting-stoichiometry-values-of-hypoxia-and-normoxia-data-with-re-expression-of-jmjd6--diagnostic-ion)
+- [2.8.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry
+  data.](#287-xic-values-against-ms_ss-ms_kr_1-and-pnas-stoichiometry-data)
+- [2.8.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under
   varying dox incubation (+ diagnostic
-  ion)](#277-oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
-- [2.7.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under
+  ion)](#288-oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
+- [2.8.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under
   varying dox incubation - Re-exp J6 (+ diagnostic
-  ion)](#278-oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation---re-exp-j6--diagnostic-ion)
-- [2.7.9 Oxygen sensitivity - Comparing hypoxia stoichiometry vs
+  ion)](#289-oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation---re-exp-j6--diagnostic-ion)
+- [2.8.10 Oxygen sensitivity - Comparing hypoxia stoichiometry vs
   normoxia stoichiometry (+ diagnostic
-  ion)](#279-oxygen-sensitivity---comparing-hypoxia-stoichiometry-vs-normoxia-stoichiometry--diagnostic-ion)
-- [2.7.10 Comparing hypoxia stoichiometry under varying dox incubation
+  ion)](#2810-oxygen-sensitivity---comparing-hypoxia-stoichiometry-vs-normoxia-stoichiometry--diagnostic-ion)
+- [2.8.11 Comparing hypoxia stoichiometry under varying dox incubation
   (+ diagnostic
-  ion)](#2710-comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
+  ion)](#2811-comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
 - [Session information](#session-information)
 
 # Overview
@@ -62,7 +65,7 @@ project.dir <-
 #renv::restore(file.path(project.dir, "R"))
 ```
 
-# 2.7.1 Install,load essential functions and libraries
+# 2.8.1 Install,load essential functions and libraries
 
 ``` r
 ## Load all R scripts from the 'functions' folder into the current session
@@ -195,7 +198,7 @@ library("janitor")
 library("ptm.stoichiometry")
 ```
 
-# 2.7.2 Import human protein reference data
+# 2.8.2 Import human protein reference data
 
 ``` r
 # Import human protein reference data from specified file path 
@@ -210,7 +213,7 @@ data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 ```
 
-# 2.7.3 Defining functions and data preprocessing
+# 2.8.3 Defining functions and data preprocessing
 
 ``` r
 # Read FASTA data 
@@ -390,14 +393,14 @@ MS_SS_KR_PNAS_dt[, `:=`(
 )]
 ```
 
-# 2.7.4 Plotting raw Stoichiometry values of normoxia and hypoxia data with re-expression of JMJD6
+# 2.8.4 Plotting raw stoichiometry values of normoxia data with re-expression of JMJD6
 
 ``` r
 # Plotting stoichiometry of BRD proteins in different O2% 
 # Note: the amino acid region of the proteins is that of the ones represented 
 # in the PNAS2022 paper. 
 
-# subset data to specific BRD protein
+# subset data to specific BRD2 protein
 MS_SS_KR_PNAS_BRD2_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
                                             !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
@@ -426,10 +429,10 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-2.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_21pc-2.png)<!-- -->
 
 ``` r
-# subset data to specific BRD protein
+# subset data to specific BRD3 protein
 MS_SS_KR_PNAS_BRD3_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
                                             !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised")&
@@ -458,10 +461,10 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-3.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-4.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_21pc-2.png)<!-- -->
 
 ``` r
-# subset data to specific BRD protein
+# subset data to specific BRD4 protein
 MS_SS_KR_PNAS_BRD4_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
                                             !sample_name %in% c("minusDox_BRD4", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised")&
@@ -490,7 +493,9 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-5.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_21pc-6.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_21pc-2.png)<!-- -->
+
+# 2.8.5 Plotting raw stoichiometry values of normoxia and hypoxia data with re-expression of JMJD6
 
 ``` r
 # Plotting stoichiometry of BRD proteins in different O2% 
@@ -546,7 +551,7 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-2.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_hypoxia_pc-2.png)<!-- -->
 
 ``` r
 #------
@@ -581,7 +586,7 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-3.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-4.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_hypoxia_pc-2.png)<!-- -->
 
 ``` r
 #------
@@ -618,9 +623,9 @@ plot_ptm_stoichiometry(
 )
 ```
 
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-5.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD_proteins_at_hypoxia_pc-6.png)<!-- -->
+![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_hypoxia_pc-2.png)<!-- -->
 
-# 2.7.5 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# 2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ``` r
 # subset rows with diagnostic ion from MS_SS and MS_KR data
@@ -709,7 +714,7 @@ lc_MS_SS_KR_PNAS_WT_dt <- merge(
 )
 ```
 
-# 2.7.6 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data.
+# 2.8.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data.
 
 ``` r
 #-------------
@@ -744,7 +749,7 @@ theme_classic_2()
 ``` r
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 levels
 ggplot(
-  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -765,15 +770,13 @@ ggplot(
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/Dox_plus_minus_JMJD6_O2_levels-1.png)<!-- -->
 
 ``` r
-#-----------------------
-
-# O2 levels subset to 21pc 
-lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc"]
-
+#---------------------------------------------
+# Normoxia samples under varying dox induction
+#--------------------------------------------- 
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc" & induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -781,7 +784,7 @@ ggplot(
 ) +
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
- # facet_grid(~ oxygen) +
+  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [%]") +
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
@@ -795,14 +798,9 @@ ggplot(
 
 ``` r
 #------------------------
-
-# O2 levels subset to 21pc and (N >= 0.1)
-lc_MS_SS_KR_PNAS_21pc_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
-
-
-# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
+# Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry
@@ -825,7 +823,7 @@ ggplot(
 ``` r
 # Boxplot - Stoichiometry of Dox + and - JMJD6 under O2 pc levels
 ggplot(
-  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[induction != "Inf"& data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry/WT_stoichiometry
@@ -839,7 +837,7 @@ ggplot(
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 2.5)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
@@ -847,15 +845,13 @@ ggplot(
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/Dox_plus_minus_JMJD6_O2_levels_relative_WT-1.png)<!-- -->
 
 ``` r
-#---------------------
-
-# O2 levels subset to 21pc 
-lc_MS_SS_KR_PNAS_21pc_dt <- lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc"]
-
+#---------------------------------------------
+# Normoxia samples under varying dox induction
+#---------------------------------------------
 
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[oxygen == "21pc" & induction != "Inf"& data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry/WT_stoichiometry
@@ -864,12 +860,12 @@ ggplot(
   #geom_hline(yintercept = 1, color = "gray60") +
   geom_boxplot(outlier.shape = NA) +
   labs(title = "Stoic of Dox +/- JMJD6 at 21pc O2") + 
- # facet_grid(~ oxygen) +
+  # facet_grid(~ oxygen) +
   ylab("Stoichiometry [% to WT]") +
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 2.5)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
@@ -878,14 +874,9 @@ ggplot(
 
 ``` r
 #------------------------
-
-# O2 levels subset to 21pc and (N >= 0.1)
-lc_MS_SS_KR_PNAS_21pc_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
-
-
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
-  data = lc_MS_SS_KR_PNAS_21pc_N01_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_21pc_N01_dt[, data_size_per_site])],
+  data = lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf"& data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
   aes(
     x = induction,
     y = Stoichiometry/WT_stoichiometry
@@ -899,123 +890,14 @@ ggplot(
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 2.5)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/Dox_plus_minus_JMJD6_O2_levels_relative_WT-3.png)<!-- -->
 
-``` r
-#---------------------------------------------
-# Normoxia samples under varying dox induction
-#---------------------------------------------
-
-# Merge WT data with MS_SS_KR normoxia data
-pc2wt_21pc <- 
-  lc_MS_SS_KR_PNAS_WT_dt[
-    cell == "iJ6" &
-    oxygen == "21pc" &
-      induction != "Inf"
-  ]
-
-# Boxplot - comparing normoxia in different dox incubation timings
-ggplot(
-  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/normoxia_varying_dox_induction-1.png)<!-- -->
-
-``` r
-# Boxplot - comparing normoxia in different dox incubation timings
-ggplot(
-  data = pc2wt_21pc[data_size_per_site == max(pc2wt_21pc[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry/WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/normoxia_varying_dox_induction-2.png)<!-- -->
-
-``` r
-#-----------------------------------
-
-# Normoxia subset to greater than 0.1 (N >= 0.1)
-pc2wt_21pc_N01 <- pc2wt_21pc[WT_stoichiometry >0.1]
-
-# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
-ggplot(
-  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("(N >= 0.1) Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/normoxia_varying_dox_induction-3.png)<!-- -->
-
-``` r
-# Boxplot - comparing normoxia in different dox incubation timings (N >= 0.1)
-ggplot(
-  data = pc2wt_21pc_N01[data_size_per_site == max(pc2wt_21pc_N01[, data_size_per_site])],
-  aes(
-    x = induction,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  # facet_grid(~ oxygen) +
-  ylab("(N >= 0.1) Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.2)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/normoxia_varying_dox_induction-4.png)<!-- -->
-
-# 2.7.7 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.8.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ``` r
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
@@ -1023,7 +905,7 @@ ggplot(
 
 lc_MS_SS_KR_PNAS_Hxpo_dt <- lc_MS_SS_KR_PNAS_WT_dt[
   grepl("18h|24h|Inf", induction) &
-    !sample_group %in% c("iJ6_18h_21pc_SS", "iJ6_Inf_21pc_PNAS")
+    !sample_group %in% c("iJ6_18h_21pc_SS", "iJ6_Inf_21pc_PNAS", "WT_Inf_21pc_PNAS")
 ]
 
 #test <-  lc_MS_SS_KR_PNAS_WT_dt[grepl("Inf", induction)]
@@ -1032,7 +914,6 @@ lc_MS_SS_KR_PNAS_Hxpo_dt <- lc_MS_SS_KR_PNAS_WT_dt[
 lc_MS_SS_KR_PNAS_Hxpo_dt[, sample_group :=
                        factor(sample_group,
                               levels = c("WT_Inf_21pc_KR",
-                                         "WT_Inf_21pc_PNAS",
                                          "iJ6_24h_21pc_KR",
                                          "iJ6_18h_4pc_SS",
                                          "iJ6_18h_1pc_SS",
@@ -1041,7 +922,8 @@ lc_MS_SS_KR_PNAS_Hxpo_dt[, sample_group :=
 
 # Plot
 ggplot(
-  data = lc_MS_SS_KR_PNAS_Hxpo_dt,
+  data = lc_MS_SS_KR_PNAS_Hxpo_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_Hxpo_dt
+                                                            [, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry
@@ -1062,7 +944,8 @@ ggplot(
 ``` r
 # Plot - relative to WT_stoichiometry
 ggplot(
-  data = lc_MS_SS_KR_PNAS_Hxpo_dt,
+  data = lc_MS_SS_KR_PNAS_Hxpo_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_Hxpo_dt
+                                                            [, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1082,11 +965,8 @@ ggplot(
 
 ``` r
 # Plot - Subset WT data - N >= 0.1
-
-lc_MS_SS_KR_PNAS_Hxpo_N01_dt <- lc_MS_SS_KR_PNAS_Hxpo_dt[WT_stoichiometry >= 0.1]
-
 ggplot(
-  data = lc_MS_SS_KR_PNAS_Hxpo_N01_dt,
+  data = lc_MS_SS_KR_PNAS_Hxpo_dt[WT_stoichiometry >= 0.1 & data_size_per_site == max(lc_MS_SS_KR_PNAS_Hxpo_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry
@@ -1106,9 +986,8 @@ ggplot(
 
 ``` r
 # Plot - Subset WT data - N >= 0.1, relative to WT_stoichiometry
-
 ggplot(
-  data = lc_MS_SS_KR_PNAS_Hxpo_N01_dt,
+  data = lc_MS_SS_KR_PNAS_Hxpo_dt[WT_stoichiometry >= 0.1 & data_size_per_site == max(lc_MS_SS_KR_PNAS_Hxpo_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1126,7 +1005,7 @@ ggplot(
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-4.png)<!-- -->
 
-# 2.7.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation - Re-exp J6 (+ diagnostic ion)
+# 2.8.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation - Re-exp J6 (+ diagnostic ion)
 
 ``` r
 #--------------------------------------
@@ -1149,7 +1028,7 @@ lc_Hxpo_reexp_J6_dt[, sample_group :=
 
 # Plot
 ggplot(
-  data = lc_Hxpo_reexp_J6_dt,
+  data = lc_Hxpo_reexp_J6_dt[data_size_per_site == max(lc_Hxpo_reexp_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry
@@ -1170,7 +1049,7 @@ ggplot(
 ``` r
 # Plot- relative to WT_stoichiometry
 ggplot(
-  data = lc_Hxpo_reexp_J6_dt,
+  data = lc_Hxpo_reexp_J6_dt[data_size_per_site == max(lc_Hxpo_reexp_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1190,11 +1069,9 @@ ggplot(
 
 ``` r
 # Subset WT data - N >= 0.1 
-lc_Hxpo_reexp_J6_N01_dt <- lc_Hxpo_reexp_J6_dt[WT_stoichiometry >= 0.1]
-
 # Plot
 ggplot(
-  data = lc_Hxpo_reexp_J6_N01_dt,
+  data = lc_Hxpo_reexp_J6_dt[WT_stoichiometry >= 0.1 & data_size_per_site == max(lc_Hxpo_reexp_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry
@@ -1215,7 +1092,7 @@ ggplot(
 ``` r
 # Plot- N >= 0.1 relative to WT_stoichiometry
 ggplot(
-  data = lc_Hxpo_reexp_J6_N01_dt,
+  data = lc_Hxpo_reexp_J6_dt[WT_stoichiometry >= 0.1 & data_size_per_site == max(lc_Hxpo_reexp_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1250,7 +1127,7 @@ lc_Hxpo_J6_dt[, sample_group :=
 
 # Plot- relative to WT_stoichiometry
 ggplot(
-  data = lc_Hxpo_J6_dt,
+  data = lc_Hxpo_J6_dt[data_size_per_site == max(lc_Hxpo_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1261,7 +1138,7 @@ ggplot(
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
@@ -1270,10 +1147,8 @@ ggplot(
 
 ``` r
 # Plot- Subset WT to >= 0.1
-lc_Hxpo_J6_dt <- lc_Hxpo_J6_dt[WT_stoichiometry >= 0.1]
-
 ggplot(
-  data = lc_Hxpo_J6_dt,
+  data = lc_Hxpo_J6_dt[WT_stoichiometry >= 0.1 & data_size_per_site == max(lc_Hxpo_J6_dt[, data_size_per_site])],
   aes(
     x = sample_group,
     y = Stoichiometry/WT_stoichiometry
@@ -1284,14 +1159,14 @@ ggplot(
   theme_classic_2()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
   theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
+  coord_cartesian(ylim = c(0, 1.2)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/reexp_J6_varying_hypoxia_pc_overnightdox-2.png)<!-- -->
 
-# 2.7.9 Oxygen sensitivity - Comparing hypoxia stoichiometry vs normoxia stoichiometry (+ diagnostic ion)
+# 2.8.10 Oxygen sensitivity - Comparing hypoxia stoichiometry vs normoxia stoichiometry (+ diagnostic ion)
 
 ``` r
 # Scatter plot - Normoxia stoichiometry versus hypoxia at 4% - 18h dox incubation
@@ -1425,7 +1300,7 @@ ggplot(
   )
 ) +
   geom_point(aes(colour = gene_name)) +
-    geom_smooth(method=lm , color="black", size = 0.5, se=FALSE)+
+    geom_smooth(method=lm , color="black", size = 0.5, se=TRUE)+
   #facet_grid(~ gene_name, space = "free")+
   theme_classic_2() +
   coord_cartesian(ylim = c(0, 1)) +
@@ -1473,12 +1348,12 @@ wilcox.test(
     ## V = 0, p-value = 1.709e-08
     ## alternative hypothesis: true location shift is not equal to 0
 
-# 2.7.10 Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.8.11 Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ``` r
 # box_plot - hypoxia stoichiometry in diff dox incubation
 ggplot(
-  data = lc_MS_SS_KR_PNAS_WT_dt[induction != "Inf" & oxygen != "21pc"], 
+  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site]) & induction != "Inf" & oxygen != "21pc"], 
   aes(
     x = induction,
     y = Stoichiometry/WT_stoichiometry
@@ -1499,12 +1374,9 @@ ggplot(
 
 ``` r
 #--------------------
-
-lc_hypo_WT_N01_dt <- lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1]
-
 # box_plot - Hypoxia samples in diff dox incubation (N =>0.1)
 ggplot(
-  data = lc_hypo_WT_N01_dt[induction != "Inf" & oxygen != "21pc"], 
+  data = lc_MS_SS_KR_PNAS_WT_dt[data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site]) & WT_stoichiometry >= 0.1 & induction != "Inf" & oxygen != "21pc"], 
   aes(
     x = induction,
     y = Stoichiometry/WT_stoichiometry
@@ -1539,7 +1411,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-02-27
+    ##  date     2026-03-02
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
