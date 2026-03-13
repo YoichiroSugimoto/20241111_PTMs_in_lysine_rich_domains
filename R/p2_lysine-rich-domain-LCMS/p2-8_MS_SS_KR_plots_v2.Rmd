@@ -60,6 +60,11 @@ library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
 
+
+# install "gt" package
+install.packages("gt")
+library("gt")
+
 ```
 
 # 2.8.2 Import human protein reference data 
@@ -78,6 +83,10 @@ ref_protein_dt <- import_reference_fasta(file.path
 # Define path to data directory
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
+
+#Create p1 results directory
+p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
+# create.dirs(c(results.dir, p2_MS_SS_KR))
 
 ```
 
@@ -239,6 +248,16 @@ pnas2022_BRD_dt <-  pnas2022_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
+
+# Convert data table into publication ready 
+MS_KR1_gt_dt <- gt(MS_KR1_BRD_dt)
+MS_SS_BRD_dt <- gt(MS_SS_BRD_dt)
+
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2.csv"))
+
+
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
 MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
                          MS_KR1_BRD_dt,
@@ -304,6 +323,11 @@ plot_ptm_stoichiometry(
   sample_colors = NA,
 )
 
+MS_SS_KR_PNAS_BRD2 <- MS_SS_KR_PNAS_BRD2_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2.csv"))
+
 ```
 
 
@@ -337,6 +361,11 @@ plot_ptm_stoichiometry(
   sample_colors = NA,
 )
 
+MS_SS_KR_PNAS_BRD3 <- MS_SS_KR_PNAS_BRD3_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD3, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD3.csv"))
+
 ```
 
 
@@ -369,6 +398,11 @@ plot_ptm_stoichiometry(
   all.protein.bs, 
   sample_colors = NA,
 )
+
+MS_SS_KR_PNAS_BRD4 <- MS_SS_KR_PNAS_BRD4_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD4, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD4.csv"))
 
 ```
 
@@ -428,6 +462,11 @@ plot_ptm_stoichiometry(
   sample_colors = NA,
 )
 
+MS_SS_KR_PNAS_BRD2_O2pc <- MS_SS_KR_PNAS_BRD2_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD2_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2_O2pc.csv"))
+
 ```
 
 
@@ -463,6 +502,11 @@ plot_ptm_stoichiometry(
   all.protein.bs, 
   sample_colors = NA,
 )
+
+MS_SS_KR_PNAS_BRD3_O2pc <- MS_SS_KR_PNAS_BRD3_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD3_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD3_O2pc.csv"))
 
 ```
 
@@ -502,8 +546,12 @@ plot_ptm_stoichiometry(
   sample_colors = NA,
 )
 
-```
+MS_SS_KR_PNAS_BRD4_O2pc <- MS_SS_KR_PNAS_BRD4_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
 
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD4_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD4_O2pc.csv"))
+
+```
 
 # 2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
