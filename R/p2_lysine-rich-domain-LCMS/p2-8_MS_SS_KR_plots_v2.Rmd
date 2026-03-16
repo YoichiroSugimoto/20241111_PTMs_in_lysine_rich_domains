@@ -306,6 +306,52 @@ MS_SS_KR_PNAS_dt[, `:=`(
 # Subset the data to contain only Lysine
 MS_KR1_stoic_K_dt <- MS_KR1_stoic_dt[aa == "K"]
 
+# removing unsed data columns from data table
+MS_KR1_stoic_K_dt <-  MS_KR1_stoic_K_dt[, c("sum_intensity_per_position",
+                                            "sum_psm_mapped_per_position",
+                                            "sum_the_number_of_peptide",
+                                            "localization_prob",
+                                            "score_for_localization",
+                                            "best_localization_ms_ms_id",
+                                            "best_localization_raw_file") := NULL]
+
+# Column "sample group" created to simplify sample names
+MS_KR1_stoic_K_dt[, `:=`(
+  sample_group = case_when(
+    sample_name == "HeLaiJMJD6_noDox_N_NA" ~ "iJ6_0h_21pc_KR",
+    sample_name == "HeLaiJMJD6_Dox_N_NA" ~ "iJ6_24h_21pc_KR",
+    sample_name == "HeLaWT_NA_N_NA" ~ "WT_Inf_21pc_KR", 
+    sample_name == "HeLaiJMJD6_Dox_01O224h_NA" ~ "iJ6_24h_01pc_KR"
+  )
+)]
+
+# Separate the contents of sample_group column into new columns 
+MS_KR1_stoic_K_dt[, `:=`(
+  cell = str_split_fixed(sample_group, "_", 4)[, 1],
+  induction = str_split_fixed(sample_group, "_", 4)[, 2],
+  oxygen = str_split_fixed(sample_group, "_", 4)[, 3],
+  dataset = str_split_fixed(sample_group, "_", 4)[, 4]
+)]
+
+# changing stoichiometry column position 
+ setcolorder(
+  MS_KR1_stoic_K_dt,
+  append(setdiff(names(MS_KR1_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+  setcolorder(
+  MS_KR1_stoic_K_dt,
+  append(setdiff(names(MS_KR1_stoic_K_dt), "sample_group"), "sample_group", after = 1)
+)
+ 
+ # changing column names - publication ready
+setnames(dt1, c("V1", "V2"), c("souksou","mouksou"))
+ 
+ # install package for writing data table to excel 
+ install.packages("xlsx")
+ library("xlsx")
+ 
+ # Write to csv table to identify "K" with DI 
+write.xlsx(MS_KR1_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_KR1_stoic_K.xlsx"))
 
 ```
 
