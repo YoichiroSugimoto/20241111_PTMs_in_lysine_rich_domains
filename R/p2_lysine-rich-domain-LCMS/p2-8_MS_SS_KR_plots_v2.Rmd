@@ -212,7 +212,7 @@ MS_SS_stoic_dt[, `:=`(
 # Load PNAS stoichiometry data analysed by MaxQuant (dataset A)
 #--------------------------------------------------------------
 
- pnas2022_stoic_dt <- read_stoic_data(
+MQ_DI_stoic_dt <- read_stoic_data(
   prefix = "DI_noH2O_data-A_trp_m7_v7_def_",
   pre_prefix = "",
   post_fix = "_DI",
@@ -220,7 +220,7 @@ MS_SS_stoic_dt[, `:=`(
 
 # Create a logical column for diagnostic peak. For rows where diagnostic peak is 
 # present "+", logical vector is "TRUE", or else "FALSE"
-pnas2022_stoic_dt[, `:=`(
+MQ_DI_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
   
@@ -256,25 +256,25 @@ MS_SS_BRD_dt <-  MS_SS_stoic_dt[
 ]
 
 # Filter PNAS2022 data to retain only BRD2, 3, 4 data 
-pnas2022_BRD_dt <-  pnas2022_stoic_dt[
+MQ_DI_BRD_dt <-  MQ_DI_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
-MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
+MS_SS_KR_MQ_dt <- rbindlist(list(MS_SS_BRD_dt,
                          MS_KR1_BRD_dt,
-                         pnas2022_BRD_dt),
+                         MQ_DI_BRD_dt),
                          use.names = TRUE)
 
 # Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
 # These samples are removed as it could be false positives reported by the system 
-MS_SS_KR_PNAS_dt <- MS_SS_KR_PNAS_dt[
+MS_SS_KR_MQ_dt <- MS_SS_KR_MQ_dt[
   !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
        (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
 ]
 
 # Column "sample group" created to simplify sample names
-MS_SS_KR_PNAS_dt[, `:=`(
+MS_SS_KR_MQ_dt[, `:=`(
   sample_group = case_when(
     condition == "MS_SS" & grepl("minusDox", sample_name) ~ paste0("iJ6_0h_21pc_SS"),
     condition == "MS_SS"~ paste0("iJ6_", str_split_fixed(sample_name, "_", 3)[, 1], "_", str_split_fixed(sample_name, "_", 3)[, 2], "_SS"),
@@ -306,14 +306,14 @@ MS_KR1_stoic_K_dt <- MS_KR1_stoic_dt[aa == "K"]
 # in the PNAS2022 paper. 
 
 # subset data to specific BRD2 protein
-MS_SS_KR_PNAS_BRD2_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
+MS_SS_KR_MQ_BRD2_dt <- MS_SS_KR_MQ_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
                                             !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") & 
                                             gene_name == "BRD2"]
 
 
 # reorder sample names
-MS_SS_KR_PNAS_BRD2_dt <-  MS_SS_KR_PNAS_BRD2_dt[, sample_name := factor(
+MS_SS_KR_MQ_BRD2_dt <-  MS_SS_KR_MQ_BRD2_dt[, sample_name := factor(
   sample_name, 
   levels = c("HeLaWT_NA_N_NA",
              "HeLaiJMJD6_noDox_N_NA",
@@ -326,17 +326,17 @@ MS_SS_KR_PNAS_BRD2_dt <-  MS_SS_KR_PNAS_BRD2_dt[, sample_name := factor(
 
 #accession = "P25440", plot_range = c(540, 590) BRD2
 plot_ptm_stoichiometry(
-  MS_SS_KR_PNAS_BRD2_dt,
+  MS_SS_KR_MQ_BRD2_dt,
   accession = "P25440",
   plot_range = c(540, 590), 
   all.protein.bs, 
   sample_colors = NA,
 )
 
-MS_SS_KR_PNAS_BRD2 <- MS_SS_KR_PNAS_BRD2_dt[is_diagnostic_peak == TRUE & aa == "K"]
+MS_SS_KR_MQ_BRD2 <- MS_SS_KR_MQ_BRD2_dt[is_diagnostic_peak == TRUE & aa == "K"]
 
 # Write to csv table to identify "K" with DI 
-fwrite(MS_SS_KR_PNAS_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2.csv"))
+fwrite(MS_SS_KR_MQ_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_MQ_BRD2.csv"))
 
 ```
 
