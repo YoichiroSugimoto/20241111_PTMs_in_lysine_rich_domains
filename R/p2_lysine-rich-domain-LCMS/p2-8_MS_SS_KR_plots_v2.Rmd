@@ -60,11 +60,6 @@ library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
 
-
-# install "gt" package
-install.packages("gt")
-library("gt")
-
 ```
 
 # 2.8.2 Import human protein reference data 
@@ -248,16 +243,6 @@ pnas2022_BRD_dt <-  pnas2022_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
-
-# Convert data table into publication ready 
-MS_KR1_gt_dt <- gt(MS_KR1_BRD_dt)
-MS_SS_BRD_dt <- gt(MS_SS_BRD_dt)
-
-
-# Write to csv table to identify "K" with DI 
-fwrite(MS_SS_KR_PNAS_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2.csv"))
-
-
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
 MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
                          MS_KR1_BRD_dt,
@@ -284,6 +269,14 @@ MS_SS_KR_PNAS_dt[, `:=`(
     sample_name == "JQ1_HeLaJMJD6KO_derivatised" ~ "iJ6_Inf_21pc_PNAS"
   )
 )]
+
+```
+
+```{r publication_ready_tables}
+
+# Subset the data to contain only Lysine
+MS_KR1_stoic_K_dt <- MS_KR1_stoic_dt[aa == "K"]
+
 
 ```
 
