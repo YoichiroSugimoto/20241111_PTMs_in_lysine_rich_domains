@@ -224,6 +224,23 @@ pnas2022_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
   
+
+#--------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant (dataset A)
+#--------------------------------------------------------------
+
+ pnas2022_stoic_dt <- read_stoic_data(
+  prefix = "DI_noH2O_data-A_trp_m7_v7_def_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+pnas2022_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+  
 ```
 
 ```{r data_preprocessing}
