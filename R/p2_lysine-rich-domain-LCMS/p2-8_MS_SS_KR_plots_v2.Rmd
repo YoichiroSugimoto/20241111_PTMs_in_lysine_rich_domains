@@ -342,18 +342,61 @@ setcolorder(
   append(setdiff(names(MS_KR1_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
 )
 
-# changing stoichiometry column position 
+# changing sample_group column position 
 setcolorder(
   MS_KR1_stoic_K_dt,
   append(setdiff(names(MS_KR1_stoic_K_dt), "sample_group"), "sample_group", after = 1)
 )
  
+# changing sample_group column position 
+setcolorder(
+  MS_KR1_stoic_K_dt,
+  append(setdiff(names(MS_KR1_stoic_K_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
  # changing column names - publication ready
-setnames(MS_KR1_stoic_K_dt, c("sample_name", "sample_group", "protein_accession"), c("Sample_Name","Sample_ID","Protein_accession"))
- 
+setnames(MS_KR1_stoic_K_dt, c("sample_name",
+                              "sample_group",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "max_score",
+                              "diagnostic_peak",
+                              "is_diagnostic_peak",
+                              "condition",
+                              "cell",
+                              "induction",
+                              "oxygen",
+                              "dataset"), 
+         c("Sample_Name",
+           "Sample_ID",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Max_score",
+           "Diagnostic_Peak",
+           "Diagnostic_peak_presence",
+           "Experimental_condition",
+           "Cell_type",
+           "JMJD6_induction",
+           "Oxygen_levels",
+           "Dataset"))
+
  # install package for writing data table to excel 
- install.packages("xlsx")
- library("xlsx")
+install.packages('openxlsx')
+ library("openxlsx")
  
  # Write to csv table to identify "K" with DI 
 write.xlsx(MS_KR1_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_KR1_stoic_K.xlsx"))
