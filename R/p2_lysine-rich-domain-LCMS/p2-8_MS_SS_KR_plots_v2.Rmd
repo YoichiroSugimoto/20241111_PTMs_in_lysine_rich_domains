@@ -255,6 +255,7 @@ PNAS_all_stoic_dt[, `:=`(
   
 ```
 
+
 ```{r data_preprocessing}
 
 # Filter MS_KR_1 data to retain only BRD2, 3, 4 data
@@ -301,6 +302,8 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 ```
 
+#
+
 ```{r publication_ready_tables}
 
 # Subset the data to contain only Lysine
@@ -334,17 +337,19 @@ MS_KR1_stoic_K_dt[, `:=`(
 )]
 
 # changing stoichiometry column position 
- setcolorder(
+setcolorder(
   MS_KR1_stoic_K_dt,
   append(setdiff(names(MS_KR1_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
 )
-  setcolorder(
+
+# changing stoichiometry column position 
+setcolorder(
   MS_KR1_stoic_K_dt,
   append(setdiff(names(MS_KR1_stoic_K_dt), "sample_group"), "sample_group", after = 1)
 )
  
  # changing column names - publication ready
-setnames(dt1, c("V1", "V2"), c("souksou","mouksou"))
+setnames(MS_KR1_stoic_K_dt, c("sample_name", "sample_group", "protein_accession"), c("Sample_Name","Sample_ID","Protein_accession"))
  
  # install package for writing data table to excel 
  install.packages("xlsx")
