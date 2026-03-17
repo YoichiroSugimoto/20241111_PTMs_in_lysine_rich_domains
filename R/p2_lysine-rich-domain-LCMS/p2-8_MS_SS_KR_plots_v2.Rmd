@@ -239,7 +239,7 @@ MQ_DI_noH2O_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_noH2O_run_info[, sample_id := 1:.N]
 
-PNAS_all_stoic_dt <- lapply(
+PNAS_DI_all_stoic_dt <- lapply(
   MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_noH2O_", 
@@ -249,7 +249,7 @@ PNAS_all_stoic_dt <- lapply(
 
 # Create a logical column for diagnostic peak. For rows where diagnostic peak is 
 # present "+", logical vector is "TRUE", or else "FALSE"
-PNAS_all_stoic_dt[, `:=`(
+PNAS_DI_all_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
   
@@ -1198,10 +1198,10 @@ ggplot(
 
 # 2.8.12 MS_SS, MS_KR, PNAS Data tables converted to excel 
 
-```{r PNAS_publication_ready_tables}
+```{r PNAS_DI_excel}
 
 # Subset the data to contain only Lysine
-MQ_DI_stoic_K_dt <- pnas2022_stoic_dt[aa == "K"]
+MQ_DI_stoic_K_dt <- PNAS_DI_all_stoic_dt[aa == "K"]
 
 # removing unsed data columns from data table
 MQ_DI_stoic_K_dt <-  MQ_DI_stoic_K_dt[, c("sum_intensity_per_position",
@@ -1212,6 +1212,7 @@ MQ_DI_stoic_K_dt <-  MQ_DI_stoic_K_dt[, c("sum_intensity_per_position",
                                           "best_localization_ms_ms_id",
                                           "best_localization_raw_file",
                                           "max_score",
+                                          "diagnostic_peak",
                                           "condition"
                                           
 ) := NULL]
@@ -1240,7 +1241,6 @@ setnames(MQ_DI_stoic_K_dt, c("sample_name",
                               "sum_peak_intensity",
                               "sum_psm_mapped",
                               "the_number_of_peptide",
-                              "diagnostic_peak",
                               "is_diagnostic_peak"), 
          c("Sample_Name",
            "Protein_accession",
@@ -1252,12 +1252,11 @@ setnames(MQ_DI_stoic_K_dt, c("sample_name",
            "Total_peak_intensity",
            "Total_PSM_mapped",
            "Number_of_peptide",
-           "Diagnostic_Peak",
            "Diagnostic_peak_presence"))
 
- # install package for writing data table to excel 
-install.packages('openxlsx')
- library("openxlsx")
+# install package for writing data table to excel 
+# install.packages('openxlsx')
+# library("openxlsx")
 
  
  # Write to csv table to identify "K" with DI 
@@ -1265,7 +1264,7 @@ write.xlsx(MQ_DI_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_stoic_
 
 ```
 
-```{r MS_KR_publication_ready_tables}
+```{r MS_KR_excel}
 
 # Subset the data to contain only Lysine
 MS_KR1_stoic_K_dt <- MS_KR1_stoic_dt[aa == "K"]
@@ -1328,7 +1327,7 @@ write.xlsx(MS_KR1_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_KR1_stoi
 ```
 
 
-```{r MS_SS_publication_ready_tables}
+```{r MS_SS_excel}
 
 # Subset the data to contain only Lysine
 MS_SS_stoic_K_dt <- MS_SS_stoic_dt[aa == "K"]
@@ -1398,7 +1397,7 @@ write.xlsx(MS_SS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_stoic_
 ```
 
 
-```{r}
+```{r PNAS_2022_excel}
 
 # Load PNAS stoichiometry data
 pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
@@ -1428,10 +1427,6 @@ pnas2022_stoic_dt[, `:=`(
 
 
 ```
-
-
-
-
 
 
 # Session information
