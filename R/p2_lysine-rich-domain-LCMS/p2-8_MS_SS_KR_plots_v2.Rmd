@@ -1420,11 +1420,20 @@ pnas2022_stoic_dt <- merge(
 # new columns: accession_position, ptm, sample_name 
 pnas2022_stoic_dt[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
-  ptm = "[Oxidation (K)]", 
+    ptm = fifelse(curated_oxK_site == TRUE, "[Oxidation (K)]", " "),
   sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
     {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)} # Take response from previous line and change accordingly 
 )]
 
+
+setnames(pnas2022_stoic_dt, c("stoichiometry",),  c("stoichiometry_PNAS2022"))
+
+# Merge MQ_DI stoic and pnas2022 by 'protein_accession' and 'aa_pos'
+MQ_DI_stoic_K_dt <- merge(
+  MQ_DI_stoic_K_dt,
+  pnas2022_stoic_dt[, .(gene_name, stoichiometry_PNAS2022, curated_oxK_site)],
+  by = c("protein_accession", "aa_pos")
+)
 
 ```
 
