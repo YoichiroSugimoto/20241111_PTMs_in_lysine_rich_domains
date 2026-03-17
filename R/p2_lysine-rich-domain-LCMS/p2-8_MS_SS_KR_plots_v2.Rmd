@@ -269,14 +269,14 @@ MS_SS_BRD_dt <-  MS_SS_stoic_dt[
 ]
 
 # Filter PNAS2022 data to retain only BRD2, 3, 4 data 
-pnas2022_BRD_dt <-  pnas_DI_stoic_dt[
+pnas_DI_BRD_dt <-  pnas_DI_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
 MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
                          MS_KR1_BRD_dt,
-                         pnas2022_BRD_dt),
+                         pnas_DI_BRD_dt),
                          use.names = TRUE)
 
 # Remove BRD2/3 samples reporting BRD4 stoichiomtery and vice versa
@@ -576,7 +576,7 @@ fwrite(MS_SS_KR_PNAS_BRD4_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_
 DI_sites <- rbind(
   MS_KR1_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
   MS_SS_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
-  pnas2022_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
+  pnas_DI_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
 )
 
 # remove duplicate sites 
@@ -707,8 +707,6 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-
-#------------------------
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
   data = lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf" & data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
@@ -777,7 +775,6 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-#------------------------
 # Boxplot - Stoichiometry of Dox + and - JMJD6 at 21pc O2 (N >= 0.1)
 ggplot(
   data = lc_MS_SS_KR_PNAS_WT_dt[WT_stoichiometry >= 0.1 & oxygen == "21pc" & induction != "Inf"& data_size_per_site == max(lc_MS_SS_KR_PNAS_WT_dt[, data_size_per_site])],
@@ -841,8 +838,6 @@ lc_MS_SS_KR_PNAS_Hxpo_dt <- lc_MS_SS_KR_PNAS_WT_dt[
   grepl("18h|24h|Inf", induction) &
     !sample_group %in% c("iJ6_18h_21pc_SS", "iJ6_Inf_21pc_PNAS", "WT_Inf_21pc_PNAS")
 ]
-
-#test <-  lc_MS_SS_KR_PNAS_WT_dt[grepl("Inf", induction)]
 
 # reorder the sample_group according to oxygen levels
 lc_MS_SS_KR_PNAS_Hxpo_dt[, sample_group :=
@@ -1406,25 +1401,25 @@ write.xlsx(MS_SS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_stoic_
 ```{r}
 
 # Load PNAS stoichiometry data
-pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
 
 # Replace old column names with new ones
 setnames(
-  pnas2022.stoic.dt, 
+  pnas2022_stoic_dt, 
   old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
   new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
 )
 
 # Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
-pnas2022.stoic.dt <- merge(
+pnas2022_stoic_dt <- merge(
   ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
-  pnas2022.stoic.dt,
+  pnas2022_stoic_dt,
   by = "protein_accession" #combine both data.table by protein accession ID
 )
 
 ## Add columns to pnas2022.stoic.dt metadata
 # new columns: accession_position, ptm, sample_name 
-pnas2022.stoic.dt[, `:=`(
+pnas2022_stoic_dt[, `:=`(
   accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
   ptm = "[Oxidation (K)]", 
   sample_name = gsub("HeLa_", "HeLa", sample_name) %>% #replace sample names as mentioned (from "Hela_" to "HeLa")
