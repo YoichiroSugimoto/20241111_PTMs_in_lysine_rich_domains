@@ -1215,69 +1215,46 @@ pnas_DI_dtB_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
-# Subset the data to contain only Lysine
-pnas_DI_dtB_stoic_dt <- pnas_DI_dtB_stoic_dt[aa == "K"]
+#--------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant (dataset C)
+#--------------------------------------------------------------
 
-# removing unsed data columns from data table
-pnas_DI_dtB_stoic_dt <-  pnas_DI_dtB_stoic_dt[, c("sum_intensity_per_position",
-                                          "sum_psm_mapped_per_position",
-                                          "sum_the_number_of_peptide",
-                                          "localization_prob",
-                                          "score_for_localization",
-                                          "best_localization_ms_ms_id",
-                                          "best_localization_raw_file",
-                                          "max_score",
-                                          "diagnostic_peak",
-                                          "condition"
-                                          
-) := NULL]
+ pnas_DI_dtC_stoic_dt <- read_stoic_data(
+  prefix = "DI_noH2O_data-A_trp_m7_v7_mCC_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O"))
 
-
-# changing stoichiometry column position 
-setcolorder(
-  MQ_DI_stoic_K_dt,
-  append(setdiff(names(MQ_DI_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
-)
- 
-# changing sample_group column position 
-setcolorder(
-  MQ_DI_stoic_K_dt,
-  append(setdiff(names(MQ_DI_stoic_K_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
-)
-
- # changing column names - publication ready
-setnames(MQ_DI_stoic_K_dt, c("sample_name",
-                              "protein_accession",
-                              "gene_name",
-                              "aa",
-                              "aa_pos",
-                              "ptm", 
-                              "stoichiometry",
-                              "sum_peak_intensity",
-                              "sum_psm_mapped",
-                              "the_number_of_peptide",
-                              "is_diagnostic_peak"), 
-         c("Sample_Name",
-           "Protein_accession",
-           "Gene_name",
-           "Amino_acid",
-           "Amino_acid_pos",
-           "PTM_type",
-           "Stoichiometry",
-           "Total_peak_intensity",
-           "Total_PSM_mapped",
-           "Number_of_peptide",
-           "Diagnostic_peak_presence"))
-
-# install package for writing data table to excel 
-# install.packages('openxlsx')
-# library("openxlsx")
-
- 
- # Write to csv table to identify "K" with DI 
-write.xlsx(MQ_DI_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_stoic_K.xlsx"))
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+pnas_DI_dtC_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r MS_KR_excel}
 
@@ -1455,6 +1432,73 @@ write.xlsx(MQ_DI_PNAS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_P
 
 ```
 
+```{r PNAS_MQ_DI_data_B}
+
+# Subset the data to contain only Lysine
+pnas_DI_dtB_stoic_dt <- pnas_DI_dtB_stoic_dt[aa == "K"]
+
+# removing unsed data columns from data table
+pnas_DI_dtB_stoic_dt <-  pnas_DI_dtB_stoic_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition"
+                                          
+) := NULL]
+
+
+# changing stoichiometry column position 
+setcolorder(
+  MQ_DI_stoic_K_dt,
+  append(setdiff(names(MQ_DI_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+ 
+# changing sample_group column position 
+setcolorder(
+  MQ_DI_stoic_K_dt,
+  append(setdiff(names(MQ_DI_stoic_K_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+ # changing column names - publication ready
+setnames(MQ_DI_stoic_K_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_Name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+# install package for writing data table to excel 
+# install.packages('openxlsx')
+# library("openxlsx")
+
+ 
+ # Write to csv table to identify "K" with DI 
+write.xlsx(MQ_DI_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_stoic_K.xlsx"))
+
+
+
+```
 
 # Session information
 
