@@ -1169,7 +1169,23 @@ ggplot(
 
 # 2.8.12 MS_SS, MS_KR, PNAS Data tables converted to excel 
 
-```{r PNAS_DI_excel}
+```{r PNAS_DI_data_excel}
+
+#--------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant (dataset A)
+#--------------------------------------------------------------
+
+ pnas_DI_dtA_stoic_dt <- read_stoic_data(
+  prefix = "DI_noH2O_data-A_trp_m7_v7_def_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+pnas_DI_dtA_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
 
 #--------------------------------------------------------------------------
 # Load PNAS stoichiometry data analysed by MaxQuant with DI (dataset B1 and B2)
@@ -1185,8 +1201,8 @@ MQ_DI_noH2O_run_info <- read_excel(
 #row (1:N), where N is the total number of rows in the data.table
 MQ_DI_noH2O_run_info[, sample_id := 1:.N]
 
-PNAS_DI_all_stoic_dt <- lapply(
-  MQ_DI_noH2O_run_info[, prefix],
+pnas_DI_dtB_stoic_dt <- lapply(
+  MQ_DI_noH2O_run_info[data != c("data-A", "data-C"), prefix],
   read_stoic_data,
   pre_prefix = "DI_noH2O_", 
   post_fix = "_DI",
@@ -1195,15 +1211,15 @@ PNAS_DI_all_stoic_dt <- lapply(
 
 # Create a logical column for diagnostic peak. For rows where diagnostic peak is 
 # present "+", logical vector is "TRUE", or else "FALSE"
-PNAS_DI_all_stoic_dt[, `:=`(
+pnas_DI_dtB_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
 # Subset the data to contain only Lysine
-MQ_DI_stoic_K_dt <- PNAS_DI_all_stoic_dt[aa == "K"]
+pnas_DI_dtB_stoic_dt <- pnas_DI_dtB_stoic_dt[aa == "K"]
 
 # removing unsed data columns from data table
-MQ_DI_stoic_K_dt <-  MQ_DI_stoic_K_dt[, c("sum_intensity_per_position",
+pnas_DI_dtB_stoic_dt <-  pnas_DI_dtB_stoic_dt[, c("sum_intensity_per_position",
                                           "sum_psm_mapped_per_position",
                                           "sum_the_number_of_peptide",
                                           "localization_prob",
@@ -1396,7 +1412,7 @@ write.xlsx(MS_SS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_stoic_
 ```
 
 
-```{r PNAS_2022_excel}
+```{r PNAS_2022_data_excel}
 
 # Load PNAS stoichiometry data
 pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
