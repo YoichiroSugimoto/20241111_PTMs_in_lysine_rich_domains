@@ -169,7 +169,7 @@ contrast_hydroxylation_by_sample_group<- function(all_stoic_dt){
 ```
 
 
-```{r load_MS_KR_1_MS_SS_data}
+```{r load_PNAS_MS_KR_1_MS_SS_data}
 
 #-----------------------------
 # Load MS_KR_1 stoichiometry data
@@ -256,7 +256,6 @@ pnas2022_stoic_dt[, `:=`(
 #Change col names to make it same across datasets
 setnames(pnas2022_stoic_dt, c("stoichiometry", "protein_accession", "gene_name", "aa_pos", "curated_oxK_site"),  c("Stoichiometry_PNAS2022", "Protein_accession", "Gene_name", "Amino_acid_pos", "PNAS2022_curated_oxK_site"))
 
-
 ```
 
 
@@ -272,10 +271,14 @@ MS_SS_BRD_dt <-  MS_SS_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
-# Filter PNAS2022 data to retain only BRD2, 3, 4 data 
+# Filter PNAS2022 MQ DI data to retain only BRD2, 3, 4 data 
 pnas_DI_BRD_dt <-  pnas_DI_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
+
+# Filter PNAS2022 manually curated sites to retain BRD2, 3, 4 data
+pnas2022_curated_dt <- pnas2022_stoic_dt[
+  Gene_name %in% c("BRD2", "BRD3", "BRD4")]
 
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
 MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
@@ -580,7 +583,8 @@ fwrite(MS_SS_KR_PNAS_BRD4_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_
 DI_sites <- rbind(
   MS_KR1_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
   MS_SS_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
-  pnas_DI_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)]
+  pnas_DI_BRD_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
+  pnas2022_curated_dt[ptm == "[Oxidation (K)]",  .(Protein_accession, Amino_acid_pos)]
 )
 
 # remove duplicate sites 
@@ -1602,6 +1606,13 @@ setnames(MS_SS_stoic_K_dt, c("sample_name",
            "Number_of_peptide",
            "Diagnostic_peak_presence"))
 
+
+# Merge MS_SS and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MS_SS_stoic_K_dt <- MS_SS_stoic_K_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
 
  # Write to Excel table
 write.xlsx(MS_SS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_stoic_K.xlsx"))
