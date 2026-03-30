@@ -1,8 +1,9 @@
 2-2. Optimise MQ parameters
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-07 January, 2026
+29 March, 2026
 
+- [Overview](#overview)
 - [Environment setup](#environment-setup)
 - [2.2.1 Import basic data](#221-import-basic-data)
 - [2.2.2 MS/MS count by different
@@ -13,15 +14,14 @@ Yoichiro Sugimoto and Pallavi Kesavan
   score](#224-the-effect-of-mq-setting-by-k-score)
 - [2.2.5 The effect of MQ setting on
   runtime](#225-the-effect-of-mq-setting-on-runtime)
-- [2.2.6 The hydroxylation sites reported in the PNAS2022
-  paper](#226-the-hydroxylation-sites-reported-in-the-pnas2022-paper)
-- [2.2.7 Comparison of WT and KO
-  data](#227-comparison-of-wt-and-ko-data)
-- [2.2.8 Comparison of the results of PNAS paper (hydoxylation
-  stoichometry)](#228-comparison-of-the-results-of-pnas-paper-hydoxylation-stoichometry)
+- [Coverage in BRD2, 3, and 4](#coverage-in-brd2-3-and-4)
+- [Notes](#notes)
 - [Session information](#session-information)
 
-This script calculates the stoichiometry of PTMs.
+# Overview
+
+This script determines the optimal settings for the database search that
+analyses the LC-MS data of lysine-derivatised samples.
 
 # Environment setup
 
@@ -148,9 +148,6 @@ library("readxl")
 
 # Define path to result directory 
 results.dir <- file.path(project.dir, "results")
-
-### To be deleted
-results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
 
 p2_results_dir <- file.path(results.dir,
                         "p2-analysis-setting")
@@ -545,121 +542,117 @@ ggplot(
   ylab("Run time [min]")
 ```
 
+    ## Warning in fortify(data, ...): Arguments in `...` must be used.
+    ## ✖ Problematic argument:
+    ## • color = NA
+    ## ℹ Did you misspell an argument name?
+
 ![](p2-2_optimise_parameters_files/figure-gfm/MQ_setting_on_runtime-1.png)<!-- -->
 
-# 2.2.6 The hydroxylation sites reported in the PNAS2022 paper
+# Coverage in BRD2, 3, and 4
 
 ``` r
-## Hydroxylation stoichiometry comparisons
-pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
-setnames(pnas2022.stoic.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+all_stoic_pos.dt <- lapply(
+  all_sample_run_info[
+    data == "data-A" & 
+      grepl("_trp_", prefix) &
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[257]_v[257]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_stoic_data,
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS")
+) %>% rbindlist
 
-pnas2022.stoic.dt[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos)
-)]
-
-# PNAS paper reported 153 sites
-nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))])
+list.files(data.dir)
 ```
 
-    ## [1] 153
+    ##  [1] "20241113_cd-code.csv"                  
+    ##  [2] "20241113_RBPbase_Hs_DescriptiveID.xlsx"
+    ##  [3] "analysis_setting"                      
+    ##  [4] "FP_diagnostic_ion_search"              
+    ##  [5] "MQ_standard"                           
+    ##  [6] "MQ_with_additional_ptms_output"        
+    ##  [7] "MQ_with_DI"                            
+    ##  [8] "MQ_with_DI_iterative"                  
+    ##  [9] "MQ_with_DI_iterative_addPTMs"          
+    ## [10] "MQ_with_DI_no_waterloss"               
+    ## [11] "PNAS2022"                              
+    ## [12] "xic_MS_SS.csv"
 
 ``` r
-# Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
+ref_protein_bs <- Biostrings::readAAStringSet(file.path
+                                         ("/fast/AG_Sugimoto/reference/uniprot/human", 
+                                           "UP000005640_9606.fasta"))
 
-all_stoic_pos.dt[, `:=`(
-  curated_oxK_site = 
-    paste0(protein_accession, "_", aa_pos) %in%
-    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)],
-  genotype = str_extract(sample_name, "(?<=HeLa)(WT|JMJD6KO)")
-)]
+plot_coverage <- function(stoichiometry_data, sl.accession, sl.plot_range){
+  coverage_dt <- 
+    lapply(
+      c("data-A_trp_m2_v2_def", "data-A_trp_m5_v5_def", "data-A_trp_m7_v7_def"),
+      function(x){
+        preprocess_stoichiometry_data_for_plotting(
+          stoichiometry_data = stoichiometry_data[sample_name == "JQ1_HeLaWT_derivatised" & condition == x], 
+          accession = sl.accession, 
+          plot_range = sl.plot_range, 
+          all.protein.bs = ref_protein_bs
+        )$coverage_data %>%
+          {.[, condition := x]}
+      }
+    ) %>% rbindlist
+  
+  g <- ggplot(
+    data = coverage_dt,
+    aes(
+      x = aa_pos,
+      y = psm_coverage,
+      color = condition
+    )
+  ) +
+    geom_line() +
+    scale_x_continuous(
+      breaks = sl.plot_range[1]:sl.plot_range[2],
+      labels = ref_protein_bs[
+        str_split_fixed(names(ref_protein_bs), "\\|", n = 3)[, 2] == sl.accession
+      ] %>%
+        {strsplit(as.character(.), "")[[1]]} %>%
+        {.[sl.plot_range[1]:sl.plot_range[2]]}      # Use amino acids as labels
+    ) +
+    scale_color_bright() +
+    theme(
+      axis.ticks.x = element_blank(),
+      aspect.ratio = 0.3
+    )
+  
+  return(g)
+}
 
-# PNAS paper reported 153 sites
-nrow(pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(protein_accession, aa_pos))])
+# BRD4
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "O60885", sl.plot_range = c(531, 581)
+)
 ```
 
-    ## [1] 153
+![](p2-2_optimise_parameters_files/figure-gfm/coverage-1.png)<!-- -->
 
 ``` r
-# The number of hydroxylated sites identified by different MQ cleavage setting
-all_stoic_pos.dt[
-  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
-][order(stoichiometry, MQ_setting, decreasing = TRUE)][
-  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
-][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
+# BRD3
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "Q15059", sl.plot_range = c(483, 533)
+)
 ```
 
-    ##    genotype MQ_setting             ptm     N
-    ##      <char>     <char>          <char> <int>
-    ## 1:       WT      m2_v2 [Oxidation (K)]    23
-    ## 2:       WT      m5_v5 [Oxidation (K)]   110
-    ## 3:       WT      m7_v7 [Oxidation (K)]   120
+![](p2-2_optimise_parameters_files/figure-gfm/coverage-2.png)<!-- -->
 
 ``` r
-MQ_Khydoxy_dt <- all_stoic_pos.dt[
-  curated_oxK_site == TRUE & genotype == "WT" & ptm == "[Oxidation (K)]"
-][order(stoichiometry, MQ_setting, decreasing = TRUE)][
-  !duplicated(paste(genotype, MQ_setting, protein_accession, aa_pos, ptm))
-][,list(.N), by = list(genotype, MQ_setting, ptm)][order(MQ_setting, ptm)]
-
-# Plot - Number of hydroxylated sites identified based on MQ cleavage setting 
-ggplot(data = MQ_Khydoxy_dt,
-       aes(x = MQ_setting,
-           y = N) 
-) +
-  geom_col() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# BRD2
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "P25440", sl.plot_range = c(540, 590)
+) 
 ```
 
-![](p2-2_optimise_parameters_files/figure-gfm/hydroxylation_site_reported_in_PNAS2022-1.png)<!-- -->
+![](p2-2_optimise_parameters_files/figure-gfm/coverage-3.png)<!-- -->
 
-``` r
-## The sites not identified by the new workflow
-print("Unidentified sites out of 150")
-```
-
-    ## [1] "Unidentified sites out of 150"
-
-``` r
-pnas2022.stoic.dt[curated_oxK_site == TRUE][!duplicated(paste(accession_position))][!(accession_position %in% all_stoic_pos.dt[MQ_setting == "m7_v7" & curated_oxK_site == TRUE & grepl("[Oxidation (K)]", ptm, fixed = TRUE) & genotype == "WT", paste0(protein_accession, "_", aa_pos)]), .(Accession, aa_pos)]
-```
-
-    ##              Accession aa_pos
-    ##                 <char>  <int>
-    ##  1: O15042|SR140_HUMAN    962
-    ##  2: O15042|SR140_HUMAN    972
-    ##  3:  O60885|BRD4_HUMAN    286
-    ##  4:  O60885|BRD4_HUMAN    289
-    ##  5:  O60885|BRD4_HUMAN    291
-    ##  6: O95232|LC7L3_HUMAN    392
-    ##  7:  P02545|LMNA_HUMAN    341
-    ##  8: P11142|HSP7C_HUMAN    248
-    ##  9:  P11387|TOP1_HUMAN     40
-    ## 10:  P11387|TOP1_HUMAN    159
-    ## 11: P18077|RL35A_HUMAN     45
-    ## 12:  P35251|RFC1_HUMAN     38
-    ## 13:  P46100|ATRX_HUMAN   1422
-    ## 14:  P46100|ATRX_HUMAN   1424
-    ## 15:  Q13428|TCOF_HUMAN   1348
-    ## 16:  Q14331|FRG1_HUMAN     27
-    ## 17:  Q14331|FRG1_HUMAN     29
-    ## 18:  Q14331|FRG1_HUMAN     30
-    ## 19:  Q15059|BRD3_HUMAN    487
-    ## 20:  Q15059|BRD3_HUMAN    683
-    ## 21: Q66PJ3|AR6P4_HUMAN    290
-    ## 22: Q66PJ3|AR6P4_HUMAN    292
-    ## 23: Q66PJ3|AR6P4_HUMAN    294
-    ## 24: Q6NYC1|JMJD6_HUMAN    219
-    ## 25: Q8WXA9|SREK1_HUMAN    269
-    ## 26: Q8WXA9|SREK1_HUMAN    400
-    ## 27: Q8WXA9|SREK1_HUMAN    414
-    ## 28: Q96SB4|SRPK1_HUMAN     18
-    ## 29:  Q9BVP2|GNL3_HUMAN     20
-    ## 30: Q9NQ29|LUC7L_HUMAN    323
-    ## 31: Q9NQ29|LUC7L_HUMAN    325
-    ## 32:  Q9NYK5|RM39_HUMAN    322
-    ## 33: Q9P1Y6|PHRF1_HUMAN   1073
-    ##              Accession aa_pos
+# Notes
 
 The following sites were identified by non-unique peptides (therefore
 total number used here is 153 instead of 150 in the paper).
@@ -675,204 +668,6 @@ Q9UQ35\|SRRM2_HUMAN 243 JMJD6_substrate FLAGJMJD6 6: Q9UQ35\|SRRM2_HUMAN
 In the end, 91% of hydroxylated sites were covered by the data, and 80%
 (120 / 150) of reported hydroxylation sites were identified by this
 workflow.
-
-# 2.2.7 Comparison of WT and KO data
-
-``` r
-## Compare WT vs KO data
-wt_ko_comparison.dt <- all_stoic_pos.dt[
-  sample_name %in% c(
-    "JMJD6peptide_HeLaWT_derivatised",
-    "JMJD6peptide_HeLaJMJD6KO_derivatised",
-    "JQ1_HeLaWT_derivatised",
-    "JQ1_HeLaJMJD6KO_derivatised"
-  ) &
-    MQ_setting == "m7_v7"
-]
-
-wt_ko_comparison.dt[, `:=`(
-  total_sum_psm_mapped = sum_psm_mapped
-)]
-
-no_hydroxyK.stoic.dt <- copy(wt_ko_comparison.dt[aa == "K"])
-# Analyse positions for which at least one sample identified hydroxylation
-no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
-  paste0(protein_accession, "_", aa_pos) %in% 
-    wt_ko_comparison.dt[
-      grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
-      paste0(protein_accession, "_", aa_pos)
-    ]
-]
-
-# Assign 0 for the hydroxylation stoichiometry for the position which only identified unmodified K
-no_hydroxyK.stoic.dt <- no_hydroxyK.stoic.dt[
-  !(paste0(sample_name, "_", protein_accession, "_", aa_pos) %in% 
-      wt_ko_comparison.dt[
-        grepl("[Oxidation (K)]", ptm, fixed = TRUE), 
-        paste0(sample_name, "_", protein_accession, "_", aa_pos)
-      ]
-  )
-]
-
-no_hydroxyK.stoic.dt[, `:=`(
-  sum_psm_mapped = 0,
-  stoichiometry = 0,
-  ptm = "[Oxidation (K)]"
-)]
-
-hydroxyK.stoic.dt <- rbind(
-  wt_ko_comparison.dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
-  no_hydroxyK.stoic.dt
-)
-
-hydroxyK.stoic.dt <- hydroxyK.stoic.dt[, list(
-  stoichiometry = sum(stoichiometry),
-  sum_psm_mapped_per_position = max(sum_psm_mapped_per_position)
-), by = list(sample_name, protein_accession, gene_name, aa_pos, genotype)]
-
-hydroxyK.stoic.dt <- hydroxyK.stoic.dt[order(stoichiometry, decreasing = TRUE)][
-  !duplicated(paste0(protein_accession, gene_name, aa_pos, genotype))
-]
-
-hydroxyK.stoic.dt <- hydroxyK.stoic.dt[
-  sum_psm_mapped_per_position > 2
-]
-
-d.hydroxyK.stoic.dt <- dcast(
-  hydroxyK.stoic.dt,
-  protein_accession + gene_name + aa_pos ~ genotype,
-  value.var = "stoichiometry"
-)
-
-d.hydroxyK.stoic.dt[, `:=`(
-  curated_oxK_site = 
-    paste0(protein_accession, "_", aa_pos) %in%
-    pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)]
-)]
-
-ggplot(
-  data = d.hydroxyK.stoic.dt[order(curated_oxK_site)],
-  aes(
-    x = JMJD6KO,
-    y = WT,
-    color = curated_oxK_site
-  )
-) + geom_point() +
-  theme(aspect.ratio = 1) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))
-```
-
-    ## Warning: Removed 482 rows containing missing values or values outside the scale range
-    ## (`geom_point()`).
-
-![](p2-2_optimise_parameters_files/figure-gfm/comparison_WT_KO-1.png)<!-- -->
-
-``` r
-d.hydroxyK.stoic.dt[WT > 0.5 & JMJD6KO < 0.01 & curated_oxK_site == FALSE]
-```
-
-    ## Key: <protein_accession, gene_name, aa_pos>
-    ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
-    ##                <char>    <char>  <int>   <num>     <num>           <lgcl>
-    ##  1:            O14979   HNRNPDL    221       0 1.0000000            FALSE
-    ##  2:            O60264   SMARCA5    249       0 1.0000000            FALSE
-    ##  3:            O60573    EIF4E2    215       0 0.9054387            FALSE
-    ##  4:            O95232    LUC7L3    377       0 0.5050502            FALSE
-    ##  5:            P07237      P4HB    326       0 0.6760288            FALSE
-    ##  6:            P11047     LAMC1   1466       0 0.5191134            FALSE
-    ##  7:            P25440      BRD2    551       0 0.6077523            FALSE
-    ##  8:            P25440      BRD2    552       0 0.7837141            FALSE
-    ##  9:            P25440      BRD2    555       0 0.8367906            FALSE
-    ## 10:            P25440      BRD2    556       0 0.7414816            FALSE
-    ## 11:            P25440      BRD2    557       0 0.8703312            FALSE
-    ## 12:            P27635     RPL10     40       0 1.0000000            FALSE
-    ## 13:            P27635     RPL10     42       0 0.8997907            FALSE
-    ## 14:            P27816      MAP4    870       0 0.5186066            FALSE
-    ## 15:            P46100      ATRX    956       0 0.7404017            FALSE
-    ## 16:            Q13123        IK    556       0 0.6816335            FALSE
-    ## 17:            Q66PJ3   ARL6IP4    120       0 1.0000000            FALSE
-    ## 18:            Q66PJ3   ARL6IP4    122       0 0.5600105            FALSE
-    ## 19:            Q66PJ3   ARL6IP4    123       0 1.0000000            FALSE
-    ## 20:            Q6KC79     NIPBL   1023       0 0.5172122            FALSE
-    ## 21:            Q6KC79     NIPBL   1029       0 0.6771044            FALSE
-    ## 22:            Q6KC79     NIPBL   1034       0 0.6771044            FALSE
-    ## 23:            Q6KC79     NIPBL   1923       0 0.6472365            FALSE
-    ## 24:            Q6UX04     CWC27    331       0 0.9769166            FALSE
-    ## 25:            Q7L2H7     EIF3M    319       0 0.5234239            FALSE
-    ## 26:            Q7L2H7     EIF3M    324       0 0.8555795            FALSE
-    ## 27:            Q8N3C0     ASCC3   1825       0 0.7075247            FALSE
-    ## 28:            Q8NC51    SERBP1    286       0 0.5397405            FALSE
-    ## 29:            Q92541      RTF1    127       0 0.5219774            FALSE
-    ## 30:            Q99816    TSG101     10       0 0.9181354            FALSE
-    ## 31:            Q99816    TSG101     14       0 0.9181354            FALSE
-    ## 32:            Q9BTC0     DIDO1    442       0 1.0000000            FALSE
-    ## 33:            Q9UGU0     TCF20     96       0 0.5165910            FALSE
-    ##     protein_accession gene_name aa_pos JMJD6KO        WT curated_oxK_site
-
-The sites for BRD2 (551, 552, 555), ARL6IP4 (120, 122, 123), and maybe
-NIPBL (1023, 1034, 1923) might be novel hydroxylation sites.
-
-# 2.2.8 Comparison of the results of PNAS paper (hydoxylation stoichometry)
-
-``` r
-non.duplicated.pnas2022.stoic.dt <- pnas2022.stoic.dt[
-  (data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep")) &
-    (curated_oxK_site == TRUE) &
-    total_n_feature_K > 2
-][
-  order(
-    data_source %in% c("HeLa_WT_JQ1", "HeLa_WT_J6pep"),
-    curated_oxK_site == TRUE,
-    oxK_ratio,
-    decreasing = TRUE
-  )][
-    !duplicated(accession_position)
-  ]
-
-selected_stoic_pos.dt <- all_stoic_pos.dt[
-  sample_name %in% c("JQ1_HeLaWT_derivatised", "JMJD6peptide_HeLaWT_derivatised") &
-    aa == "K" & grepl("[Oxidation (K)]", ptm, fixed = TRUE)
-][order(stoichiometry, decreasing = TRUE)][!duplicated(paste0(protein_accession, "_", aa_pos))]
-
-pnas2022.mq1.stoic.dt <- merge(
-  non.duplicated.pnas2022.stoic.dt,
-  selected_stoic_pos.dt[, .(protein_accession, aa_pos, stoichiometry)],
-  by = c("protein_accession", "aa_pos")
-)
-
-pnas2022.mq1.stoic.dt[, cor.test(oxK_ratio, stoichiometry)]
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  oxK_ratio and stoichiometry
-    ## t = 17.957, df = 48, p-value < 2.2e-16
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  0.8842532 0.9615994
-    ## sample estimates:
-    ##       cor 
-    ## 0.9329693
-
-``` r
-ggplot(
-  pnas2022.mq1.stoic.dt,
-  aes(
-    x = oxK_ratio,
-    y = stoichiometry
-  )
-) +
-  geom_point() +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
-  theme(aspect.ratio = 1) +
-  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  xlab("Stoichiometry in PNAS2022") +
-  ylab("Stoichiometry in new workflow")
-```
-
-![](p2-2_optimise_parameters_files/figure-gfm/comparison_with_PNAS_paper-1.png)<!-- -->
 
 # Session information
 
@@ -890,7 +685,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-01-07
+    ##  date     2026-03-29
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -904,13 +699,13 @@ sessioninfo::session_info()
     ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
     ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
     ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
-    ##  evaluate            1.0.4      2025-06-18 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
     ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
     ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
     ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
     ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
-    ##  ggplot2           * 3.5.2      2025-04-09 [1] CRAN (R 4.4.3)
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
@@ -923,9 +718,9 @@ sessioninfo::session_info()
     ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
     ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
     ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
-    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.4.3)
-    ##  patchwork         * 1.3.1      2025-06-21 [1] CRAN (R 4.4.3)
-    ##  pillar              1.11.0     2025-07-04 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
+    ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
     ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
@@ -935,18 +730,19 @@ sessioninfo::session_info()
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
     ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
     ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
     ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
     ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
     ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
     ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
     ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
     ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
     ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
     ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
     ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
     ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
-    ##  xfun                0.52       2025-04-02 [1] CRAN (R 4.4.3)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
     ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
     ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
     ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
