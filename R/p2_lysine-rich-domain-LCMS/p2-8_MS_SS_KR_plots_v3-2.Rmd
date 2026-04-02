@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# 2.8.1 Install,load essential functions and libraries
+# Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -62,7 +62,7 @@ library("ptm.stoichiometry")
 
 ```
 
-# 2.8.2 Import human protein reference data 
+# Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -85,7 +85,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# 2.8.3 Defining functions and data preprocessing
+# Defining functions and data preprocessing
 
 ```{r Define_important_functions}
 
@@ -279,7 +279,7 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 
 
-# 2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ```{r merge_MS_SS_KR_PNAS_data}
 
@@ -383,6 +383,10 @@ lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
 plot_long_pc2wt_21pc <- copy(long_pc2wt_21pc)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])]
 
+plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[
+  paste(protein_accession, aa_pos) %in% plot_long_pc2wt_21pc[cell == "WT"][Stoichiometry > 0, paste(protein_accession, aa_pos)]
+]
+
 ggplot(
   plot_long_pc2wt_21pc,
   aes(
@@ -464,11 +468,9 @@ induction_t_test
 
 ```
 
-## Time to half-value
+## t50
 
 ```{r time_to_half_value}
-
-lc_MS_SS_KR_PNAS_dt[gene_name == "BRD4" & aa_pos == "535"]
 
 # helper: convert time to numeric and replace Inf by a large finite value
 time_to_num <- function(x, inf_value = 100) {
@@ -532,11 +534,75 @@ t50_dt[, `:=`(
   ) %>% factor(levels = c("0-4h", "4-8h", ">8h"))
 )]
 
+t50_dt
+
+```
+
+```{r kinetics}
+
+kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
+
+ggplot(
+  data = kinetics_data,
+  aes(
+    x = WT_stoichiometry,
+    y = Stoichiometry / WT_stoichiometry
+  )
+) +
+  # geom_smooth(method = "lm", se = FALSE) +
+  geom_point() +
+  facet_grid(~ induction2) +
+  ylab("Stoichiometry [% to WT]") +
+  theme_classic_2()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.5)) +
+  theme(aspect.ratio = 1) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+
+kinetics_out <- data.table()
+
+for(i2 in kinetics_data[, unique(induction2)]){
+  c1 <- kinetics_data[induction2 == i2] %$%
+    cor.test(x = WT_stoichiometry, y = Stoichiometry / WT_stoichiometry, method = "spearman")
+  
+  kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
+}
+
+kinetics_out[, padj := p.adjust(p_val, method = "holm")]
+
+kinetics_out
+
+
+kinetics_data <- merge(
+  kinetics_data,
+  t50_dt,
+  by = c("gene_name", "aa_pos")
+)
+
+ggplot(
+  data = kinetics_data[!duplicated(paste(gene_name, aa_pos))],
+  aes(
+    x = t50_bin,
+    y = WT_stoichiometry
+  )
+) +
+  # geom_smooth(method = "lm", se = FALSE) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry [%]") +
+  theme_classic_2()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
+
 ```
 
 
-
-# 2.8.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
+# XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -625,78 +691,7 @@ ggplot(
 
 ```
 
-
-# Kinetics
-
-```{r kinetics}
-
-kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
-
-ggplot(
-  data = kinetics_data,
-  aes(
-    x = WT_stoichiometry,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  # geom_smooth(method = "lm", se = FALSE) +
-  geom_point() +
-  facet_grid(~ induction2) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  theme(aspect.ratio = 1) +
-  scale_x_continuous(labels = scales::percent_format(accuracy = 1))
-
-kinetics_out <- data.table()
-
-for(i2 in kinetics_data[, unique(induction2)]){
-  c1 <- kinetics_data[induction2 == i2] %$%
-    cor.test(x = WT_stoichiometry, y = Stoichiometry / WT_stoichiometry, method = "spearman")
-  
-  kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
-}
-
-kinetics_out[, padj := p.adjust(p_val, method = "holm")]
-
-kinetics_out
-
-
-kinetics_data <- merge(
-  kinetics_data,
-  t50_dt,
-  by = c("gene_name", "aa_pos")
-)
-
-ggplot(
-  data = kinetics_data[!duplicated(paste(gene_name, aa_pos))],
-  aes(
-    x = t50_bin,
-    y = WT_stoichiometry
-  )
-) +
-  # geom_smooth(method = "lm", se = FALSE) +
-  geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1)) +
-  theme(aspect.ratio = 3) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
-
-```
-
-## Inreraction
-
-We will focus on specific sites for this analysis.
-(parental) BRD4 K538 -> (child) BRD4 K537 and K535 (as a result K537 and K535)
-(parental) BRD4 K548 -> (child) BRD4 K550
-
+# Interaction
 
 ```{r interaction}
 
@@ -878,7 +873,7 @@ ggplot(
 
 
 
-# 2.8.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
@@ -909,6 +904,9 @@ pc2wt_on <- copy(pc2wt_on)[, data_size_per_site := .N, by = list(protein_accessi
 pc2wt_on <- pc2wt_on[data_size_per_site == max(pc2wt_on[, data_size_per_site])]
 
 pc2wt_on <- pc2wt_on[WT_stoichiometry > 0]
+pc2wt_on[, `:=`(
+  oxygen = factor(oxygen, c("21pc", "4pc", "1pc", "01pc"))
+)]
 
 ggplot(
   data = pc2wt_on,
@@ -972,26 +970,6 @@ oxygen_t_test[, significance := case_when(
 
 oxygen_t_test
 
-ggplot(
-  data = pc2wt_on[WT_stoichiometry > 0],
-  aes(
-    x = oxygen,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ gene_name) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  ggtitle("All sites (> 0)")
-
-pc2wt_on[WT_stoichiometry > 0][, .N, by = list(gene_name, induction2, oxygen)]
 
 ```
 
@@ -1116,7 +1094,7 @@ pc2wt_on_kinetics <- merge(
 )
 
 ggplot(
-  pc2wt_on_kinetics[n > 5][oxygen != "21pc"],
+  pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
     x = t50,
     y = Stoichiometry / WT_stoichiometry
@@ -1133,7 +1111,26 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 ggplot(
-  pc2wt_on_kinetics[n > 5][oxygen != "21pc"],
+  pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
+  aes(
+    x = oxygen,
+    y = Stoichiometry / WT_stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ t50_bin) +
+  theme(
+    aspect.ratio = 3,
+    legend.position = NULL
+  ) +
+  ylab("Stoichiometry [% to WT]") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  coord_cartesian(ylim = c(0, 2)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+# QC
+ggplot(
+  pc2wt_on_kinetics[n == 7],
   aes(
     x = oxygen,
     y = Stoichiometry / WT_stoichiometry
@@ -1151,7 +1148,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
-pc2wt_on[, .N, by = list(gene_name, oxygen)]
+pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen)]
 
 ```
 

@@ -2,28 +2,27 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-27 March, 2026
+02 April, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
-- [2.8.1 Install,load essential functions and
-  libraries](#281-installload-essential-functions-and-libraries)
-- [2.8.2 Import human protein reference
-  data](#282-import-human-protein-reference-data)
-- [2.8.3 Defining functions and data
-  preprocessing](#283-defining-functions-and-data-preprocessing)
-- [2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with
+- [Install,load essential functions and
+  libraries](#installload-essential-functions-and-libraries)
+- [Import human protein reference
+  data](#import-human-protein-reference-data)
+- [Defining functions and data
+  preprocessing](#defining-functions-and-data-preprocessing)
+- [Plotting Stoichiometry values of hypoxia and normoxia data with
   re-expression of JMJD6 (+ diagnostic
-  ion)](#286-plotting-stoichiometry-values-of-hypoxia-and-normoxia-data-with-re-expression-of-jmjd6--diagnostic-ion)
+  ion)](#plotting-stoichiometry-values-of-hypoxia-and-normoxia-data-with-re-expression-of-jmjd6--diagnostic-ion)
 - [Kinetics](#kinetics)
-  - [Time to half-value](#time-to-half-value)
-- [2.8.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry
-  data.](#287-xic-values-against-ms_ss-ms_kr_1-and-pnas-stoichiometry-data)
-- [Kinetics](#kinetics-1)
-  - [Inreraction](#inreraction)
-- [2.8.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under
-  varying dox incubation (+ diagnostic
-  ion)](#288-oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
+  - [t50](#t50)
+- [XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry
+  data.](#xic-values-against-ms_ss-ms_kr_1-and-pnas-stoichiometry-data)
+- [Interaction](#interaction)
+- [Oxygen sensitivity - Comparing hypoxia stoichiometry under varying
+  dox incubation (+ diagnostic
+  ion)](#oxygen-sensitivity---comparing-hypoxia-stoichiometry-under-varying-dox-incubation--diagnostic-ion)
 - [Relationship of the stoichiometry in WT and changes in stoichiometry
   by
   hypoxia](#relationship-of-the-stoichiometry-in-wt-and-changes-in-stoichiometry-by-hypoxia)
@@ -57,7 +56,7 @@ project.dir <-
 #renv::restore(file.path(project.dir, "R"))
 ```
 
-# 2.8.1 Install,load essential functions and libraries
+# Install,load essential functions and libraries
 
 ``` r
 ## Load all R scripts from the 'functions' folder into the current session
@@ -176,7 +175,7 @@ library("janitor")
 library("ptm.stoichiometry")
 ```
 
-# 2.8.2 Import human protein reference data
+# Import human protein reference data
 
 ``` r
 # Import human protein reference data from specified file path 
@@ -195,7 +194,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 # create.dirs(c(results.dir, p2_MS_SS_KR))
 ```
 
-# 2.8.3 Defining functions and data preprocessing
+# Defining functions and data preprocessing
 
 ``` r
 # Read FASTA data 
@@ -379,7 +378,7 @@ MS_SS_KR_PNAS_dt[, `:=`(
 )]
 ```
 
-# 2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ``` r
 # subset rows with diagnostic ion from MS_SS and MS_KR data
@@ -474,6 +473,10 @@ lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
 plot_long_pc2wt_21pc <- copy(long_pc2wt_21pc)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])]
 
+plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[
+  paste(protein_accession, aa_pos) %in% plot_long_pc2wt_21pc[cell == "WT"][Stoichiometry > 0, paste(protein_accession, aa_pos)]
+]
+
 ggplot(
   plot_long_pc2wt_21pc,
   aes(
@@ -500,12 +503,12 @@ plot_long_pc2wt_21pc[, .N, by = induction]
 
     ##    induction     N
     ##       <fctr> <int>
-    ## 1:        0h    49
-    ## 2:       18h    49
-    ## 3:       24h    49
-    ## 4:        4h    49
-    ## 5:        8h    49
-    ## 6:       Inf    49
+    ## 1:        0h    42
+    ## 2:       18h    42
+    ## 3:       24h    42
+    ## 4:        4h    42
+    ## 5:        8h    42
+    ## 6:       Inf    42
 
 ``` r
 # Plot ratio
@@ -580,44 +583,7 @@ induction_t_test
     ## 4:        4h 1.425583e-05    42 5.702331e-05           **
     ## 5:        8h 6.817018e-03    42 2.045105e-02            *
 
-## Time to half-value
-
-``` r
-lc_MS_SS_KR_PNAS_dt[gene_name == "BRD4" & aa_pos == "535"]
-```
-
-    ##     protein_accession gene_name aa_pos    sample_group Stoichiometry   cell
-    ##                <char>    <fctr>  <int>          <fctr>         <num> <char>
-    ##  1:            O60885      BRD4    535  WT_Inf_21pc_KR   0.239610509     WT
-    ##  2:            O60885      BRD4    535  iJ6_0h_21pc_KR   0.004483078    iJ6
-    ##  3:            O60885      BRD4    535  iJ6_0h_21pc_SS   0.000000000    iJ6
-    ##  4:            O60885      BRD4    535  iJ6_18h_1pc_SS   0.153587189    iJ6
-    ##  5:            O60885      BRD4    535 iJ6_18h_21pc_SS   0.310904751    iJ6
-    ##  6:            O60885      BRD4    535  iJ6_18h_4pc_SS   0.260901536    iJ6
-    ##  7:            O60885      BRD4    535 iJ6_24h_01pc_KR   0.022581824    iJ6
-    ##  8:            O60885      BRD4    535 iJ6_24h_21pc_KR   0.131011528    iJ6
-    ##  9:            O60885      BRD4    535   iJ6_4h_1pc_SS   0.038836348    iJ6
-    ## 10:            O60885      BRD4    535  iJ6_4h_21pc_SS   0.072395138    iJ6
-    ## 11:            O60885      BRD4    535   iJ6_4h_4pc_SS   0.097388941    iJ6
-    ## 12:            O60885      BRD4    535   iJ6_8h_1pc_SS   0.142440534    iJ6
-    ## 13:            O60885      BRD4    535  iJ6_8h_21pc_SS   0.247034986    iJ6
-    ## 14:            O60885      BRD4    535   iJ6_8h_4pc_SS   0.167607159    iJ6
-    ##     induction oxygen dataset data_size_per_sample data_size_per_site induction2
-    ##        <fctr> <fctr>  <char>                <int>              <int>     <fctr>
-    ##  1:       Inf   21pc      KR                   56                 14        Inf
-    ##  2:        0h   21pc      KR                   52                 14         0h
-    ##  3:        0h   21pc      SS                   42                 14         0h
-    ##  4:       18h    1pc      SS                   56                 14     18-24h
-    ##  5:       18h   21pc      SS                   56                 14     18-24h
-    ##  6:       18h    4pc      SS                   56                 14     18-24h
-    ##  7:       24h   01pc      KR                   56                 14     18-24h
-    ##  8:       24h   21pc      KR                   55                 14     18-24h
-    ##  9:        4h    1pc      SS                   49                 14         4h
-    ## 10:        4h   21pc      SS                   50                 14         4h
-    ## 11:        4h    4pc      SS                   50                 14         4h
-    ## 12:        8h    1pc      SS                   50                 14         8h
-    ## 13:        8h   21pc      SS                   56                 14         8h
-    ## 14:        8h    4pc      SS                   56                 14         8h
+## t50
 
 ``` r
 # helper: convert time to numeric and replace Inf by a large finite value
@@ -681,9 +647,162 @@ t50_dt[, `:=`(
     TRUE ~ ">8h"
   ) %>% factor(levels = c("0-4h", "4-8h", ">8h"))
 )]
+
+t50_dt
 ```
 
-# 2.8.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data.
+    ##     gene_name aa_pos       t50     n t50_bin
+    ##        <fctr>  <int>     <num> <int>  <fctr>
+    ##  1:      BRD4    291 62.000000     7     >8h
+    ##  2:      BRD4    329 13.000000     7     >8h
+    ##  3:      BRD4    332 10.875997     7     >8h
+    ##  4:      BRD4    535  5.205940     7    4-8h
+    ##  5:      BRD4    537 12.537167     7     >8h
+    ##  6:      BRD4    538  1.914826     7    0-4h
+    ##  7:      BRD4    539 20.354251     7     >8h
+    ##  8:      BRD4    541  2.000000     6    0-4h
+    ##  9:      BRD4    543  2.000000     6    0-4h
+    ## 10:      BRD4    544  2.202539     6    0-4h
+    ## 11:      BRD4    546 19.094271     6     >8h
+    ## 12:      BRD4    547  2.274141     6    0-4h
+    ## 13:      BRD4    548  2.757705     6    0-4h
+    ## 14:      BRD4    550  5.957624     6    4-8h
+    ## 15:      BRD4    552  4.641731     7    4-8h
+    ## 16:      BRD4    554 11.541566     7     >8h
+    ## 17:      BRD4    561 21.276581     7     >8h
+    ## 18:      BRD4    562 15.945181     7     >8h
+    ## 19:      BRD4    572  5.688024     7    4-8h
+    ## 20:      BRD4    574 19.155493     7     >8h
+    ## 21:      BRD4    575 14.865966     7     >8h
+    ## 22:      BRD4    727 12.503481     4     >8h
+    ## 23:      BRD2    546 19.201084     7     >8h
+    ## 24:      BRD2    551  4.166637     5    4-8h
+    ## 25:      BRD2    552  6.595157     5    4-8h
+    ## 26:      BRD2    554  4.482859     5    4-8h
+    ## 27:      BRD2    555  8.000000     4    4-8h
+    ## 28:      BRD2    556  8.000000     4    4-8h
+    ## 29:      BRD2    557  8.000000     4    4-8h
+    ## 30:      BRD2    585 21.000000     7     >8h
+    ## 31:      BRD2    586 19.995857     7     >8h
+    ## 32:      BRD2    589 13.918552     7     >8h
+    ## 33:      BRD2    713 21.000000     7     >8h
+    ## 34:      BRD2    718 21.000000     7     >8h
+    ## 35:      BRD2    755 19.116352     7     >8h
+    ## 36:      BRD2    756 42.153411     7     >8h
+    ## 37:      BRD3    245 37.736947     7     >8h
+    ## 38:      BRD3    364 31.555315     7     >8h
+    ## 39:      BRD3    487 61.640419     7     >8h
+    ## 40:      BRD3    489 10.259251     7     >8h
+    ## 41:      BRD3    490 20.979746     7     >8h
+    ## 42:      BRD3    491  5.273730     7    4-8h
+    ## 43:      BRD3    492  2.965761     7    0-4h
+    ## 44:      BRD3    494  3.306317     7    0-4h
+    ## 45:      BRD3    495  9.684812     7     >8h
+    ## 46:      BRD3    500 18.957295     7     >8h
+    ## 47:      BRD3    501  5.638917     7    4-8h
+    ## 48:      BRD3    502  3.837635     7    0-4h
+    ## 49:      BRD3    504  2.000000     7    0-4h
+    ## 50:      BRD3    538 10.701912     7     >8h
+    ## 51:      BRD3    591  1.758896     7    0-4h
+    ## 52:      BRD3    650 13.000000     7     >8h
+    ## 53:      BRD3    651  7.106203     7    4-8h
+    ## 54:      BRD3    655 13.000000     7     >8h
+    ## 55:      BRD3    683 58.749514     7     >8h
+    ## 56:      BRD3    684 10.794703     7     >8h
+    ##     gene_name aa_pos       t50     n t50_bin
+
+``` r
+kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
+
+ggplot(
+  data = kinetics_data,
+  aes(
+    x = WT_stoichiometry,
+    y = Stoichiometry / WT_stoichiometry
+  )
+) +
+  # geom_smooth(method = "lm", se = FALSE) +
+  geom_point() +
+  facet_grid(~ induction2) +
+  ylab("Stoichiometry [% to WT]") +
+  theme_classic_2()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1.5)) +
+  theme(aspect.ratio = 1) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
+![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-1.png)<!-- -->
+
+``` r
+kinetics_out <- data.table()
+
+for(i2 in kinetics_data[, unique(induction2)]){
+  c1 <- kinetics_data[induction2 == i2] %$%
+    cor.test(x = WT_stoichiometry, y = Stoichiometry / WT_stoichiometry, method = "spearman")
+  
+  kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
+}
+```
+
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+
+``` r
+kinetics_out[, padj := p.adjust(p_val, method = "holm")]
+
+kinetics_out
+```
+
+    ##    induction2       rho        p_val     n         padj
+    ##        <char>     <num>        <num> <int>        <num>
+    ## 1:     18-24h 0.1381575 3.490397e-01    48 3.490397e-01
+    ## 2:         4h 0.6632045 1.700021e-06    42 5.100062e-06
+    ## 3:         8h 0.4699430 7.513709e-04    48 1.502742e-03
+
+``` r
+kinetics_data <- merge(
+  kinetics_data,
+  t50_dt,
+  by = c("gene_name", "aa_pos")
+)
+
+ggplot(
+  data = kinetics_data[!duplicated(paste(gene_name, aa_pos))],
+  aes(
+    x = t50_bin,
+    y = WT_stoichiometry
+  )
+) +
+  # geom_smooth(method = "lm", se = FALSE) +
+  geom_boxplot(outlier.shape = NA) +
+  ylab("Stoichiometry [%]") +
+  theme_classic_2()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  theme(legend.position="right") +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme(aspect.ratio = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
+![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-2.png)<!-- -->
+
+``` r
+kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
+```
+
+    ##          t50_bin
+    ## gene_name 0-4h 4-8h >8h
+    ##      BRD2    0    6   6
+    ##      BRD3    3    3  10
+    ##      BRD4    6    4  10
+
+# XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data.
 
 ``` r
 #-------------
@@ -786,104 +905,7 @@ ggplot(
 
 ![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/xic_per_pos-1.png)<!-- -->
 
-# Kinetics
-
-``` r
-kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
-
-ggplot(
-  data = kinetics_data,
-  aes(
-    x = WT_stoichiometry,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  # geom_smooth(method = "lm", se = FALSE) +
-  geom_point() +
-  facet_grid(~ induction2) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  theme(aspect.ratio = 1) +
-  scale_x_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-1.png)<!-- -->
-
-``` r
-kinetics_out <- data.table()
-
-for(i2 in kinetics_data[, unique(induction2)]){
-  c1 <- kinetics_data[induction2 == i2] %$%
-    cor.test(x = WT_stoichiometry, y = Stoichiometry / WT_stoichiometry, method = "spearman")
-  
-  kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
-}
-```
-
-    ## Warning in cor.test.default(x = WT_stoichiometry, y =
-    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
-    ## Warning in cor.test.default(x = WT_stoichiometry, y =
-    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
-    ## Warning in cor.test.default(x = WT_stoichiometry, y =
-    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
-
-``` r
-kinetics_out[, padj := p.adjust(p_val, method = "holm")]
-
-kinetics_out
-```
-
-    ##    induction2       rho        p_val     n         padj
-    ##        <char>     <num>        <num> <int>        <num>
-    ## 1:     18-24h 0.1381575 3.490397e-01    48 3.490397e-01
-    ## 2:         4h 0.6632045 1.700021e-06    42 5.100062e-06
-    ## 3:         8h 0.4699430 7.513709e-04    48 1.502742e-03
-
-``` r
-kinetics_data <- merge(
-  kinetics_data,
-  t50_dt,
-  by = c("gene_name", "aa_pos")
-)
-
-ggplot(
-  data = kinetics_data[!duplicated(paste(gene_name, aa_pos))],
-  aes(
-    x = t50_bin,
-    y = WT_stoichiometry
-  )
-) +
-  # geom_smooth(method = "lm", se = FALSE) +
-  geom_boxplot(outlier.shape = NA) +
-  ylab("Stoichiometry [%]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1)) +
-  theme(aspect.ratio = 3) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-```
-
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-2.png)<!-- -->
-
-``` r
-kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
-```
-
-    ##          t50_bin
-    ## gene_name 0-4h 4-8h >8h
-    ##      BRD2    0    6   6
-    ##      BRD3    3    3  10
-    ##      BRD4    6    4  10
-
-## Inreraction
-
-We will focus on specific sites for this analysis. (parental) BRD4 K538
--\> (child) BRD4 K537 and K535 (as a result K537 and K535) (parental)
-BRD4 K548 -\> (child) BRD4 K550
+# Interaction
 
 ``` r
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
@@ -1127,7 +1149,7 @@ ggplot(
 
 ![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/interaction-2.png)<!-- -->
 
-# 2.8.8 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ``` r
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
@@ -1157,6 +1179,9 @@ pc2wt_on <- copy(pc2wt_on)[, data_size_per_site := .N, by = list(protein_accessi
 pc2wt_on <- pc2wt_on[data_size_per_site == max(pc2wt_on[, data_size_per_site])]
 
 pc2wt_on <- pc2wt_on[WT_stoichiometry > 0]
+pc2wt_on[, `:=`(
+  oxygen = factor(oxygen, c("21pc", "4pc", "1pc", "01pc"))
+)]
 
 ggplot(
   data = pc2wt_on,
@@ -1243,48 +1268,6 @@ oxygen_t_test
     ## 2:       4pc 3.860210e-02    48 3.860210e-02            *
     ## 3:      01pc 9.613294e-12    48 2.883988e-11           **
     ## 4:      21pc          NaN    48          NaN         N.S.
-
-``` r
-ggplot(
-  data = pc2wt_on[WT_stoichiometry > 0],
-  aes(
-    x = oxygen,
-    y = Stoichiometry / WT_stoichiometry
-  )
-) +
-  #geom_hline(yintercept = 1, color = "gray60") +
-  geom_boxplot(outlier.shape = NA) +
-  facet_grid(~ gene_name) +
-  ylab("Stoichiometry [% to WT]") +
-  theme_classic_2()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  theme(legend.position="right") +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  theme(aspect.ratio = 2) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  ggtitle("All sites (> 0)")
-```
-
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-3.png)<!-- -->
-
-``` r
-pc2wt_on[WT_stoichiometry > 0][, .N, by = list(gene_name, induction2, oxygen)]
-```
-
-    ##     gene_name induction2 oxygen     N
-    ##        <fctr>     <fctr> <fctr> <int>
-    ##  1:      BRD4     18-24h    1pc    20
-    ##  2:      BRD4     18-24h    4pc    20
-    ##  3:      BRD4     18-24h   01pc    20
-    ##  4:      BRD4     18-24h   21pc    20
-    ##  5:      BRD2     18-24h    1pc    12
-    ##  6:      BRD2     18-24h    4pc    12
-    ##  7:      BRD2     18-24h   01pc    12
-    ##  8:      BRD2     18-24h   21pc    12
-    ##  9:      BRD3     18-24h    1pc    16
-    ## 10:      BRD3     18-24h    4pc    16
-    ## 11:      BRD3     18-24h   01pc    16
-    ## 12:      BRD3     18-24h   21pc    16
 
 # Relationship of the stoichiometry in WT and changes in stoichiometry by hypoxia
 
@@ -1472,7 +1455,7 @@ pc2wt_on_kinetics <- merge(
 )
 
 ggplot(
-  pc2wt_on_kinetics[n > 5][oxygen != "21pc"],
+  pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
     x = t50,
     y = Stoichiometry / WT_stoichiometry
@@ -1493,7 +1476,7 @@ ggplot(
 
 ``` r
 ggplot(
-  pc2wt_on_kinetics[n > 5][oxygen != "21pc"],
+  pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
     x = oxygen,
     y = Stoichiometry / WT_stoichiometry
@@ -1514,23 +1497,38 @@ ggplot(
 ![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-3.png)<!-- -->
 
 ``` r
-pc2wt_on[, .N, by = list(gene_name, oxygen)]
+# QC
+ggplot(
+  pc2wt_on_kinetics[n == 7],
+  aes(
+    x = oxygen,
+    y = Stoichiometry / WT_stoichiometry
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  facet_grid(~ t50_bin) +
+  theme(
+    aspect.ratio = 3,
+    legend.position = NULL
+  ) +
+  ylab("Stoichiometry [% to WT]") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  coord_cartesian(ylim = c(0, 2)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-    ##     gene_name oxygen     N
-    ##        <fctr> <fctr> <int>
-    ##  1:      BRD4    1pc    20
-    ##  2:      BRD4    4pc    20
-    ##  3:      BRD4   01pc    20
-    ##  4:      BRD4   21pc    20
-    ##  5:      BRD2    1pc    12
-    ##  6:      BRD2    4pc    12
-    ##  7:      BRD2   01pc    12
-    ##  8:      BRD2   21pc    12
-    ##  9:      BRD3    1pc    16
-    ## 10:      BRD3    4pc    16
-    ## 11:      BRD3   01pc    16
-    ## 12:      BRD3   21pc    16
+![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-4.png)<!-- -->
+
+``` r
+pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen)]
+```
+
+    ##    oxygen     N
+    ##    <fctr> <int>
+    ## 1:    1pc    35
+    ## 2:    4pc    35
+    ## 3:   01pc    35
+    ## 4:   21pc    35
 
 # Session information
 
@@ -1548,7 +1546,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-03-27
+    ##  date     2026-04-02
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 

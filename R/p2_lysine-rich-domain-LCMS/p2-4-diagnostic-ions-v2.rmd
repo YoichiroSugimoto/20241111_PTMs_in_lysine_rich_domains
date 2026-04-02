@@ -243,6 +243,10 @@ g2 <- ggplot(koh_per_site_count[DI_site == TRUE], aes(x = Hyl_found_in, y = N, f
 
 g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
   
+merge(
+  koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
+  koh_per_site[DI_site == TRUE & Hyl_found_in == "both"]
+)
 
 # Statistical significance of methionine enrichment
 # All sites, found in both
@@ -261,6 +265,23 @@ library("eulerr")
 library("RColorBrewer")
 
 vennlist <-  list(
+  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT", paste(protein_accession, aa_pos)],
+  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO", paste(protein_accession, aa_pos)]
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(3, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap (All)")
+
+vennlist <-  list(
   WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT" & DI_site == TRUE, paste(protein_accession, aa_pos)],
   KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO" & DI_site == TRUE, paste(protein_accession, aa_pos)]
 )
@@ -275,7 +296,7 @@ plot(venn_size_based,
      fills = list(fill = cols, alpha = 0.4),
      legend = list(side = "right"),
      quantities = TRUE,
-     main = "Hydroxylated Sites Overlap")
+     main = "Hydroxylated Sites Overlap (with DI)")
 
 ```
 

@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-29 March, 2026
+30 March, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -345,6 +345,57 @@ g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 ![](p2-4-diagnostic-ions-v2_files/figure-gfm/overlap_wt_ko-1.png)<!-- -->
 
 ``` r
+merge(
+  koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
+  koh_per_site[DI_site == TRUE & Hyl_found_in == "both"]
+)
+```
+
+    ## Key: <protein_accession>
+    ##     protein_accession gene_name aa_pos DI_site met_within_2 HeLaWT HeLaJMJD6KO
+    ##                <char>    <char>  <int>  <lgcl>       <char>  <int>       <int>
+    ##  1:            O60814    H2BC12     21    TRUE           No      1           1
+    ##  2:            P13639      EEF2    159    TRUE          Yes      1           1
+    ##  3:            P16403      H1-2    137    TRUE           No      1           1
+    ##  4:            P16403      H1-2    148    TRUE           No      1           1
+    ##  5:            P16403      H1-2    149    TRUE           No      1           1
+    ##  6:            P16403      H1-2    152    TRUE           No      1           1
+    ##  7:            P16403      H1-2    153    TRUE           No      1           1
+    ##  8:            P19338       NCL    282    TRUE          Yes      1           1
+    ##  9:            P20908    COL5A1    535    TRUE           No      1           1
+    ## 10:            P29375     KDM5A   1495    TRUE           No      1           1
+    ## 11:            P29375     KDM5A   1497    TRUE           No      1           1
+    ## 12:            P46777      RPL5    264    TRUE           No      1           1
+    ## 13:            P62753      RPS6    221    TRUE           No      1           1
+    ## 14:            P62805     H4C16     13    TRUE           No      1           1
+    ## 15:            P62805     H4C16     92    TRUE           No      1           1
+    ## 16:            Q13428     TCOF1   1444    TRUE           No      1           1
+    ## 17:            Q8TA86       RP9    195    TRUE           No      1           1
+    ## 18:            Q9Y3S2    ZNF330     10    TRUE           No      1           1
+    ## 19:            Q9Y3S2    ZNF330     11    TRUE           No      1           1
+    ##     Hyl_found_in
+    ##           <fctr>
+    ##  1:         both
+    ##  2:         both
+    ##  3:         both
+    ##  4:         both
+    ##  5:         both
+    ##  6:         both
+    ##  7:         both
+    ##  8:         both
+    ##  9:         both
+    ## 10:         both
+    ## 11:         both
+    ## 12:         both
+    ## 13:         both
+    ## 14:         both
+    ## 15:         both
+    ## 16:         both
+    ## 17:         both
+    ## 18:         both
+    ## 19:         both
+
+``` r
 # Statistical significance of methionine enrichment
 # All sites, found in both
 all.K.m.count <- rbind(
@@ -376,6 +427,27 @@ library("eulerr")
 library("RColorBrewer")
 
 vennlist <-  list(
+  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT", paste(protein_accession, aa_pos)],
+  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO", paste(protein_accession, aa_pos)]
+)
+
+# Changing the circle size based on the number in the circle
+venn_size_based <- euler(vennlist)
+
+cols <- brewer.pal(3, "Set2")
+
+# Plot the diagram
+plot(venn_size_based,
+     fills = list(fill = cols, alpha = 0.4),
+     legend = list(side = "right"),
+     quantities = TRUE,
+     main = "Hydroxylated Sites Overlap (All)")
+```
+
+![](p2-4-diagnostic-ions-v2_files/figure-gfm/overlap_wt_ko-2.png)<!-- -->
+
+``` r
+vennlist <-  list(
   WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT" & DI_site == TRUE, paste(protein_accession, aa_pos)],
   KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO" & DI_site == TRUE, paste(protein_accession, aa_pos)]
 )
@@ -390,10 +462,10 @@ plot(venn_size_based,
      fills = list(fill = cols, alpha = 0.4),
      legend = list(side = "right"),
      quantities = TRUE,
-     main = "Hydroxylated Sites Overlap")
+     main = "Hydroxylated Sites Overlap (with DI)")
 ```
 
-![](p2-4-diagnostic-ions-v2_files/figure-gfm/overlap_wt_ko-2.png)<!-- -->
+![](p2-4-diagnostic-ions-v2_files/figure-gfm/overlap_wt_ko-3.png)<!-- -->
 
 # Comparison with previous PNAS 2022 paper
 
@@ -487,7 +559,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-03-29
+    ##  date     2026-03-30
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
