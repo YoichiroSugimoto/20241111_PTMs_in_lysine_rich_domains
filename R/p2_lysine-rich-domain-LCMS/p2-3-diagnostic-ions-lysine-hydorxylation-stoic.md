@@ -1,16 +1,19 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-07 January, 2026
+03 April, 2026
 
+- [Overview](#overview)
 - [Environment setup](#environment-setup)
 - [2.3.1 Import basic data](#231-import-basic-data)
 - [2.3.2 Identify useful diagnostic ions to identify lysine
   hydroxylations](#232-identify-useful-diagnostic-ions-to-identify-lysine-hydroxylations)
 - [Session information](#session-information)
 
-This script identify diagnostic ions to identify confident hydroxylation
-sites.
+# Overview
+
+This script identify diagnostic ions that can aid to determine
+hydroxylation sites.
 
 # Environment setup
 
@@ -377,6 +380,17 @@ ggplot(
 ![](p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/figure-gfm/plot_with_only_diagnostic_ions-1.png)<!-- -->
 
 ``` r
+m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(monoisotopic_mass, genotype)]
+```
+
+    ##    monoisotopic_mass genotype     N
+    ##               <fctr>   <fctr> <int>
+    ## 1:          100.0762       WT   752
+    ## 2:          100.0762  JMJD6KO   586
+    ## 3:          156.1025       WT   752
+    ## 4:          156.1025  JMJD6KO   586
+
+``` r
 # Plot - Bar chart of proportion of PSMs with diagnostic ion 
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],
@@ -411,7 +425,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-01-07
+    ##  date     2026-04-03
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -426,14 +440,14 @@ sessioninfo::session_info()
     ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
     ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
     ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
-    ##  evaluate            1.0.4      2025-06-18 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
     ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
     ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
     ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
     ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
     ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.4.3)
-    ##  ggplot2           * 3.5.2      2025-04-09 [1] CRAN (R 4.4.3)
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
@@ -446,8 +460,8 @@ sessioninfo::session_info()
     ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
     ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
     ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
-    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.4.3)
-    ##  pillar              1.11.0     2025-07-04 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
     ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
@@ -457,11 +471,12 @@ sessioninfo::session_info()
     ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
     ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
     ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
     ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
     ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
     ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
     ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
     ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
     ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
     ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
@@ -469,7 +484,7 @@ sessioninfo::session_info()
     ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
     ##  vipor               0.4.7      2023-12-18 [1] CRAN (R 4.4.3)
     ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
-    ##  xfun                0.52       2025-04-02 [1] CRAN (R 4.4.3)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
     ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
     ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
     ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~

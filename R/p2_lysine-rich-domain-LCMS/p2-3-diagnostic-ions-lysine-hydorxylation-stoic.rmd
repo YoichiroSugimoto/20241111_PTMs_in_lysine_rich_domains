@@ -233,6 +233,8 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   scale_fill_bright()
 
+m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)][, .N, by = list(monoisotopic_mass, genotype)]
+
 # Plot - Bar chart of proportion of PSMs with diagnostic ion 
 ggplot(
   data = m.brd4_hydroxylation_site_di[monoisotopic_mass %in% c(selected.ms)],

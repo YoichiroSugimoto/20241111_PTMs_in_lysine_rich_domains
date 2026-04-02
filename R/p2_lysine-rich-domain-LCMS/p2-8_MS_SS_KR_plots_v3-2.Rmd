@@ -1093,6 +1093,8 @@ pc2wt_on_kinetics <- merge(
   by = c("gene_name", "aa_pos")
 )
 
+library("ggbeeswarm")
+
 ggplot(
   pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
@@ -1118,6 +1120,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
+  geom_beeswarm() +
   facet_grid(~ t50_bin) +
   theme(
     aspect.ratio = 3,
@@ -1148,7 +1151,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
 
-pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen)]
+pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
 
 ```
 

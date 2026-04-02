@@ -2,7 +2,7 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-02 April, 2026
+03 April, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -1454,6 +1454,8 @@ pc2wt_on_kinetics <- merge(
   by = c("gene_name", "aa_pos")
 )
 
+library("ggbeeswarm")
+
 ggplot(
   pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
@@ -1483,6 +1485,7 @@ ggplot(
   )
 ) +
   geom_boxplot(outlier.shape = NA) +
+  geom_beeswarm() +
   facet_grid(~ t50_bin) +
   theme(
     aspect.ratio = 3,
@@ -1520,15 +1523,23 @@ ggplot(
 ![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-4.png)<!-- -->
 
 ``` r
-pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen)]
+pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
 ```
 
-    ##    oxygen     N
-    ##    <fctr> <int>
-    ## 1:    1pc    35
-    ## 2:    4pc    35
-    ## 3:   01pc    35
-    ## 4:   21pc    35
+    ##     oxygen t50_bin     N
+    ##     <fctr>  <fctr> <int>
+    ##  1:    1pc     >8h    25
+    ##  2:    4pc     >8h    25
+    ##  3:   01pc     >8h    25
+    ##  4:   21pc     >8h    25
+    ##  5:    1pc    4-8h     6
+    ##  6:    4pc    4-8h     6
+    ##  7:   01pc    4-8h     6
+    ##  8:   21pc    4-8h     6
+    ##  9:    1pc    0-4h     4
+    ## 10:    4pc    0-4h     4
+    ## 11:   01pc    0-4h     4
+    ## 12:   21pc    0-4h     4
 
 # Session information
 
@@ -1546,12 +1557,13 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-04-02
+    ##  date     2026-04-03
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
+    ##  beeswarm            0.4.0      2021-06-01 [1] CRAN (R 4.4.3)
     ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
     ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
     ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
@@ -1566,6 +1578,7 @@ sessioninfo::session_info()
     ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
     ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.4.3)
     ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
@@ -1605,6 +1618,7 @@ sessioninfo::session_info()
     ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
     ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
     ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  vipor               0.4.7      2023-12-18 [1] CRAN (R 4.4.3)
     ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
     ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
     ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
