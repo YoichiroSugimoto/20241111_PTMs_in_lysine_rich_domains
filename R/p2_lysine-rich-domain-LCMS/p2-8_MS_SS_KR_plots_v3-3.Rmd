@@ -53,7 +53,7 @@ P2_functions <- sapply(list.files
 
 ## Install private package 
 # Install ptm.stiochiometry package
-# install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
+#install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
 library("readxl")
@@ -88,6 +88,23 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 # 2.8.12 MS_SS, MS_KR, PNAS Data tables converted to excel 
 
 ```{r PNAS_DI_load_data_excel}
+
+# Read FASTA data 
+all.protein.bs <- Biostrings::readAAStringSet(
+  file.path(
+    "/fast/AG_Sugimoto/reference/uniprot/human",
+    "UP000005640_9606.fasta"
+  )
+)
+
+# Define function - 'read_stoic_data'
+read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
+  # Read csv file with defined file path,  
+  dt <- fread(file.path(dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv"))) 
+  dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
+  return(dt)
+}
+
 
 # install package for writing data table to excel 
 # install.packages('openxlsx')
@@ -150,6 +167,76 @@ MQ_DI_dtB_stoic_dt[, `:=`(
 # Create a logical column for diagnostic peak. For rows where diagnostic peak is 
 # present "+", logical vector is "TRUE", or else "FALSE"
 MQ_DI_dtC_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+
+#------------------------------------------------------
+# Load PNAS stoichiometry data manually curated sites
+#------------------------------------------------------
+
+# Load PNAS stoichiometry data
+pnas2022_stoic_dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022_stoic_dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022_stoic_dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022_stoic_dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+## Add columns to pnas2022.stoic.dt metadata
+# new columns: accession_position, ptm, sample_name 
+pnas2022_stoic_dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
+    ptm = fifelse(curated_oxK_site == TRUE, "[Oxidation (K)]", " ")
+    )
+  ]
+
+#Change col names to make it same across datasets
+setnames(pnas2022_stoic_dt, c("stoichiometry", "protein_accession", "gene_name", "aa_pos", "curated_oxK_site"),  c("Stoichiometry_PNAS2022", "Protein_accession", "Gene_name", "Amino_acid_pos", "PNAS2022_curated_oxK_site"))
+
+#-----------------------------
+# Load MS_KR_1 stoichiometry data
+#-----------------------------
+
+## Read stoichiometry data for MS_KR1 data (noH2O loss)
+ MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_noH2O_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1_noH2O"))
+
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+#-----------------------------
+# Load MS_SS stoichiometry data
+#-----------------------------
+
+## Read stoichiometry data for MS_SS data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_SS_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS_noH2O"))
+
+ #[Oxidation (K)] 
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_SS_stoic_dt[, `:=`(
   is_diagnostic_peak = diagnostic_peak == "+" 
 )]
 
