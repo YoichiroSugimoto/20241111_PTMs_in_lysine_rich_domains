@@ -2,7 +2,7 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-03 April, 2026
+16 April, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -1557,7 +1557,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-04-03
+    ##  date     2026-04-16
     ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
