@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# 2.8.1 Install,load essential functions and libraries
+# 2.11.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -67,7 +67,7 @@ library("openxlsx")
 
 ```
 
-# 2.8.2 Import human protein reference data 
+# 2.11.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -90,7 +90,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# 2.8.12 MS_SS, MS_KR, PNAS Data tables converted to excel 
+# 2.11.3 MS_SS, MS_KR, PNAS Data tables converted to excel 
 
 ```{r PNAS_DI_load_data_excel}
 
