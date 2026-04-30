@@ -1,5 +1,5 @@
 ---
-title: "2-8. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
+title: "2-11. Lysine hydroxylations in varying O2 pc and dox induction time - excel data export"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script examines the oxygen sensitivity of lysine hydroxylations in BRD proteins and their respective sites. This script is for visualizing the calculated stoichiometry. 
+This script exports processed lysine hydroxylation stoichiometry data for BRD protein sites to a formatted Excel sheet as part of the oxygen sensitivity analysis pipeline.
 
 # Environment setup
 
