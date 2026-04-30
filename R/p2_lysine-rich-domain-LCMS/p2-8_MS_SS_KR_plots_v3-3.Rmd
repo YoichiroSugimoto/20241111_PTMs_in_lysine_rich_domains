@@ -55,10 +55,15 @@ P2_functions <- sapply(list.files
 # Install ptm.stiochiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
+# install package for writing data table to excel 
+# install.packages('openxlsx')
+
 # Load Libraries
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")
+library("openxlsx")
+
 
 ```
 
@@ -104,11 +109,6 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
   dt[, condition := gsub("_$", "", prefix)] # Removes '_' at the end of the prefix and creates a new column called condition
   return(dt)
 }
-
-
-# install package for writing data table to excel 
-# install.packages('openxlsx')
-# library("openxlsx")
 
 #---------------------------------------------------------------------
 # Load PNAS stoichiometry data analysed by MaxQuant with DI (dataset A)

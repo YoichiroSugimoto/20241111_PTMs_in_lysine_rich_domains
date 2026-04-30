@@ -2,7 +2,7 @@
 data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-02 March, 2026
+13 March, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -196,6 +196,17 @@ library("janitor")
 
 ``` r
 library("ptm.stoichiometry")
+
+
+# install "gt" package
+install.packages("gt")
+```
+
+    ## Installing package into '/home/pkesava/R/x86_64-pc-linux-gnu-library/4.5'
+    ## (as 'lib' is unspecified)
+
+``` r
+library("gt")
 ```
 
 # 2.8.2 Import human protein reference data
@@ -211,6 +222,10 @@ ref_protein_dt <- import_reference_fasta(file.path
 # Define path to data directory
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
+
+#Create p1 results directory
+p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
+# create.dirs(c(results.dir, p2_MS_SS_KR))
 ```
 
 # 2.8.3 Defining functions and data preprocessing
@@ -365,6 +380,11 @@ pnas2022_BRD_dt <-  pnas2022_stoic_dt[
   gene_name %in% c("BRD2", "BRD3", "BRD4")
 ]
 
+
+# Convert data table into publication ready 
+MS_KR1_gt_dt <- gt(MS_KR1_BRD_dt)
+MS_SS_gt_dt <- gt(MS_SS_BRD_dt)
+
 # Combine MS_KR1_subset_dt and MS_SS_all_dt data
 MS_SS_KR_PNAS_dt <- rbindlist(list(MS_SS_BRD_dt,
                          MS_KR1_BRD_dt,
@@ -432,6 +452,13 @@ plot_ptm_stoichiometry(
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_21pc-2.png)<!-- -->
 
 ``` r
+MS_SS_KR_PNAS_BRD2 <- MS_SS_KR_PNAS_BRD2_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD2, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2.csv"))
+```
+
+``` r
 # subset data to specific BRD3 protein
 MS_SS_KR_PNAS_BRD3_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
@@ -464,6 +491,13 @@ plot_ptm_stoichiometry(
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_21pc-2.png)<!-- -->
 
 ``` r
+MS_SS_KR_PNAS_BRD3 <- MS_SS_KR_PNAS_BRD3_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD3, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD3.csv"))
+```
+
+``` r
 # subset data to specific BRD4 protein
 MS_SS_KR_PNAS_BRD4_dt <- MS_SS_KR_PNAS_dt[grepl("Inf|0h|4h|8h|18h|24h", sample_group) & 
                                             grepl("21pc", sample_group) & 
@@ -494,6 +528,13 @@ plot_ptm_stoichiometry(
 ```
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_21pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_21pc-2.png)<!-- -->
+
+``` r
+MS_SS_KR_PNAS_BRD4 <- MS_SS_KR_PNAS_BRD4_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD4, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD4.csv"))
+```
 
 # 2.8.5 Plotting raw stoichiometry values of normoxia and hypoxia data with re-expression of JMJD6
 
@@ -554,6 +595,13 @@ plot_ptm_stoichiometry(
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD2_at_hypoxia_pc-2.png)<!-- -->
 
 ``` r
+MS_SS_KR_PNAS_BRD2_O2pc <- MS_SS_KR_PNAS_BRD2_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD2_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD2_O2pc.csv"))
+```
+
+``` r
 #------
 # BRD3
 #------
@@ -587,6 +635,13 @@ plot_ptm_stoichiometry(
 ```
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD3_at_hypoxia_pc-2.png)<!-- -->
+
+``` r
+MS_SS_KR_PNAS_BRD3_O2pc <- MS_SS_KR_PNAS_BRD3_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD3_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD3_O2pc.csv"))
+```
 
 ``` r
 #------
@@ -624,6 +679,13 @@ plot_ptm_stoichiometry(
 ```
 
 ![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_hypoxia_pc-1.png)<!-- -->![](p2-8_MS_SS_KR_plots_v2_files/figure-gfm/stoichiometry_BRD4_at_hypoxia_pc-2.png)<!-- -->
+
+``` r
+MS_SS_KR_PNAS_BRD4_O2pc <- MS_SS_KR_PNAS_BRD4_O2pc_dt[is_diagnostic_peak == TRUE & aa == "K"]
+
+# Write to csv table to identify "K" with DI 
+fwrite(MS_SS_KR_PNAS_BRD4_O2pc, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_KR_PNAS_BRD4_O2pc.csv"))
+```
 
 # 2.8.6 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
@@ -1411,7 +1473,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-03-02
+    ##  date     2026-03-13
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -1428,11 +1490,13 @@ sessioninfo::session_info()
     ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
     ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
     ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
+    ##  fs                  1.6.6      2025-04-12 [1] CRAN (R 4.5.1)
     ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
     ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
     ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
     ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
     ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
+    ##  gt                * 1.3.0      2026-01-22 [1] CRAN (R 4.5.1)
     ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
     ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
     ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
@@ -1473,6 +1537,7 @@ sessioninfo::session_info()
     ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
     ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
     ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
+    ##  xml2                1.4.0      2025-08-20 [1] CRAN (R 4.5.1)
     ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
     ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
     ## 

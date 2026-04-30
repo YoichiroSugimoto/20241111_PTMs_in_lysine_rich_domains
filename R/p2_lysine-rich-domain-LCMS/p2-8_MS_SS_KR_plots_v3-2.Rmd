@@ -1,5 +1,5 @@
 ---
-title: "2-8. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
+title: "2-10. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# Install,load essential functions and libraries
+# 2.10.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -62,7 +62,7 @@ library("ptm.stoichiometry")
 
 ```
 
-# Import human protein reference data 
+# 2.10.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -85,7 +85,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# Defining functions and data preprocessing
+# 2.10.3 Defining functions and data preprocessing
 
 ```{r Define_important_functions}
 
@@ -277,9 +277,7 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 ```
 
-
-
-# Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# 2.10.3 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ```{r merge_MS_SS_KR_PNAS_data}
 
@@ -349,9 +347,7 @@ lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_
 
 ```
 
-
-# Kinetics
-
+# 2.10.4 Kinetics
 
 ```{r Dox_plus_minus_JMJD6_O2_levels}
 
@@ -408,7 +404,6 @@ plot_long_pc2wt_21pc[, .N, by = induction]
 
 
 # Plot ratio
-
 # Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
 pc2wt_21pc <- merge(
   lc_MS_SS_KR_PNAS_dt[
@@ -538,6 +533,8 @@ t50_dt
 
 ```
 
+
+
 ```{r kinetics}
 
 kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
@@ -600,7 +597,6 @@ ggplot(
 kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
 
 ```
-
 
 # XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
 
@@ -870,8 +866,6 @@ ggplot(
   ggtitle("BRD4 K535-K537 interaction")
 
 ```
-
-
 
 # Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
