@@ -377,16 +377,16 @@ lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
   TRUE ~ induction
 )][, induction2 := factor(induction2, levels = c("Inf", "0h", "4h", "8h", "18-24h"))]
 
-# Count data per protein acession and aa position
+# Count data per protein accession and aa position
 plot_long_pc2wt_21pc <- copy(long_pc2wt_21pc)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])] # keep only max value of data
 
-# Keep only sites which are WT and stoichiomtery > 0 
+# Keep only sites which are WT and stoichiometry > 0 
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[
   paste(protein_accession, aa_pos) %in% plot_long_pc2wt_21pc[cell == "WT"][Stoichiometry > 0, paste(protein_accession, aa_pos)]
 ]
 
-# Boxplot - Stoichiometry versus induction times (normoxia condition)
+# Boxplot - comparing normoxia in different dox incubation timings
 ggplot(
   plot_long_pc2wt_21pc,
   aes(
@@ -424,7 +424,7 @@ pc2wt_21pc_sub <- pc2wt_21pc[WT_stoichiometry > 0][sample_group != "iJ6_0h_21pc_
 pc2wt_21pc_sub <- copy(pc2wt_21pc_sub)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 pc2wt_21pc_sub <- pc2wt_21pc_sub[data_size_per_site == max(pc2wt_21pc_sub[, data_size_per_site])]
 
-# Boxplot - comparing normoxia in different dox incubation timings
+# Boxplot - comparing normoxia in different dox incubation timings (relative to WT stoichiometry)
 ggplot(
   data = pc2wt_21pc_sub,
   aes(
@@ -443,7 +443,7 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
-# Create data table categorising 
+# Create data table  
 induction_t_test <- data.table()
 
 # Paired t-test 
