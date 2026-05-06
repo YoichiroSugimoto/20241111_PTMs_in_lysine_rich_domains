@@ -359,6 +359,7 @@ lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_
 wt_21pc <- lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stoichiometry")
 
+# Sub-setting and combining data tables 
 long_pc2wt_21pc <- rbind(
   lc_MS_SS_KR_PNAS_dt[
     cell == "iJ6" &
@@ -366,6 +367,7 @@ long_pc2wt_21pc <- rbind(
   ],
   lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR"]
 )
+
 
 long_pc2wt_21pc <- long_pc2wt_21pc[sample_group != "iJ6_0h_21pc_SS"]
 
@@ -414,6 +416,7 @@ pc2wt_21pc <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
+# Subset data to WT_stoichiometry > 0 and exclude sample group = iJ6_0h_21pc_SS
 pc2wt_21pc_sub <- pc2wt_21pc[WT_stoichiometry > 0][sample_group != "iJ6_0h_21pc_SS"]
 
 pc2wt_21pc_sub <- copy(pc2wt_21pc_sub)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
@@ -438,8 +441,10 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 
+# Create data table categorising 
 induction_t_test <- data.table()
 
+# Paired t-test 
 for(i in pc2wt_21pc_sub[, unique(induction)]){
   t.out <- t.test(
     pc2wt_21pc_sub[induction == i][, Stoichiometry],
