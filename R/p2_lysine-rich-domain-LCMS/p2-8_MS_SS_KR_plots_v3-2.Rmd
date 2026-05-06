@@ -351,7 +351,7 @@ lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_
 
 ```{r Dox_plus_minus_JMJD6_21_O2pc}
 
-# subset data to WT normoxia (MS_KR_1 sample)
+# Subset data to WT normoxia (MS_KR_1 sample)
 wt_21pc <- lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stoichiometry")
 
@@ -455,6 +455,7 @@ for(i in pc2wt_21pc_sub[, unique(induction)]){
   )  
 }
 
+# Adjusted P-value
 induction_t_test[, padj := p.adjust(p_value, method = "holm")]
 induction_t_test[, significance := case_when(
   padj < 0.005 ~ "**",
