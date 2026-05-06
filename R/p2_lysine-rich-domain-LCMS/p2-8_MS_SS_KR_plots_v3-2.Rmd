@@ -467,7 +467,7 @@ induction_t_test
 
 ```
 
-## t50
+# 2.10.5 t50 - Time to half value 
 
 ```{r time_to_half_value}
 
@@ -537,7 +537,7 @@ t50_dt
 
 ```
 
-
+# 2.10.6 Kinetics 
 
 ```{r kinetics}
 
@@ -602,7 +602,7 @@ kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)
 
 ```
 
-# XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
+# 2.10.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -691,7 +691,7 @@ ggplot(
 
 ```
 
-# Interaction
+# 2.10.8 Interaction
 
 ```{r interaction}
 
@@ -871,7 +871,7 @@ ggplot(
 
 ```
 
-# Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.10.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
@@ -971,7 +971,7 @@ oxygen_t_test
 
 ```
 
-# Relationship of the stoichiometry in WT and changes in stoichiometry by hypoxia
+# 2.10.10 Relationship of the stoichiometry in WT and changes in stoichiometry by hypoxia
 
 ```{r normoxia_vs_hypoxia_scatterplot}
 
@@ -1010,7 +1010,6 @@ oxygen_out[, padj := p.adjust(p_val, method = "holm")]
 oxygen_out
 
 ```
-
 
 
 ```{r hypoxic_sensitivity}
@@ -1152,7 +1151,6 @@ ggplot(
 pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
 
 ```
-
 
 # Session information
 
