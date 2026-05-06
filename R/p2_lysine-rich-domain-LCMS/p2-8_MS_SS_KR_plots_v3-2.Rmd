@@ -347,13 +347,9 @@ lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_
 
 ```
 
-# 2.10.4 Kinetics
+# 2.10.4 Normoxia samples under varying dox induction
 
-```{r Dox_plus_minus_JMJD6_O2_levels}
-
-#---------------------------------------------
-# Normoxia samples under varying dox induction
-#--------------------------------------------- 
+```{r Dox_plus_minus_JMJD6_21_O2pc}
 
 # subset data to WT normoxia (MS_KR_1 sample)
 wt_21pc <- lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
