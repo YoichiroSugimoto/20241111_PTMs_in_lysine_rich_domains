@@ -367,10 +367,9 @@ long_pc2wt_21pc <- rbind(
   ],
   lc_MS_SS_KR_PNAS_dt[sample_group == "WT_Inf_21pc_KR"]
 )
-
-
 long_pc2wt_21pc <- long_pc2wt_21pc[sample_group != "iJ6_0h_21pc_SS"]
 
+# Here, we combine induction times 18h and 24h into category 18-24h 
 lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
   induction == "18h" ~ "18-24h",
   induction == "24h" ~ "18-24h",
@@ -378,8 +377,9 @@ lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
   TRUE ~ induction
 )][, induction2 := factor(induction2, levels = c("Inf", "0h", "4h", "8h", "18-24h"))]
 
+# Count data per protein acession and aa position
 plot_long_pc2wt_21pc <- copy(long_pc2wt_21pc)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
-plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])]
+plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])] # keep only max value of data
 
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[
   paste(protein_accession, aa_pos) %in% plot_long_pc2wt_21pc[cell == "WT"][Stoichiometry > 0, paste(protein_accession, aa_pos)]
