@@ -381,6 +381,7 @@ lc_MS_SS_KR_PNAS_dt[, induction2 := case_when(
 plot_long_pc2wt_21pc <- copy(long_pc2wt_21pc)[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[data_size_per_site == max(plot_long_pc2wt_21pc[, data_size_per_site])] # keep only max value of data
 
+# Take only sample data which is WT and stoichiomtery > 0 
 plot_long_pc2wt_21pc <- plot_long_pc2wt_21pc[
   paste(protein_accession, aa_pos) %in% plot_long_pc2wt_21pc[cell == "WT"][Stoichiometry > 0, paste(protein_accession, aa_pos)]
 ]
