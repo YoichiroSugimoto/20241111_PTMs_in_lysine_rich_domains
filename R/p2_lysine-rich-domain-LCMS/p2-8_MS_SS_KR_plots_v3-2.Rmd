@@ -563,6 +563,7 @@ ggplot(
   theme(aspect.ratio = 1) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
 
+# Spearman correlation between WT stoichiometry and normalized stoichiometry 
 kinetics_out <- data.table()
 
 for(i2 in kinetics_data[, unique(induction2)]){
@@ -572,7 +573,8 @@ for(i2 in kinetics_data[, unique(induction2)]){
   kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
 }
 
-kinetics_out[, padj := p.adjust(p_val, method = "holm")]
+# Adjusted p-value
+kinetics_out[, padj := p.adjust(p_val, method = "holm")] # Holm correction for multiple comparisons
 
 kinetics_out
 
