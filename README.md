@@ -19,9 +19,9 @@ The repository contains:
 .
 ├── R.Rproj
 ├── functions/
-├── p1_lysine-rich-domain-biology/   #characterises lysine-rich domains of proteins
+├── p1_lysine-rich-domain-biology/   # Characterises lysine-rich domains of proteins
 ├── p2_lysine-rich-domain-LCMS/
-│   ├── p2-1_calculate_ptm_stoichiometry_new.rmd
+│   ├── p2-1_calculate_ptm_stoichiometry_new.rmd # Calculates stoichiometry from MaxQuant data
 │   ├── p2-2_optimise_parameters.rmd
 │   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic.rmd
 │   ├── p2-4-diagnostic-ions-v2.rmd
