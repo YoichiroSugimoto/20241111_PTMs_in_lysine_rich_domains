@@ -15,6 +15,7 @@ The repository contains:
 ---
 # Repository Structure 
 
+```
 .
 ├── R.Rproj
 ├── functions
@@ -38,6 +39,8 @@ The repository contains:
 ├── renv/
 │   └── settings.json
 └── renv.lock
+```
+
 
 The rmd documents are stored in the R directory. The knitted documents are stored together, too.
 
