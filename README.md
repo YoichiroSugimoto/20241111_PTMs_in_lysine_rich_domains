@@ -1,6 +1,5 @@
 # Introduction
-**
-HylQuant** is a R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
+**HylQuant** is a R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
 
 
 The rmd documents are stored in the R directory. The knitted documents are stored together, too.
