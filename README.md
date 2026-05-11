@@ -18,51 +18,25 @@ The repository contains:
 .
 ├── R.Rproj
 ├── functions
-│   ├── 0-load_essential_packages.R
-│   ├── 1-data_visualization_setting_and_functions.R
-│   └── 2-useful_functions.R
-├── p1_lysine-rich-domain-biology
-│   ├── p1-1_lysine-rich-domain-proteins.md
-│   ├── p1-1_lysine-rich-domain-proteins.rmd
-│   └── p1-1_lysine-rich-domain-proteins_files/
-├── p2_lysine-rich-domain-LCMS
-│   ├── p2-1_1_PSM_PTM_comparisons_files/
-│   ├── p2-1_calculate_ptm_stoichiometry_new.md
-│   ├── p2-1_calculate_ptm_stoichiometry_new.rmd
-│   ├── p2-1_calculate_ptm_stoichiometry_new_files/
-│   ├── p2-2_optimise_parameters.md
-│   ├── p2-2_optimise_parameters.rmd
-│   ├── p2-2_optimise_parameters_files/
-│   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic.md
-│   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic.rmd
-│   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic_files/
-│   ├── p2-4-diagnostic-ions-v2.md
-│   ├── p2-4-diagnostic-ions-v2.rmd
-│   ├── p2-4-diagnostic-ions-v2_files/
-│   ├── p2-4-diagnostic-ions.md
-│   ├── p2-4-diagnostic-ions.rmd
-│   ├── p2-4-diagnostic-ions_files/
-│   ├── p2-5_MS_KR1.Rmd
-│   ├── p2-5_MS_KR1.md
-│   ├── p2-5_MS_KR1_files/
-│   ├── p2-6_PSM_PTM_comparisons.Rmd
-│   ├── p2-6_PSM_PTM_comparisons.md
-│   ├── p2-6_PSM_PTM_comparisons_files/
-│   ├── p2-7_MS_SS.Rmd
-│   ├── p2-7_MS_SS.md
-│   ├── p2-8_MS_SS_KR_plots_v2.Rmd
-│   ├── p2-8_MS_SS_KR_plots_v2.md
-│   ├── p2-8_MS_SS_KR_plots_v2_files/
-│   ├── p2-8_MS_SS_KR_plots_v3-1.Rmd
-│   ├── p2-8_MS_SS_KR_plots_v3-1.md
-│   ├── p2-8_MS_SS_KR_plots_v3-1_files/
-│   ├── p2-8_MS_SS_KR_plots_v3-2.Rmd
-│   ├── p2-8_MS_SS_KR_plots_v3-2.md
-│   ├── p2-8_MS_SS_KR_plots_v3-2_files/
-│   ├── p2-8_MS_SS_KR_plots_v3-3.Rmd
-│   └── p2-8_MS_SS_KR_plots_v3-3.md
+│   ├── 0-load_essential_packages.R
+│   ├── 1-data_visualization_setting_and_functions.R
+│   └── 2-useful_functions.R
+├── p1_lysine-rich-domain-biology/
+├── p2_lysine-rich-domain-LCMS/
+│   ├── p2-1_calculate_ptm_stoichiometry_new.rmd
+│   ├── p2-2_optimise_parameters.rmd
+│   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic.rmd
+│   ├── p2-4-diagnostic-ions-v2.rmd
+│   ├── p2-4-diagnostic-ions.rmd
+│   ├── p2-5_MS_KR1.Rmd
+│   ├── p2-6_PSM_PTM_comparisons.Rmd
+│   ├── p2-7_MS_SS.Rmd
+│   ├── p2-8_MS_SS_KR_plots_v2.Rmd
+│   ├── p2-8_MS_SS_KR_plots_v3-1.Rmd
+│   ├── p2-8_MS_SS_KR_plots_v3-2.Rmd
+│   └── p2-8_MS_SS_KR_plots_v3-3.Rmd
 ├── renv/
-│   └── settings.json
+│   └── settings.json
 └── renv.lock
 
 The rmd documents are stored in the R directory. The knitted documents are stored together, too.
