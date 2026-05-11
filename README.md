@@ -18,10 +18,7 @@ The repository contains:
 ```
 .
 ├── R.Rproj
-├── functions
-│   ├── 0-load_essential_packages.R
-│   ├── 1-data_visualization_setting_and_functions.R
-│   └── 2-useful_functions.R
+├── functions/
 ├── p1_lysine-rich-domain-biology/
 ├── p2_lysine-rich-domain-LCMS/
 │   ├── p2-1_calculate_ptm_stoichiometry_new.rmd
