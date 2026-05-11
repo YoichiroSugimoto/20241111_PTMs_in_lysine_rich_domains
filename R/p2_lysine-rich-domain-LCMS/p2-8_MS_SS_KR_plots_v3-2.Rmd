@@ -480,6 +480,7 @@ time_to_num <- function(x, inf_value = 100) {
   out
 }
 
+# Calculate t50 based on induction time 
 calc_t50 <- function(dt, time_col = "induction", y_col = "Stoichiometry", inf_value = 100) {
   t <- time_to_num(dt[[time_col]], inf_value = inf_value)
   y <- as.numeric(dt[[y_col]])
