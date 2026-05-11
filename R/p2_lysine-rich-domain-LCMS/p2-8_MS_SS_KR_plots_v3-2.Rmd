@@ -583,6 +583,7 @@ kinetics_data <- merge(
   by = c("gene_name", "aa_pos")
 )
 
+# Boxplot - half-time versus stoichiometry 
 ggplot(
   data = kinetics_data[!duplicated(paste(gene_name, aa_pos))],
   aes(
