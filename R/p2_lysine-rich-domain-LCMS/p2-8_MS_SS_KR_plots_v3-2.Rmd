@@ -545,6 +545,7 @@ t50_dt
 
 kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
 
+# Boxplot - WT stoichiometry versus normalized stoichiometry 
 ggplot(
   data = kinetics_data,
   aes(
@@ -886,7 +887,6 @@ ggplot(
 on_data <- lc_MS_SS_KR_PNAS_dt[induction2 %in% c("18-24h", "Inf")][
   sample_group != "iJ6_18h_21pc_SS" # As iJ6_24h_21pc_KR exists
 ]
-
 
 #---------------------------------------------
 # Stoichiometry relative to WT values
