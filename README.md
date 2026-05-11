@@ -19,7 +19,7 @@ The repository contains:
 .
 ├── R.Rproj
 ├── functions/
-├── p1_lysine-rich-domain-biology/
+├── p1_lysine-rich-domain-biology/   #characterises lysine-rich domains of proteins
 ├── p2_lysine-rich-domain-LCMS/
 │   ├── p2-1_calculate_ptm_stoichiometry_new.rmd
 │   ├── p2-2_optimise_parameters.rmd
