@@ -521,6 +521,7 @@ calc_t50 <- function(dt, time_col = "induction", y_col = "Stoichiometry", inf_va
   t1 + (y_half - y1) * (t2 - t1) / (y2 - y1)
 }
 
+# Calculate t50 for normoxia data 
 t50_dt <- lc_MS_SS_KR_PNAS_dt[oxygen == "21pc"][, .(
   t50 = calc_t50(.SD, time_col = "induction", y_col = "Stoichiometry", inf_value = 100),
   n = .N
