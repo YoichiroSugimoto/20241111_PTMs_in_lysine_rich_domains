@@ -10,5 +10,8 @@
 
 
 The repository contains
-- 
+* 
+*
+
+
 The rmd documents are stored in the R directory. The knitted documents are stored together, too.
