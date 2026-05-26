@@ -1,5 +1,5 @@
 ---
-title: "2-9. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
+title: "2-9. Site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction time"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script examines the oxygen sensitivity of lysine hydroxylations in BRD proteins and their respective sites. This script is for visualizing the calculated stoichiometry. 
+This script examines site-specific stoichiometry of lysine hydroxylations in BRD proteins across varying oxygen percentages and doxycycline induction times. The site-specific stoichiometries are visualised using the plot_ptm_stoichiometry function from the ptm.stoichiometry package
 
 # Environment setup
 
