@@ -131,6 +131,22 @@ MQ_DI_noH20_stoic_dt[, DI_site :=
   paste(protein_accession, aa_pos) %in% DI_sites[, paste(protein_accession, aa_pos)] 
 ]
 
+#Test - Extract the sites with diagnostic ions
+DI_sites <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][
+  !duplicated(paste(genotype, protein_accession, aa_pos)), 
+  .(genotype, protein_accession, aa_pos)
+]
+
+MQ_DI_noH20_stoic_dt[, DI_site :=
+  paste(genotype, protein_accession, aa_pos) %in% 
+  DI_sites[, paste(genotype, protein_accession, aa_pos)]
+]
+
+#checking 
+MQ_DI_noH20_stoic_dt[DI_site == TRUE, uniqueN(paste(protein_accession, aa_pos))]
+
+MQ_DI_noH20_stoic_dt[DI_site == TRUE, .N]
+
 # Load protein feature data 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 protein.feature.dt <- protein.feature.dt[residue == "K"]
@@ -175,6 +191,11 @@ wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_
 
 koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- wt_vs_KO_MQ_DI_noH20_stoic_dt[ptm == "[Oxidation (K)]"]
 koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[order(-DI_site)][!duplicated(paste(genotype, protein_accession, aa_pos))]
+
+koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[DI_site == TRUE & met_within_2 == "No",
+                            uniqueN(paste(protein_accession, aa_pos)),
+                            by = genotype]
+
 
 g1 <- ggplot(
   data = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge"],
