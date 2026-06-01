@@ -92,7 +92,7 @@ MQ_DI_noH2O_run_info[, sample_id := 1:.N]
 
 ```
 
-# Definition of functions
+# 2.4.2 Definition of functions
 
 ```{r definition_of_functions}
 
@@ -106,11 +106,11 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 
 ```
 
-# The effect of diagnostic ion on precision
+# 2.4.3 The effect of diagnostic ion on precision
 
 ```{r precision}
 
-## Read stoichiometry data for MQ_DI (change from the older version: a potential diagnostic ions with water loss is no longer considered)
+# Read stoichiometry data for MQ_DI (change from the older version: a potential diagnostic ions with water loss is no longer considered)
 MQ_DI_noH20_stoic_dt <- lapply(
   MQ_DI_noH2O_run_info[, prefix],
   read_stoic_data,
@@ -211,7 +211,7 @@ g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ```
 
-# Overlaps of Hyl sites in WT and JMJD6 KO cells
+# 2.4.4 Overlaps of Hyl sites in WT and JMJD6 KO cells
 
 ```{r overlap_wt_ko}
 
@@ -303,7 +303,7 @@ plot(venn_size_based,
 
 ```
 
-# Comparison with previous PNAS 2022 paper
+# 2.4.5 Comparison with previous PNAS 2022 paper
 
 ```{r pnas2022_comparison_MQ_DI_noH20loss}
 
