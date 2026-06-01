@@ -799,7 +799,7 @@ all_interaction_summary <- rbindlist(
   )
 )
 
-## Stats
+#Statistical inference of interaction data 
 interaction_out_data <- data.table()
 
 all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos))][, .(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos)]
