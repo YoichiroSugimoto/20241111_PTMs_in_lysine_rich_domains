@@ -673,7 +673,6 @@ m_xic_stoic[, `:=`(
   induction2 = factor(induction2, levels = c("4h", "8h", "18-24h"))
 )]
 
-
 ```
 
 
@@ -701,8 +700,10 @@ ggplot(
 
 ```{r interaction}
 
+#t50 data subset to BRD4 region (amino acid position - 534 to 560)
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
 
+#Function to calculate the interaction between low and high stoic sites 
 calculate_low_hyl_stoic_with_high_hylhiometry <- function(input_per_pos_data, high_stoic_sites, low_stoic_sites, sample_group){
   
   peptide_with_high_sotic_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_stoic_sites[, paste(protein_accession, aa_pos)]][, unique(peptide_id)]
@@ -764,8 +765,10 @@ calculate_low_hyl_stoic_with_high_hylhiometry <- function(input_per_pos_data, hi
   return(interaction_summary)
 }
 
+#t50 data subset to BRD4 region (amino acid position - 534 to 560)
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
 
+# Define high and low stoic sites of BRD4
 high_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548)) # 535 included here for computation purpose
 low_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
 
