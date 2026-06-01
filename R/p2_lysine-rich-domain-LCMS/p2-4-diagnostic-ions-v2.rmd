@@ -131,17 +131,6 @@ MQ_DI_noH20_stoic_dt[, DI_site :=
   paste(protein_accession, aa_pos) %in% DI_sites[, paste(protein_accession, aa_pos)] 
 ]
 
-#Test - Extract the sites with diagnostic ions
-DI_sites <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][
-  !duplicated(paste(genotype, protein_accession, aa_pos)), 
-  .(genotype, protein_accession, aa_pos)
-]
-
-MQ_DI_noH20_stoic_dt[, DI_site :=
-  paste(genotype, protein_accession, aa_pos) %in% 
-  DI_sites[, paste(genotype, protein_accession, aa_pos)]
-]
-
 # Load protein feature data 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 protein.feature.dt <- protein.feature.dt[residue == "K"]
@@ -187,10 +176,6 @@ wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_
 koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- wt_vs_KO_MQ_DI_noH20_stoic_dt[ptm == "[Oxidation (K)]"]
 koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[order(-DI_site)][!duplicated(paste(genotype, protein_accession, aa_pos))]
 
-koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[DI_site == TRUE & met_within_2 == "No",
-                            uniqueN(paste(protein_accession, aa_pos)),
-                            by = genotype]
-
 g1 <- ggplot(
   data = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge"],
   aes(
@@ -215,24 +200,14 @@ g2 <- ggplot(
   theme(aspect.ratio = 3) +
   scale_x_discrete(guide = guide_axis(angle = 90))
 
-#test 
-ggplot(
-  data = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge" & DI_site == TRUE],
-  aes(
-    x = genotype,
-    fill = met_within_2
-  )
-) +
-  geom_bar() +  
-  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
-  theme(aspect.ratio = 3) +
-  scale_x_discrete(guide = guide_axis(angle = 90))
+# Number of sites for plotting g2
+koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge" & DI_site == TRUE][
+  , .N, by = list(met_within_2, genotype)
+]
 
 library("patchwork")
 
 g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom") 
-
-
 
 ```
 
@@ -327,7 +302,6 @@ plot(venn_size_based,
      main = "Hydroxylated Sites Overlap (with DI)")
 
 ```
-
 
 # Comparison with previous PNAS 2022 paper
 
