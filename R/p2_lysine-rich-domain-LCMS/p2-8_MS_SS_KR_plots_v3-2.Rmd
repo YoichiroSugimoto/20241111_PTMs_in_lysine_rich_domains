@@ -772,22 +772,27 @@ t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
 high_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548)) # 535 included here for computation purpose
 low_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
 
-
+#Calculate interaction between high and low stoic sites of BRD2, BRD3 and BRD4 proteins
+# MQ_DI - (no waterloss)
 dataA_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MQ_DI_noH2O/DI_noH2O_data-A_trp_m7_v7_def_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")] %>%
   {.[sample_name == "JQ1_HeLaWT_derivatised"]}
 dataA_interaction_summary <- calculate_low_hyl_stoic_with_high_hylhiometry(input_per_pos_data = dataA_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT_PNAS2022")
 
+# MS_KR_1 data 
 MS_KR_1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_KR_1_noH2O/MS_KR_1_noH2O_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")] 
 MS_KR_1_WT_per_pos <- MS_KR_1_per_pos[sample_name == "HeLaWT_NA_N_NA"]
 MS_KR_1_WT_interaction_summary <- calculate_low_hyl_stoic_with_high_hylhiometry(input_per_pos_data = MS_KR_1_WT_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT")
 
+# MS_KR_1 - iJMJD6 cells in 24hr dox induction
 MS_KR_1_24h_per_pos <- MS_KR_1_per_pos[sample_name == "HeLaiJMJD6_Dox_N_NA"]
 MS_KR_1_24h_interaction_summary <- calculate_low_hyl_stoic_with_high_hylhiometry(input_per_pos_data = MS_KR_1_24h_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 24h")
 
+# MS_SS_1 data 
 MS_SS_1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_SS_noH2O/MS_SS_all_per_pos_data.csv")) %>%
   {rbind(.[gene_name %in% c("BRD4")][sample_name == "18h_21pc_BRD4"], .[gene_name %in% c("BRD2", "BRD3")][sample_name == "18h_21pc_BRD23"])}
 MS_SS_1_interaction_summary <- calculate_low_hyl_stoic_with_high_hylhiometry(input_per_pos_data = MS_SS_1_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 18h")
 
+# Combine interaction data from each dataset 
 all_interaction_summary <- rbindlist(
   list(
     dataA_interaction_summary, MS_KR_1_WT_interaction_summary, MS_KR_1_24h_interaction_summary, MS_SS_1_interaction_summary 
