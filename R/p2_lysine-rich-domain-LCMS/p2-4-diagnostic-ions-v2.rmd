@@ -60,7 +60,7 @@ library("ptm.stoichiometry")
 
 ```
 
-# Import basic data
+# 2.4.1 Import basic data
 
 ```{r import_basic_data, warning=FALSE}
 
