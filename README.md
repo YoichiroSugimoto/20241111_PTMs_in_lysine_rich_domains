@@ -1,5 +1,15 @@
 # Introduction
-An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package `ptm.stoichiometry` to calculate the stoichiometry of lysine hydroxylations.  
+An R-based pipeline for studying lysine hydroxylations from proteomics data, 
+supporting the study:
+
+> **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
+> residue-dependent oxygen sensitivity**
+> 
+> *Preprint available on bioRxiv:* DOI:
+
+This pipeline uses the **`ptm.stoichiometry`** package to calculate the stoichiometry
+of lysine hydroxylations from LC-MS/MS data processed by **`MaxQuant`**.
+
 
 ---
 
