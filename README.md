@@ -1,5 +1,5 @@
 # Introduction
-An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
+An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package `ptm.stoichiometry` to calculate the stoichiometry of lysine hydroxylations. 
 
 ---
 
@@ -13,7 +13,12 @@ The repository contains:
   - Plots examining lysine hydroxylation across varying O₂ conditions and doxycycline induction levels
 
 ---
-# Repository Structure 
+# Directory Structure 
+## R(markdown) scripts
+- p1_lysine-rich-domain-biology
+  - This script characterises lysine-rich domains of proteins
+- p2_lysine-rich-domain-LCMS
+  - The scripts take MaxQuant output as input and progress through PTM stoichiometry calculation, parameter optimisation, diagnostic ion analysis, and visualisation of site-specific lysine hydroxylations.
 
 ```
 .
@@ -36,6 +41,109 @@ The repository contains:
 └── renv.lock
 ```
 
+## Data Availability
+
+To run this pipeline, LC-MS/MS data must first be processed using `MaxQuant`. 
+Data A–E can be retrieved from the PRoteomics IDEntification Database (PRIDE) 
+using the following accession numbers:
+
+| Dataset | Description | PRIDE Accession |
+|---------|-------------|-----------------|
+| A, B1, B2, C | PNAS 2022 | `PXD031221` |
+| D | MS_KR_1 | `PXD079306` |
+| E | MS_SS | `PXD031221` |
+
+### Data Requirements
+To calculate stoichiometry, the pipeline uses the following `MaxQuant` output files:
+
+- `evidence.txt` — peptide-level search results including retention times, intensities, and modifications
+- `mqpar.xml` — `MaxQuant` parameter file recording the database search settings used
+- `proteinGroups.txt` — protein-level quantification and identification results
+- `sample_info.csv` — sample metadata and experimental design information
+- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified via diagnostic ions
+- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
+
+### Structure
+```
+.
+├── 20241113_RBPbase_Hs_DescriptiveID.xlsx
+├── 20241113_cd-code.csv
+├── FP_diagnostic_ion_search
+│   └── fragpipe_dataset-A
+│       ├── dataset01.diagnosticIons.tsv
+│       ├── fragger.params
+│       ├── fragpipe.workflow
+│       └── psm.tsv
+├── MQ_standard
+│   └── PNAS2022
+│       ├── evidence/
+│       ├── mqpar/
+│       ├── runtime/
+│       └── sample_info
+│           ├── MS_dataset_overview_PXD031221_data-A.csv
+│           ├── MS_dataset_overview_PXD031221_data-B.csv
+│           ├── MS_dataset_overview_PXD031221_data-C.csv
+│           └── MS_dataset_overview_PXD031221_data-D.csv
+├── MQ_with_DI_no_waterloss
+│   ├── MS_KR_1
+│   │   ├── MS_KR_1_evidence.txt
+│   │   ├── MS_KR_1_mqpar.xml
+│   │   ├── MS_KR_1_proteinGroups.txt
+│   │   ├── ptm
+│   │   │   ├── Oxidation (K) DISites.txt
+│   │   │   └── Oxidised Propionylation (K) DISites.txt
+│   │   └── sample_info.csv
+│   ├── MS_SS
+│   │   ├── MS_SS_evidence.txt
+│   │   ├── MS_SS_mqpar.xml
+│   │   ├── MS_SS_proteinGroups.txt
+│   │   ├── ptm
+│   │   │   ├── Oxidation (K) DISites.txt
+│   │   │   └── Oxidised Propionylation (K) DISites.txt
+│   │   └── sample_info.csv
+│   └── PNAS2022
+│       ├── evidence
+│       │   ├── data-A_trp_m7_v7_def_evidence.txt
+│       │   ├── data-B1_trp_m7_v7_mCC_evidence.txt
+│       │   ├── data-B2_trp_m7_v7_mCC_evidence.txt
+│       │   └── data-C_trp_m7_v7_mCC_evidence.txt
+│       ├── mqpar
+│       │   ├── data-A_trp_m7_v7_def_mqpar.xml
+│       │   ├── data-B1_trp_m7_v7_mCC_mqpar.xml
+│       │   ├── data-B2_trp_m7_v7_mCC_mqpar.xml
+│       │   └── data-C_trp_m7_v7_mCC_mqpar.xml
+│       ├── proteingroups
+│       │   ├── data-A_trp_m7_v7_def_proteinGroups.txt
+│       │   ├── data-B1_trp_m7_v7_mCC_proteinGroups.txt
+│       │   ├── data-B2_trp_m7_v7_mCC_proteinGroups.txt
+│       │   └── data-C_trp_m7_v7_mCC_proteinGroups.txt
+│       ├── ptm
+│       │   ├── data-A_trp_m7_v7_def_ptm
+│       │   │   ├── Oxidation (K) DISites.txt
+│       │   │   └── Oxidised Propionylation (K) DISites.txt
+│       │   ├── data-B1_trp_m7_v7_mCC_ptm
+│       │   │   ├── Oxidation (K) DISites.txt
+│       │   │   └── Oxidised Propionylation (K) DISites.txt
+│       │   ├── data-B2_trp_m7_v7_mCC_ptm
+│       │   │   ├── Oxidation (K) DISites.txt
+│       │   │   └── Oxidised Propionylation (K) DISites.txt
+│       │   └── data-C_trp_m7_v7_mCC_ptm
+│       │       ├── Oxidation (K) DISites.txt
+│       │       └── Oxidised Propionylation (K) DISites.txt
+│       └── sample_info
+│           ├── MS_dataset_overview_PXD031221_data-A.csv
+│           ├── MS_dataset_overview_PXD031221_data-B1.csv
+│           ├── MS_dataset_overview_PXD031221_data-B2.csv
+│           └── MS_dataset_overview_PXD031221_data-C.csv
+├── PNAS2022
+│   ├── all_protein_feature_per_position.csv
+│   └── long_K_stoichiometry_data.csv
+├── analysis_setting
+│   ├── PXD031221_sample_matrix.xlsx
+│   ├── ptm_replacement_de-propionylate_for_hydroxylysine.csv
+│   └── ptm_replacement_de-propionylate_for_hydroxylysine_fragpipe.csv
+└── xic_MS_SS.csv
+```
 
 The rmd documents are stored in the R directory. The knitted documents are stored together, too.
 
