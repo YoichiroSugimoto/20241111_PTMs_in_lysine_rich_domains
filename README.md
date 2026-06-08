@@ -29,7 +29,7 @@ The repository contains:
 │   ├── p2-6_PSM_PTM_comparisons.Rmd # PSm coverage in different database search settings
 │   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
 │   ├── p2-8_ptm_stoichiometry_plots.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
-│   ├── p2-9_MS_SS_KR_plots_v3-1.Rmd
+│   ├── p2-9_MS_SS_KR_plots_v3-1.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
 │   └── p2-10_MS_SS_KR_plots_v3-2.Rmd # Script for Supplementary data table 
 ├── renv/
 │   └── settings.json
