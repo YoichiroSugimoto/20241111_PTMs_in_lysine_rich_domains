@@ -2,9 +2,9 @@
 An R-based pipeline for studying lysine hydroxylations from proteomics data, 
 supporting the study:
 
-> **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
-> residue-dependent oxygen sensitivity**
-> 
+ **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
+ residue-dependent oxygen sensitivity**
+
 > *Preprint available on bioRxiv:* DOI:
 
 This pipeline uses the **`ptm.stoichiometry`** package to calculate the stoichiometry
