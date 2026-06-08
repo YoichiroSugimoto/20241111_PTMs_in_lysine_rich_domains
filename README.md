@@ -93,7 +93,7 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
 
 - `evidence.txt` — peptide-level search results including retention times, intensities, and modifications
 - `mqpar.xml` — `MaxQuant` parameter file recording the database search settings used
-- `proteinGroups.txt` — protein-level quantification and identification results
+- `proteinGroups.txt` — protein-level quantification results
 - `sample_info.csv` — sample metadata and experimental design information
 - `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified via diagnostic ions
 - `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
