@@ -1,24 +1,24 @@
-2-8. Lysine hydroxylations in varying O2 pc and dox induction time -
-data visualisation
+2-10. Lysine hydroxylations in varying O2 pc and dox induction time -
+excel data export
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-23 April, 2026
+08 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
-- [2.8.1 Install,load essential functions and
-  libraries](#281-installload-essential-functions-and-libraries)
-- [2.8.2 Import human protein reference
-  data](#282-import-human-protein-reference-data)
-- [2.8.12 MS_SS, MS_KR, PNAS Data tables converted to
-  excel](#2812-ms_ss-ms_kr-pnas-data-tables-converted-to-excel)
+- [2.10.1 Install,load essential functions and
+  libraries](#2101-installload-essential-functions-and-libraries)
+- [2.10.2 Import human protein reference
+  data](#2102-import-human-protein-reference-data)
+- [2.10.3 MS_SS, MS_KR, PNAS Data tables converted to
+  excel](#2103-ms_ss-ms_kr-pnas-data-tables-converted-to-excel)
 - [Session information](#session-information)
 
 # Overview
 
-This script examines the oxygen sensitivity of lysine hydroxylations in
-BRD proteins and their respective sites. This script is for visualizing
-the calculated stoichiometry.
+This script exports processed lysine hydroxylation stoichiometry data
+for BRD protein sites to a formatted Excel sheet as part of the oxygen
+sensitivity analysis pipeline.
 
 # Environment setup
 
@@ -42,7 +42,7 @@ project.dir <-
 #renv::restore(file.path(project.dir, "R"))
 ```
 
-# 2.8.1 Install,load essential functions and libraries
+# 2.10.1 Install,load essential functions and libraries
 
 ``` r
 ## Load all R scripts from the 'functions' folder into the current session
@@ -179,7 +179,7 @@ library("ptm.stoichiometry")
 library("openxlsx")
 ```
 
-# 2.8.2 Import human protein reference data
+# 2.10.2 Import human protein reference data
 
 ``` r
 # Import human protein reference data from specified file path 
@@ -198,7 +198,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 # create.dirs(c(results.dir, p2_MS_SS_KR))
 ```
 
-# 2.8.12 MS_SS, MS_KR, PNAS Data tables converted to excel
+# 2.10.3 MS_SS, MS_KR, PNAS Data tables converted to excel
 
 ``` r
 # Read FASTA data 
@@ -311,7 +311,7 @@ pnas2022_stoic_dt[, `:=`(
 setnames(pnas2022_stoic_dt, c("stoichiometry", "protein_accession", "gene_name", "aa_pos", "curated_oxK_site"),  c("Stoichiometry_PNAS2022", "Protein_accession", "Gene_name", "Amino_acid_pos", "PNAS2022_curated_oxK_site"))
 
 #-----------------------------
-# Load MS_KR_1 stoichiometry data
+# Load MS_KR_1 stoichiometry data (Dataset D)
 #-----------------------------
 
 ## Read stoichiometry data for MS_KR1 data (noH2O loss)
@@ -329,7 +329,7 @@ MS_KR1_stoic_dt[, `:=`(
 )]
 
 #-----------------------------
-# Load MS_SS stoichiometry data
+# Load MS_SS stoichiometry data (Dataset E)
 #-----------------------------
 
 ## Read stoichiometry data for MS_SS data 
@@ -694,7 +694,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-04-23
+    ##  date     2026-06-08
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -730,7 +730,7 @@ sessioninfo::session_info()
     ##  openxlsx          * 4.2.8.1    2025-10-31 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2026-04-13 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2026-05-15 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)
