@@ -258,6 +258,5 @@ The results directory contains the calculated stoichiometry files generated for 
     ├── stoichiometry_data.xlsx
     └── stoichiometry_data_2.xlsx
 ```
-The rmd documents are stored in the R directory. The knitted documents are stored together, too.
 
 
