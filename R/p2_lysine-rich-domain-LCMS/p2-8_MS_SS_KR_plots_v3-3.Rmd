@@ -1,5 +1,5 @@
 ---
-title: "2-11. Lysine hydroxylations in varying O2 pc and dox induction time - excel data export"
+title: "2-10. Lysine hydroxylations in varying O2 pc and dox induction time - excel data export"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# 2.11.1 Install,load essential functions and libraries
+# 2.10.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -67,7 +67,7 @@ library("openxlsx")
 
 ```
 
-# 2.11.2 Import human protein reference data 
+# 2.10.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -90,7 +90,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# 2.11.3 MS_SS, MS_KR, PNAS Data tables converted to excel 
+# 2.10.3 MS_SS, MS_KR, PNAS Data tables converted to excel 
 
 ```{r PNAS_DI_load_data_excel}
 
@@ -204,7 +204,7 @@ pnas2022_stoic_dt[, `:=`(
 setnames(pnas2022_stoic_dt, c("stoichiometry", "protein_accession", "gene_name", "aa_pos", "curated_oxK_site"),  c("Stoichiometry_PNAS2022", "Protein_accession", "Gene_name", "Amino_acid_pos", "PNAS2022_curated_oxK_site"))
 
 #-----------------------------
-# Load MS_KR_1 stoichiometry data
+# Load MS_KR_1 stoichiometry data (Dataset D)
 #-----------------------------
 
 ## Read stoichiometry data for MS_KR1 data (noH2O loss)
@@ -222,7 +222,7 @@ MS_KR1_stoic_dt[, `:=`(
 )]
 
 #-----------------------------
-# Load MS_SS stoichiometry data
+# Load MS_SS stoichiometry data (Dataset E)
 #-----------------------------
 
 ## Read stoichiometry data for MS_SS data 
