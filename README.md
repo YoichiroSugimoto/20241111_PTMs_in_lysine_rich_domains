@@ -6,7 +6,7 @@ An R-based pipeline for studying lysine hydroxylations from proteomics data. Thi
 The repository contains:
 
 - **Biological characterisation of lysine-rich domains**
--   Analysis of the domain biology of proteins with lysine-rich regions
+  - Analysis of the domain biology of proteins with lysine-rich regions
 - **LC-MS data processing and stoichiometry calculation**
 - **Visualisation of site-specific hydroxylation stoichiometry**
 
