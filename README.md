@@ -1,5 +1,5 @@
 # Introduction
-a R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
+An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
 
 ---
 
@@ -23,7 +23,7 @@ The repository contains:
 │   ├── p2-4-diagnostic-ions-v2.rmd # Using DI to identify Hyl
 │   ├── p2-4-diagnostic-ions.rmd # Using DI to identify Hyl
 │   ├── p2-5_MS_KR1.Rmd # Calculates stoichiometry of dataset D
-│   ├── p2-6_PSM_PTM_comparisons.Rmd # 
+│   ├── p2-6_PSM_PTM_comparisons.Rmd # PSm coverage in different database search settings
 │   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
 │   ├── p2-8_MS_SS_KR_plots_v2.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
 │   ├── p2-9_MS_SS_KR_plots_v3-1.Rmd
