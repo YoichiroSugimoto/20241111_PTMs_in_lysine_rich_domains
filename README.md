@@ -26,7 +26,7 @@ The repository contains:
 ├── functions/
 ├── p1_lysine-rich-domain-biology/   # Characterises lysine-rich domains of proteins
 ├── p2_lysine-rich-domain-LCMS/
-│   ├── p2-1_calculate_ptm_stoichiometry_new.rmd # Calculates stoichiometry from MaxQuant data 
+│   ├── p2-1_calculate_ptm_stoichiometry.rmd # Calculates stoichiometry from MaxQuant data 
 │   ├── p2-2_optimise_parameters.rmd # Optimal settings for the database search
 │   ├── p2-3_diagnostic_ions_hyl_identification.rmd # Identify diagnostic ions(DI)
 │   ├── p2-4_diagnostic_ions_plots.rmd # Using DI to identify Hyl
@@ -145,6 +145,8 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
 └── xic_MS_SS.csv
 ```
 ## Results 
+
+The results directory contains stoichiometry files for each dataset.
 
 ```
 .
