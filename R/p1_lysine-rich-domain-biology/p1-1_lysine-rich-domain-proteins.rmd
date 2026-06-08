@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script characterizes lysine-rich domains of proteins.
+This script characterizes lysine-rich domains of proteins, examining their maximum K score distribution relative to protein length, subcellular localisation, and functional protein class enrichment. It further analyses K scores in the context of histones.
 
 # Environment setup
 
@@ -45,7 +45,6 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 # Load PTM stiochiometry functions
 library("ptm.stoichiometry")
 ```
-
 
 # 1.1 Import data
 
@@ -130,7 +129,7 @@ protein.feature.dt[, median(K_ratio)]
 
 ```
 
-# Data Visualization - K score, Maximum K score and Protein Length
+# 1.3 Data Visualization - K score, Maximum K score and Protein Length
 
 ```{r Data_Visualization_Max_K_Score_&_Protein_Length}
 
@@ -211,7 +210,7 @@ ggplot(
 
 ```
 
-# 1.3 Subcellular localisation
+# 1.4 Subcellular localisation
 
 ```{r subcellular_localisation_analysis}
 
@@ -291,8 +290,7 @@ rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
 ```
 
-
-# Data Visualization - Subcellular Localisation
+# 1.5 Data Visualization - Subcellular Localisation
 
 ```{r Data_Visualization_Subcellular_Localisation}
 
@@ -325,7 +323,7 @@ ggplot(
 
 ```
 
-# 1.5 Enrichment of lysine-rich domains by functional protein classes
+# 1.6 Enrichment of lysine-rich domains by functional protein classes
 
 ```{r functional_classes}
 
@@ -438,6 +436,7 @@ ggplot(
   coord_cartesian(ylim = c(0, 2500))
 ```
 
+# 1.7 Max K score of histones
 
 ```{r histone_versus_max_K_score}
 library("RColorBrewer")
@@ -627,6 +626,8 @@ rbindlist(list(
 
 ```
 
+# 1.8 K score of disordered regions of proteins 
+
 ```{r kscore_disorderedness_other_proteins}
 
 library("patchwork")
@@ -686,9 +687,6 @@ ARL6IP4.1 / ARL6IP4.2
 
 
 ```
-
-
-
 
 # Session information
 
