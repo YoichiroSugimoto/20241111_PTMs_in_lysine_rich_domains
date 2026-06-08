@@ -27,8 +27,7 @@ The repository contains:
 │   ├── p2-7_MS_SS.Rmd
 │   ├── p2-8_MS_SS_KR_plots_v2.Rmd
 │   ├── p2-9_MS_SS_KR_plots_v3-1.Rmd
-│   ├── p2-10_MS_SS_KR_plots_v3-2.Rmd
-│   └── p2-11_MS_SS_KR_plots_v3-3.Rmd
+│   └── p2-10_MS_SS_KR_plots_v3-2.Rmd
 ├── renv/
 │   └── settings.json
 └── renv.lock
