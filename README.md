@@ -1,3 +1,9 @@
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![R](https://img.shields.io/badge/R-4.5.1-blue)
+![bioRxiv](https://img.shields.io/badge/bioRxiv-preprint-red)
+![MaxQuant](https://img.shields.io/badge/MaxQuant-input-orange)
+
 # Introduction
 An R-based pipeline for studying lysine hydroxylations from proteomics data, 
 supporting the study:
