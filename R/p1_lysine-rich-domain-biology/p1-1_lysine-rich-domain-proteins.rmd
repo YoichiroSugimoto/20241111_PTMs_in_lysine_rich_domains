@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script characterises lysine-rich domains of proteins.
+This script characterizes lysine-rich domains of proteins.
 
 # Environment setup
 
@@ -57,7 +57,7 @@ results.dir <- file.path(project.dir, "results")
 
 #Create p1 results directory
 p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
-create.dirs(c(results.dir, p1_K_rich_domains))
+# create.dirs(c(results.dir, p1_K_rich_domains))
 
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
