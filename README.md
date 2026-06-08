@@ -23,14 +23,14 @@ The repository contains:
 ├── p2_lysine-rich-domain-LCMS/
 │   ├── p2-1_calculate_ptm_stoichiometry_new.rmd # Calculates stoichiometry from MaxQuant data 
 │   ├── p2-2_optimise_parameters.rmd # Optimal settings for the database search
-│   ├── p2-3-diagnostic-ions-lysine-hydorxylation-stoic.rmd # Identify diagnostic ions(DI)
-│   ├── p2-4-diagnostic-ions.rmd # Using DI to identify Hyl
+│   ├── p2-3_diagnostic_ions_hyl_identification.rmd # Identify diagnostic ions(DI)
+│   ├── p2-4_diagnostic_ions_plots.rmd # Using DI to identify Hyl
 │   ├── p2-5_MS_KR1.Rmd # Calculates stoichiometry of dataset D
 │   ├── p2-6_PSM_PTM_comparisons.Rmd # PSm coverage in different database search settings
 │   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
 │   ├── p2-8_ptm_stoichiometry_plots.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
-│   ├── p2-9_MS_SS_KR_plots_v3-1.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
-│   └── p2-10_MS_SS_KR_plots_v3-2.Rmd # Script for Supplementary data table 
+│   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
+│   └── p2-10_Lys_hydroxylation_BRD_stoic_export.Rmd # Script for Supplementary data table 
 ├── renv/
 │   └── settings.json
 └── renv.lock
