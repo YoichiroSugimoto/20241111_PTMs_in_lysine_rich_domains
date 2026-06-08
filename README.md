@@ -66,7 +66,7 @@ renv::restore()
 │   ├── p2-3_diagnostic_ions_hyl_identification.rmd # Identify diagnostic ions(DI)
 │   ├── p2-4_diagnostic_ions_plots.rmd # Using DI to identify Hyl
 │   ├── p2-5_MS_KR1.Rmd # Calculates stoichiometry of dataset D
-│   ├── p2-6_PSM_PTM_comparisons.Rmd # PSm coverage in different database search settings
+│   ├── p2-6_PSM_PTM_comparisons.Rmd # PSM coverage in different database search settings
 │   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
 │   ├── p2-8_ptm_stoichiometry_plots.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
 │   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
