@@ -28,6 +28,24 @@ The repository contains:
   - Plots examining lysine hydroxylation across varying O₂ conditions and doxycycline induction levels
 
 ---
+
+## Installation - `ptm.stoichiometry`
+
+Install the required `ptm.stoichiometry` package from GitHub:
+
+```r
+install.packages("devtools")
+devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
+```
+
+> **Note:** All other package dependencies are managed via `renv`. 
+> To restore the project library, run:
+
+```r
+renv::restore()
+```
+---
+
 # Directory Structure 
 ## R(markdown) scripts
 - **p1_lysine-rich-domain-biology**
@@ -56,22 +74,6 @@ The repository contains:
 ├── renv/
 │   └── settings.json
 └── renv.lock
-```
-
-## Installation
-
-Install the required `ptm.stoichiometry` package from GitHub:
-
-```r
-install.packages("devtools")
-devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
-```
-
-> **Note:** All other package dependencies are managed via `renv`. 
-> To restore the project library, run:
-
-```r
-renv::restore()
 ```
 
 ## Data Availability
