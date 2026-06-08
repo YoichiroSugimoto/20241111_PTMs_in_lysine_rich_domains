@@ -68,7 +68,7 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
   #### MaxQuant Parameters
  MaxQuant (2.6.2.0) was used for MS database search with the following parameters: fixed modifications: carbamidomethylation (at C); variable modifications: Oxidation (at M), Acetylation (at protein N-terminus), Propionylation (C3H4O at K), Oxidation (O at K) and Oxidised Propionylation (C3H4O2 at K); diagnostic ions: Oxidation (C5H9ON at K) and Oxidised propionylation (C8H13O2N at K). Upto seven missed cleavages were allowed in order to detect derivatised lysine-rich peptides. Specific parameters of the MaxQuant search are available as parameters.txt file, downloadable from the above-mentioned PRIDE Accession `PXD079306` and `PXD031221`.
 
-### Structure
+### Data Structure
 
 ```
 .
