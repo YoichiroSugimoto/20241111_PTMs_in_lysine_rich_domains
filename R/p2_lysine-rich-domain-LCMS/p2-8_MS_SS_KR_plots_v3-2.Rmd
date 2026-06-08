@@ -48,7 +48,7 @@ project.dir <-
 
 ```
 
-# 2.10.1 Install,load essential functions and libraries
+# 2.9.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -70,7 +70,7 @@ library("ptm.stoichiometry")
 
 ```
 
-# 2.10.2 Import human protein reference data 
+# 2.9.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -93,7 +93,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# 2.10.3 Defining functions and data preprocessing
+# 2.9.3 Defining functions and data preprocessing
 
 ```{r Define_important_functions}
 
@@ -180,7 +180,8 @@ contrast_hydroxylation_by_sample_group<- function(all_stoic_dt){
 ```{r load_PNAS_MS_KR_1_MS_SS_data}
 
 #-----------------------------
-# Load MS_KR_1 stoichiometry data
+# Load MS_KR_1 stoichiometry data 
+# NOTE: dataset D will be referred as MS_KR_1
 #-----------------------------
 
 ## Read stoichiometry data for MS_KR1 data (noH2O loss)
@@ -199,6 +200,7 @@ MS_KR1_stoic_dt[, `:=`(
 
 #-----------------------------
 # Load MS_SS stoichiometry data
+# NOTE: dataset E will be referred as MS_KR_1
 #-----------------------------
 
 ## Read stoichiometry data for MS_SS data 
@@ -285,7 +287,7 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 ```
 
-# 2.10.3 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
+# 2.9.3 Plotting Stoichiometry values of hypoxia and normoxia data with re-expression of JMJD6 (+ diagnostic ion)
 
 ```{r merge_MS_SS_KR_PNAS_data}
 
@@ -355,7 +357,7 @@ lc_MS_SS_KR_PNAS_dt[, data_size_per_site := .N, by = list(protein_accession, aa_
 
 ```
 
-# 2.10.4 Normoxia samples under varying dox induction
+# 2.9.4 Normoxia samples under varying dox induction
 
 ```{r Dox_plus_minus_JMJD6_21_O2pc}
 
@@ -475,7 +477,7 @@ induction_t_test
 
 ```
 
-# 2.10.5 t50 - Time to half value 
+# 2.9.5 t50 - Time to half value 
 
 ```{r time_to_half_value}
 
@@ -547,7 +549,7 @@ t50_dt
 
 ```
 
-# 2.10.6 Kinetics 
+# 2.9.6 Kinetics 
 
 ```{r kinetics}
 
@@ -616,7 +618,7 @@ kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)
 
 ```
 
-# 2.10.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
+# 2.9.7 XIC values against MS_SS, MS_KR_1 and PNAS stoichiometry data. 
 
 ```{r XIC_vs_stoic}
 
@@ -704,7 +706,7 @@ ggplot(
 
 ```
 
-# 2.10.8 Interaction
+# 2.9.8 Interaction
 
 ```{r interaction}
 
@@ -897,7 +899,7 @@ ggplot(
 
 ```
 
-# 2.10.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
+# 2.9.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
 ```{r normoxia_vs_varying_hypoxia_pc_overnightdox}
 
@@ -996,7 +998,7 @@ oxygen_t_test
 
 ```
 
-# 2.10.10 Relationship of the stoichiometry in WT and changes in stoichiometry by hypoxia
+# 2.9.10 Relationship of the stoichiometry in WT and changes in stoichiometry by hypoxia
 
 ```{r normoxia_vs_hypoxia_scatterplot}
 
