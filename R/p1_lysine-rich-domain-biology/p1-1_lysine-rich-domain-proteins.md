@@ -1,20 +1,31 @@
 1-1. Proteins with lysine-rich domains
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-07 January, 2026
+08 June, 2026
 
+- [Overview](#overview)
 - [Environment setup](#environment-setup)
 - [1.1 Import data](#11-import-data)
 - [1.2 Maximum K score and Protein
   Length](#12-maximum-k-score-and-protein-length)
-- [Data Visualization - K score, Maximum K score and Protein
-  Length](#data-visualization---k-score-maximum-k-score-and-protein-length)
-- [1.3 Subcellular localisation](#13-subcellular-localisation)
-- [Data Visualization - Subcellular
-  Localisation](#data-visualization---subcellular-localisation)
-- [1.5 Enrichment of lysine-rich domains by functional protein
-  classes](#15-enrichment-of-lysine-rich-domains-by-functional-protein-classes)
+- [1.3 Data Visualization - K score, Maximum K score and Protein
+  Length](#13-data-visualization---k-score-maximum-k-score-and-protein-length)
+- [1.4 Subcellular localisation](#14-subcellular-localisation)
+- [1.5 Data Visualization - Subcellular
+  Localisation](#15-data-visualization---subcellular-localisation)
+- [1.6 Enrichment of lysine-rich domains by functional protein
+  classes](#16-enrichment-of-lysine-rich-domains-by-functional-protein-classes)
+- [1.7 Max K score of histones](#17-max-k-score-of-histones)
+- [1.8 K score of disordered regions of
+  proteins](#18-k-score-of-disordered-regions-of-proteins)
 - [Session information](#session-information)
+
+# Overview
+
+This script characterizes lysine-rich domains of proteins, examining
+their maximum K score distribution relative to protein length,
+subcellular localisation, and functional protein class enrichment. It
+further analyses K scores in the context of histones.
 
 # Environment setup
 
@@ -62,12 +73,26 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
     ## Loading required package: BiocGenerics
 
+    ## Loading required package: generics
+
+    ## 
+    ## Attaching package: 'generics'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     explain
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    ##     setequal, union
+
     ## 
     ## Attaching package: 'BiocGenerics'
 
-    ## The following objects are masked from 'package:dplyr':
+    ## The following object is masked from 'package:dplyr':
     ## 
-    ##     combine, intersect, setdiff, union
+    ##     combine
 
     ## The following objects are masked from 'package:stats':
     ## 
@@ -77,10 +102,10 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
     ## 
     ##     anyDuplicated, aperm, append, as.data.frame, basename, cbind,
     ##     colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
-    ##     get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply,
-    ##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    ##     Position, rank, rbind, Reduce, rownames, sapply, saveRDS, setdiff,
-    ##     table, tapply, union, unique, unsplit, which.max, which.min
+    ##     get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    ##     rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
+    ##     unsplit, which.max, which.min
 
     ## Loading required package: S4Vectors
 
@@ -141,12 +166,9 @@ library("ptm.stoichiometry")
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
-### To be deleted
-results.dir <- file.path("/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/results")
-
 #Create p1 results directory
 p1_K_rich_domains <- file.path(results.dir, "p1_K_rich_domains")
-create.dirs(c(results.dir, p1_K_rich_domains))
+# create.dirs(c(results.dir, p1_K_rich_domains))
 
 ## Load data into environment 
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
@@ -254,7 +276,7 @@ protein.feature.dt[, median(K_ratio)]
 
     ## [1] 0
 
-# Data Visualization - K score, Maximum K score and Protein Length
+# 1.3 Data Visualization - K score, Maximum K score and Protein Length
 
 ``` r
 #---------------------------------------------------------
@@ -365,7 +387,7 @@ ggplot(
 
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-5.png)<!-- -->
 
-# 1.3 Subcellular localisation
+# 1.4 Subcellular localisation
 
 ``` r
 #--------------------------------------
@@ -443,7 +465,7 @@ d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.sco
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 ```
 
-# Data Visualization - Subcellular Localisation
+# 1.5 Data Visualization - Subcellular Localisation
 
 ``` r
 # Load libraries -  'RColorBrewer' and 'pheatmap'
@@ -480,7 +502,7 @@ ggplot(
 
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/Data_Visualization_Subcellular_Localisation-2.png)<!-- -->
 
-# 1.5 Enrichment of lysine-rich domains by functional protein classes
+# 1.6 Enrichment of lysine-rich domains by functional protein classes
 
 ``` r
 library("mgcv")
@@ -668,6 +690,8 @@ ggplot(
 ```
 
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/functional_classes-2.png)<!-- -->
+
+# 1.7 Max K score of histones
 
 ``` r
 library("RColorBrewer")
@@ -904,6 +928,8 @@ rbindlist(list(
 
     ## [1] 0.3
 
+# 1.8 K score of disordered regions of proteins
+
 ``` r
 library("patchwork")
 
@@ -974,7 +1000,7 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.4.3 (2025-02-28)
+    ##  version  R version 4.5.1 (2025-06-13)
     ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
@@ -982,104 +1008,104 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-01-07
-    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
-    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ##  date     2026-06-08
+    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  package           * version    date (UTC) lib source
-    ##  AnnotationDbi     * 1.68.0     2024-10-29 [1] Bioconduc~
-    ##  Biobase           * 2.66.0     2024-10-29 [1] Bioconduc~
-    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
-    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
-    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.4.3)
-    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.4.3)
-    ##  blob                1.2.4      2023-03-17 [1] CRAN (R 4.4.3)
-    ##  cachem              1.1.0      2024-05-16 [1] CRAN (R 4.4.3)
-    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
-    ##  colourpicker        1.3.0      2023-08-21 [1] CRAN (R 4.4.3)
-    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
-    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
-    ##  DBI                 1.2.3      2024-06-02 [1] CRAN (R 4.4.3)
-    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
-    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
-    ##  evaluate            1.0.4      2025-06-18 [1] CRAN (R 4.4.3)
-    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
-    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
-    ##  formattable         0.2.1      2021-01-07 [1] CRAN (R 4.4.3)
-    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
-    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
-    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
-    ##  ggplot2           * 3.5.2      2025-04-09 [1] CRAN (R 4.4.3)
-    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
-    ##  gridExtra           2.3        2017-09-09 [1] CRAN (R 4.4.3)
-    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
-    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
-    ##  htmlwidgets         1.6.4      2023-12-06 [1] CRAN (R 4.4.3)
-    ##  httpuv              1.6.16     2025-04-16 [1] CRAN (R 4.4.3)
-    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
-    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
-    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
-    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  KEGGREST            1.46.0     2024-10-29 [1] Bioconduc~
-    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
-    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
-    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
-    ##  later               1.4.2      2025-04-08 [1] CRAN (R 4.4.3)
+    ##  AnnotationDbi     * 1.70.0     2025-04-15 [1] Bioconduc~
+    ##  Biobase           * 2.68.0     2025-04-15 [1] Bioconduc~
+    ##  BiocGenerics      * 0.54.0     2025-04-15 [1] Bioconduc~
+    ##  Biostrings        * 2.76.0     2025-04-15 [1] Bioconduc~
+    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.5.1)
+    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.5.1)
+    ##  blob                1.2.4      2023-03-17 [1] CRAN (R 4.5.1)
+    ##  cachem              1.1.0      2024-05-16 [1] CRAN (R 4.5.1)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.5.1)
+    ##  colourpicker        1.3.0      2023-08-21 [1] CRAN (R 4.5.1)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.5.1)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.5.1)
+    ##  DBI                 1.2.3      2024-06-02 [1] CRAN (R 4.5.1)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.5.1)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.5.1)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.5.1)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.5.1)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.5.1)
+    ##  formattable         0.2.1      2021-01-07 [1] CRAN (R 4.5.1)
+    ##  generics          * 0.1.4      2025-05-09 [1] CRAN (R 4.5.1)
+    ##  GenomeInfoDb      * 1.44.3     2025-09-21 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.14     2025-09-24 [1] Bioconductor
+    ##  ggplot2           * 4.0.1      2025-11-14 [1] CRAN (R 4.5.1)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.5.1)
+    ##  gridExtra           2.3        2017-09-09 [1] CRAN (R 4.5.1)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.5.1)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.5.1)
+    ##  htmlwidgets         1.6.4      2023-12-06 [1] CRAN (R 4.5.1)
+    ##  httpuv              1.6.16     2025-04-16 [1] CRAN (R 4.5.1)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.5.1)
+    ##  IRanges           * 2.42.0     2025-04-15 [1] Bioconduc~
+    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.5.1)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  KEGGREST            1.48.1     2025-06-22 [1] Bioconduc~
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.5.1)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.5.1)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.5.1)
+    ##  later               1.4.4      2025-08-27 [1] CRAN (R 4.5.1)
     ##  lattice             0.22-5     2023-10-24 [4] CRAN (R 4.3.3)
-    ##  lazyeval            0.2.2      2019-03-15 [1] CRAN (R 4.4.3)
-    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
-    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
-    ##  magrittr          * 2.0.3      2022-03-30 [1] CRAN (R 4.4.3)
-    ##  Matrix              1.7-3      2025-03-11 [1] CRAN (R 4.4.3)
-    ##  memoise             2.0.1      2021-11-26 [1] CRAN (R 4.4.3)
-    ##  mgcv              * 1.9-1      2023-12-21 [1] CRAN (R 4.4.3)
-    ##  mime                0.13       2025-03-17 [1] CRAN (R 4.4.3)
-    ##  miniUI              0.1.2      2025-04-17 [1] CRAN (R 4.4.3)
+    ##  lazyeval            0.2.2      2019-03-15 [1] CRAN (R 4.5.1)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.5.1)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.5.1)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
+    ##  Matrix              1.7-3      2025-03-11 [4] CRAN (R 4.4.3)
+    ##  memoise             2.0.1      2021-11-26 [1] CRAN (R 4.5.1)
+    ##  mgcv              * 1.9-1      2023-12-21 [4] CRAN (R 4.3.2)
+    ##  mime                0.13       2025-03-17 [1] CRAN (R 4.5.1)
+    ##  miniUI              0.1.2      2025-04-17 [1] CRAN (R 4.5.1)
     ##  nlme              * 3.1-168    2025-03-31 [4] CRAN (R 4.4.3)
-    ##  org.Hs.eg.db      * 3.20.0     2025-10-31 [1] Bioconductor
-    ##  patchwork         * 1.3.1      2025-06-21 [1] CRAN (R 4.4.3)
-    ##  pheatmap          * 1.0.13     2025-06-05 [1] CRAN (R 4.4.3)
-    ##  pillar              1.11.0     2025-07-04 [1] CRAN (R 4.4.3)
-    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
-    ##  plotly              4.11.0     2025-06-19 [1] CRAN (R 4.4.3)
-    ##  plyr                1.8.9      2023-10-02 [1] CRAN (R 4.4.3)
-    ##  png                 0.1-8      2022-11-29 [1] CRAN (R 4.4.3)
-    ##  promises            1.3.3      2025-05-29 [1] CRAN (R 4.4.3)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
-    ##  purrr               1.1.0      2025-07-10 [1] CRAN (R 4.4.3)
-    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
-    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
-    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.4.3)
-    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
-    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
-    ##  RSQLite             2.4.3      2025-08-20 [1] CRAN (R 4.4.3)
-    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
-    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
-    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
-    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
-    ##  shiny               1.11.1     2025-07-03 [1] CRAN (R 4.4.3)
-    ##  shinythemes         1.2.0      2021-01-25 [1] CRAN (R 4.4.3)
-    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
-    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  stringr           * 1.5.1      2023-11-14 [1] CRAN (R 4.4.3)
-    ##  subcellularvis    * 0.0.0.9000 2025-10-31 [1] local
-    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
-    ##  tidyr               1.3.1      2024-01-24 [1] CRAN (R 4.4.3)
-    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
-    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
-    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
-    ##  UpSetR              1.4.0      2019-05-22 [1] CRAN (R 4.4.3)
-    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
-    ##  viridisLite         0.4.2      2023-05-02 [1] CRAN (R 4.4.3)
-    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
-    ##  xfun                0.52       2025-04-02 [1] CRAN (R 4.4.3)
-    ##  xtable              1.8-4      2019-04-21 [1] CRAN (R 4.4.3)
-    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
-    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
-    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
+    ##  org.Hs.eg.db      * 3.21.0     2025-10-17 [1] Bioconductor
+    ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.5.1)
+    ##  pheatmap          * 1.0.13     2025-06-05 [1] CRAN (R 4.5.1)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
+    ##  plotly              4.11.0     2025-06-19 [1] CRAN (R 4.5.1)
+    ##  plyr                1.8.9      2023-10-02 [1] CRAN (R 4.5.1)
+    ##  png                 0.1-8      2022-11-29 [1] CRAN (R 4.5.1)
+    ##  promises            1.3.3      2025-05-29 [1] CRAN (R 4.5.1)
+    ##  ptm.stoichiometry * 0.0.0.9000 2026-05-15 [1] local
+    ##  purrr               1.2.0      2025-11-04 [1] CRAN (R 4.5.1)
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
+    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
+    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.5.1)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.5.1)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.5.1)
+    ##  RSQLite             2.4.3      2025-08-20 [1] CRAN (R 4.5.1)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.5.1)
+    ##  S4Vectors         * 0.46.0     2025-04-15 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.5.1)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.5.1)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.5.1)
+    ##  shiny               1.11.1     2025-07-03 [1] CRAN (R 4.5.1)
+    ##  shinythemes         1.2.0      2021-01-25 [1] CRAN (R 4.5.1)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.5.1)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.5.1)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.5.1)
+    ##  subcellularvis    * 0.0.0.9000 2025-10-20 [1] local
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.5.1)
+    ##  tidyr               1.3.1      2024-01-24 [1] CRAN (R 4.5.1)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.5.1)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.5.1)
+    ##  UCSC.utils          1.4.0      2025-04-15 [1] Bioconduc~
+    ##  UpSetR              1.4.0      2019-05-22 [1] CRAN (R 4.5.1)
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.5.1)
+    ##  viridisLite         0.4.2      2023-05-02 [1] CRAN (R 4.5.1)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.5.1)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.5.1)
+    ##  xtable              1.8-4      2019-04-21 [1] CRAN (R 4.5.1)
+    ##  XVector           * 0.48.0     2025-04-15 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.5.1)
     ## 
-    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
+    ##  [1] /home/pkesava/R/x86_64-pc-linux-gnu-library/4.5
     ##  [2] /usr/local/lib/R/site-library
     ##  [3] /usr/lib/R/site-library
     ##  [4] /usr/lib/R/library
