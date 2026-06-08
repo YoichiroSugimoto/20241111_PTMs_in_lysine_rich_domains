@@ -1,5 +1,5 @@
 ---
-title: "2-10. Lysine hydroxylations in varying O2 pc and dox induction time - data visualisation"
+title: "2-9. Lysine hydroxylation stoichiometry under varying O2% and dox induction — data visualisation"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
