@@ -58,6 +58,22 @@ The repository contains:
 └── renv.lock
 ```
 
+## Installation
+
+Install the required `ptm.stoichiometry` package from GitHub:
+
+```r
+install.packages("devtools")
+devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
+```
+
+> **Note:** All other package dependencies are managed via `renv`. 
+> To restore the project library, run:
+
+```r
+renv::restore()
+```
+
 ## Data Availability
 
 To run this pipeline, LC-MS/MS data must first be processed using `MaxQuant`. 
