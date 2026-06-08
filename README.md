@@ -13,7 +13,12 @@ The repository contains:
   - Plots examining lysine hydroxylation across varying O₂ conditions and doxycycline induction levels
 
 ---
-# Repository Structure 
+# Directory Structure 
+## R(markdown) scripts
+- p1_lysine-rich-domain-biology
+  - This characterises lysine-rich domains of proteins
+- p2_lysine-rich-domain-LCMS
+  - The scripts take MaxQuant output as input and progress through PTM stoichiometry calculation, parameter optimisation, diagnostic ion analysis, and visualisation of site-specific lysine hydroxylations.
 
 ```
 .
