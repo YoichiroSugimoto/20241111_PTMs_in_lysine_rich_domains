@@ -1,5 +1,5 @@
 # Introduction
-An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package "ptm.stoichiometry" to calculate the stoichiometry of lysine hydroxylations. 
+An R-based pipeline for studying lysine hydroxylations from proteomics data. This pipeline uses the package `ptm.stoichiometry` to calculate the stoichiometry of lysine hydroxylations. 
 
 ---
 
@@ -41,7 +41,29 @@ The repository contains:
 └── renv.lock
 ```
 
-## Data structure
+## Data Availability
+
+To run this pipeline, LC-MS/MS data must first be processed using `MaxQuant`. 
+Data A–E can be retrieved from the PRoteomics IDEntification Database (PRIDE) 
+using the following accession numbers:
+
+| Dataset | Description | PRIDE Accession |
+|---------|-------------|-----------------|
+| A, B1, B2, C | PNAS 2022 | `PXD031221` |
+| D | MS_KR_1 | `PXD079306` |
+| E | MS_SS | `PXD031221` |
+
+### Data Requirements
+To calculate stoichiometry, the pipeline uses the following `MaxQuant` output files:
+
+- `evidence.txt` — peptide-level search results including retention times, intensities, and modifications
+- `mqpar.xml` — `MaxQuant` parameter file recording the database search settings used
+- `proteinGroups.txt` — protein-level quantification and identification results
+- `sample_info.csv` — sample metadata and experimental design information
+- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified via diagnostic ions
+- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
+
+### Structure
 ```
 .
 ├── 20241113_RBPbase_Hs_DescriptiveID.xlsx
