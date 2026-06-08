@@ -8,7 +8,9 @@ The repository contains:
 - **Biological characterisation of lysine-rich domains**
   - Analysis of the domain biology of proteins with lysine-rich regions
 - **LC-MS data processing and stoichiometry calculation**
+  - Workflows for calculating PTM stoichiometry from MaxQuant output, optimising database search parameters, identifying diagnostic ions for hydroxylysine (Hyl), and computing site-specific stoichiometry across multiple datasets
 - **Visualisation of site-specific hydroxylation stoichiometry**
+  - Plots examining lysine hydroxylation across varying O₂ conditions and doxycycline induction levels
 
 ---
 # Repository Structure 
