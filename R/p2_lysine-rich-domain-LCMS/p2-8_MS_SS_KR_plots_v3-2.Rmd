@@ -813,7 +813,7 @@ for(irow in 1:nrow(all_sites_to_analyse)){
   )
   
   if(nrow(sl_all_interaction_summary) > 2){
-    
+    # Paired t-test: low Hyl stoichiometry without vs. with a high-stoic neighbour
     t_out <- sl_all_interaction_summary %$%
       t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
     
@@ -825,6 +825,7 @@ for(irow in 1:nrow(all_sites_to_analyse)){
       value.name = "stoichiometry"
     )
     
+    # combine the interaction_out_data table with p-value and sample size for site pair 
     interaction_out_data <- rbind(
       interaction_out_data,
       data.table(all_sites_to_analyse[irow], p_val = t_out$p.value, n = nrow(sl_all_interaction_summary))
@@ -834,10 +835,11 @@ for(irow in 1:nrow(all_sites_to_analyse)){
 
 interaction_out_data
 
+# paired t-test excluding high stoic position == 550
 all_interaction_summary[!(high_stoic_aa_pos == 550)] %$%
   t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
 
-## Plot
+# convert table into long format for plotting 
 m_all_interaction_summary <- melt(
   all_interaction_summary, 
   id.vars = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos", "n", "sample_group"), 
@@ -846,8 +848,10 @@ m_all_interaction_summary <- melt(
   value.name = "stoichiometry"
 )
 
+# new column - type - with or without high_hyl
 m_all_interaction_summary[, type := gsub("low_hyl_stoic_", "", type)]
 
+# Plot
 ggplot(
   data = m_all_interaction_summary[!(high_stoic_aa_pos == 550)],
   aes(
