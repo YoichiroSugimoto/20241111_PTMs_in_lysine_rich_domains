@@ -146,7 +146,7 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
 ```
 ## Results 
 
-The results directory contains stoichiometry files for each dataset.
+The results directory contains the calculated stoichiometry files generated for each dataset.
 
 ```
 .
