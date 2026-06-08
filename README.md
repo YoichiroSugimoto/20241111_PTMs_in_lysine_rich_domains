@@ -148,6 +148,8 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
 
 The results directory contains the calculated stoichiometry files generated for each dataset.
 
+> **Note:** The `p2_MS_SS_KR` folder contains combined stoichiometry files from datasets A-E. Figures generated from the scripts are stored in knitted folders. 
+
 ```
 .
 ├── p1_K_rich_domains
