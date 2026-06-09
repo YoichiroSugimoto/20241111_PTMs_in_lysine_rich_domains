@@ -50,23 +50,60 @@ devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
 .
 ├── R.Rproj
-├── functions/
-├── p1_lysine-rich-domain-biology/   # Characterises lysine-rich domains of proteins
-├── p2_lysine-rich-domain-LCMS/
-│   ├── p2-1_calculate_ptm_stoichiometry.rmd # Calculates stoichiometry from MaxQuant data 
-│   ├── p2-2_optimise_parameters.rmd # Optimal settings for the database search
-│   ├── p2-3_diagnostic_ions_hyl_identification.rmd # Identify diagnostic ions(DI)
-│   ├── p2-4_diagnostic_ions_plots.rmd # Using DI to identify Hyl
-│   ├── p2-5_MS_KR1.Rmd # Calculates stoichiometry of dataset D
-│   ├── p2-6_PSM_PTM_comparisons.Rmd # PSM coverage in different database search settings
-│   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
-│   ├── p2-8_ptm_stoichiometry_plots.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
-│   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation.Rmd # Visualises site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction
-│   └── p2-10_Lys_hydroxylation_BRD_stoic_export.Rmd # Script for Supplementary data table 
-├── renv/
-│   └── settings.json
+├── functions
+│   ├── 0-load_essential_packages.R
+│   ├── 1-data_visualization_setting_and_functions.R
+│   └── 2-useful_functions.R
+├── p1_lysine-rich-domain-biology 
+│   ├── p1-1_lysine-rich-domain-proteins.md
+│   ├── p1-1_lysine-rich-domain-proteins.rmd
+│   └── p1-1_lysine-rich-domain-proteins_files
+│       └── ...
+├── p2_lysine-rich-domain-LCMS
+│   ├── p2-1_calculate_ptm_stoichiometry.md # Calculates stoichiometry of lysine hydroxylations (Hyl) from MaxQuant data 
+│   ├── p2-1_calculate_ptm_stoichiometry.rmd
+│   ├── p2-1_calculate_ptm_stoichiometry_files
+│   │   └── ...
+│   ├── p2-2_optimise_parameters.md # Optimal settings for the database search
+│   ├── p2-2_optimise_parameters.rmd
+│   ├── p2-2_optimise_parameters_files
+│   │   └── ...
+│   ├── p2-3_diagnostic_ions_hyl_identification.md # Identify diagnostic ions(DI)
+│   ├── p2-3_diagnostic_ions_hyl_identification.rmd
+│   ├── p2-3_diagnostic_ions_hyl_identification_files
+│   │   └── ...
+│   ├── p2-4_diagnostic_ions_plots.md # Using DI to identify Hyl
+│   ├── p2-4_diagnostic_ions_plots.rmd
+│   ├── p2-4_diagnostic_ions_plots_files
+│   │   └── ...
+│   ├── p2-5_MS_KR1.Rmd # Calculates stoichiometry of dataset D
+│   ├── p2-5_MS_KR1.md
+│   ├── p2-5_MS_KR1_files
+│   │   └── ...
+│   ├── p2-6_PSM_PTM_comparisons.Rmd # PSM coverage in different database search settings
+│   ├── p2-6_PSM_PTM_comparisons.md
+│   ├── p2-6_PSM_PTM_comparisons_files
+│   │   └── ...
+│   ├── p2-7_MS_SS.Rmd # Calculates stoichiometry of dataset E
+│   ├── p2-7_MS_SS.md
+│   ├── p2-8_ptm_stoichiometry_plots.Rmd # Visualises site-specific stoichiometry of Hyl in varying O2% and dox induction
+│   ├── p2-8_ptm_stoichiometry_plots.md
+│   ├── p2-8_ptm_stoichiometry_plots_files
+│   │   └── ...
+│   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation.Rmd # Stoichiometry of Hyl in varying O2% and dox induction
+│   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation.md
+│   ├── p2-9_lysine_hydroxylation_O2_dox_visualisation_files
+│   │   └── ...
+│   ├── p2-10_Lys_hydroxylation_BRD_stoic_export.Rmd # Script for Supplementary data table 
+│   ├── p2-10_Lys_hydroxylation_BRD_stoic_export.md
+├── renv
+│   ├── activate.R
+│   ├── library
+│   │   └── ...
+│   └── settings.json
 └── renv.lock
 ```
+
 
 ## Data Availability
 
