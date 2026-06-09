@@ -106,9 +106,12 @@ The parameters of the MaxQuant search are available as parameters.txt file, down
 │       └── psm.tsv
 ├── MQ_standard
 │   └── PNAS2022
-│       ├── evidence/
-│       ├── mqpar/
-│       ├── runtime/
+│       ├── evidence
+│           ├── ...
+│       ├── mqpar
+│           ├── ...
+│       ├── runtime
+│           ├── ...
 │       └── sample_info
 │           ├── MS_dataset_overview_PXD031221_data-A.csv
 │           ├── MS_dataset_overview_PXD031221_data-B.csv
