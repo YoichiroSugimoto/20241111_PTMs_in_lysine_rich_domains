@@ -126,7 +126,7 @@ To calculate stoichiometry, the pipeline uses the following `MaxQuant` output fi
 - `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
 
 ### MaxQuant Parameters
-The parameters of the MaxQuant search are available as parameters.txt file, downloadable from the above-mentioned PRIDE Accession `PXD079306` and `PXD031221`.
+The parameters of the MaxQuant search are available as mqpar.xml file, downloadable from the above-mentioned PRIDE Accession `PXD079306` and `PXD031221`.
 
 ### Data Structure
 
