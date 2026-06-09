@@ -36,6 +36,8 @@ Install the required `ptm.stoichiometry` package from GitHub:
 install.packages("devtools")
 devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
+- Example of usage of [`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry/blob/main/github_vignette/stoichiometry-calculation.md)
+
 ---
 
 # Directory Structure 
