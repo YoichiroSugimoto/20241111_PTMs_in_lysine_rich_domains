@@ -28,7 +28,7 @@ The repository contains:
 
 ---
 
-## Installation - `ptm.stoichiometry`
+## Required Package Installation
 
 Install the required `ptm.stoichiometry` package from GitHub:
 
