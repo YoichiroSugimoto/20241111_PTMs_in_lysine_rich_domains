@@ -6,7 +6,7 @@ supporting the study:
  **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
  residue-dependent oxygen sensitivity**
 
-> *Preprint available on bioRxiv:* DOI:
+> *Preprint available on bioRxiv:* DOI: https://doi.org/10.64898/2026.06.08.730680
 
 This pipeline uses the **`ptm.stoichiometry`** package to calculate the stoichiometry
 of lysine hydroxylations from LC-MS/MS data processed by **`MaxQuant`**.
