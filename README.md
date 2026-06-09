@@ -36,13 +36,6 @@ Install the required `ptm.stoichiometry` package from GitHub:
 install.packages("devtools")
 devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
-
-> **Note:** All other package dependencies are managed via `renv`. 
-> To restore the project library, run:
-
-```r
-renv::restore()
-```
 ---
 
 # Directory Structure 
