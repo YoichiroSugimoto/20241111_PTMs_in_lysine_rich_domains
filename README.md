@@ -47,7 +47,7 @@ renv::restore()
 ---
 
 # Directory Structure 
-## R(markdown) scripts
+## R markdown scripts
 - **p1_lysine-rich-domain-biology**
   - This script characterises lysine-rich domains of proteins
 - **p2_lysine-rich-domain-LCMS**
