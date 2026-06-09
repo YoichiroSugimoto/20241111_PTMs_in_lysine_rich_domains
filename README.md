@@ -214,8 +214,10 @@ The results directory contains the calculated stoichiometry files generated for 
 │   │   ├── DI_noH2O_data-C_trp_m7_v7_mCC_ptm_site.csv
 │   │   ├── DI_noH2O_data-C_trp_m7_v7_mCC_ptm_site_pre_filtering.csv
 │   │   └── DI_noH2O_data-C_trp_m7_v7_mCC_qc.csv
-│   ├── MQ_Std_MSMS/
-│   ├── MQ_Std_MSMS_SECEP/
+│   ├── MQ_Std_MSMS
+│   │   ├── ...
+│   ├── MQ_Std_MSMS_SECEP
+│   │   ├── ...
 │   ├── MS_KR_1_noH2O
 │   │   ├── MS_KR_1_noH2O_PTM_stoichiometry.csv
 │   │   ├── MS_KR_1_noH2O_PTM_stoichiometry_DI.csv
