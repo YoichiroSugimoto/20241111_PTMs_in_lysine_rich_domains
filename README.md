@@ -29,13 +29,12 @@ The repository contains:
 
 ## Required Package Installation
 
-Install the required `ptm.stoichiometry` package from GitHub:
+Install the required [`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) package from GitHub:
 
 ```r
 install.packages("devtools")
 devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
-- Example of usage of [`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry/blob/main/github_vignette/stoichiometry-calculation.md)
 
 ---
 
