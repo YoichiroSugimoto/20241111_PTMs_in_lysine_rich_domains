@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-01 June, 2026
+12 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -333,7 +333,7 @@ library("patchwork")
 g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom") 
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/precision-1.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/precision-1.png)<!-- -->
 
 # 2.4.4 Overlaps of Hyl sites in WT and JMJD6 KO cells
 
@@ -370,7 +370,7 @@ g2 <- ggplot(koh_per_site_count[DI_site == TRUE], aes(x = Hyl_found_in, y = N, f
 g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/overlap_wt_ko-1.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/overlap_wt_ko-1.png)<!-- -->
 
 ``` r
 merge(
@@ -472,7 +472,7 @@ plot(venn_size_based,
      main = "Hydroxylated Sites Overlap (All)")
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/overlap_wt_ko-2.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/overlap_wt_ko-2.png)<!-- -->
 
 ``` r
 vennlist <-  list(
@@ -493,7 +493,7 @@ plot(venn_size_based,
      main = "Hydroxylated Sites Overlap (with DI)")
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/overlap_wt_ko-3.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/overlap_wt_ko-3.png)<!-- -->
 
 # 2.4.5 Comparison with previous PNAS 2022 paper
 
@@ -548,7 +548,7 @@ ggplot(
   theme(aspect.ratio = 3.5)
 ```
 
-![](p2-4-diagnostic-ions_files/figure-gfm/pnas2022_comparison_MQ_DI_noH20loss-1.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/pnas2022_comparison_MQ_DI_noH20loss-1.png)<!-- -->
 
 ``` r
 dcast(
@@ -587,7 +587,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-01
+    ##  date     2026-06-12
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
