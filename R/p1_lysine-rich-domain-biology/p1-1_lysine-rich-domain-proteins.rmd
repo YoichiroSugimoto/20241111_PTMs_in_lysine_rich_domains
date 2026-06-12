@@ -578,18 +578,6 @@ ggplot(
   geom_area(fill = "gray40") +
   ggtitle(protein.feature.dt[grepl("P33778", Accession)][1, Accession])
 
-
-# H2AX 
-# ggplot(
-#   protein.feature.dt[grepl("P16104", Accession)],
-#   aes(
-#     x = position,
-#     y = K_ratio_score
-#   )
-# ) +
-#   coord_cartesian(ylim = c(0,0.5)) +
-#   geom_area(color = "black", fill = "steelblue", alpha = 0.6)
-
 #H3
 ggplot(
   protein.feature.dt[grepl("Q16695", Accession)],
