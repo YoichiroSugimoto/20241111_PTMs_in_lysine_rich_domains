@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script calculates the stiochiomtery of PTMs using MaxQuant outputs.  
+This script calculates the stoichiomtery of PTMs using MaxQuant outputs.  
 
 # Environment setup
 
