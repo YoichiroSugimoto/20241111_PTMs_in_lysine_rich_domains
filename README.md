@@ -45,7 +45,7 @@ Analyses were performed with Rmarkdown scripts stored in R directory.
 - **p2_lysine-rich-domain-LCMS**
   - The scripts take MaxQuant output as input and progress through PTM stoichiometry calculation, parameter optimisation, diagnostic ion analysis, and visualisation of site-specific lysine hydroxylations.
 
-> Figures for the manuscript were generated using these Rmardkown scripts, and were saved in the corresponding `_files` folder.
+> Figures for the manuscript were generated using these Rmarkdown scripts, and were saved in the corresponding `_files` folder.
 
 ## data
 
