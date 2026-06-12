@@ -129,7 +129,6 @@ pnas2022.stoic.dt[, `:=`(
 
 # Load library 
 library(ggplot2)
-# library(ggpubr)
 
 ```
 
