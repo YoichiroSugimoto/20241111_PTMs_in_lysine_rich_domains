@@ -14,7 +14,7 @@ output:
 
 # Overview
 
-This script exports processed lysine hydroxylation stoichiometry data for BRD protein sites to a formatted Excel sheet as part of the oxygen sensitivity analysis pipeline.
+This script exports processed lysine hydroxylation stoichiometry data for BRD protein sites to a formatted Excel sheet.
 
 # Environment setup
 
