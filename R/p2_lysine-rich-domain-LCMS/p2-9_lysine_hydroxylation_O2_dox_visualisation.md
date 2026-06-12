@@ -42,8 +42,8 @@ The script covers:
     JMJD6 re-expression and diagnostic ion data
 2.  Hydroxylation kinetics — estimation of t50 (time to half-maximal
     stoichiometry) and broader kinetic analysis of lysine hydroxylation
-3.  XIC values benchmarked against stoichiometry data from MS_KR_1
-    (dataset_D),MS_SS (dataset_E), and PNAS datasets
+3.  Stoichiometry data from MS_KR_1 (dataset_D),MS_SS (dataset_E), and
+    PNAS datasets benchmarked against XIC values
 4.  Site-specific behaviour — examination of interactions between high
     and low stoichiometry sites, and the relationship between wildtype
     stoichiometry and hypoxia-induced changes
