@@ -1,7 +1,7 @@
 1-1. Proteins with lysine-rich domains
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-08 June, 2026
+12 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -867,17 +867,6 @@ ggplot(
 ![](p1-1_lysine-rich-domain-proteins_files/figure-gfm/histone_k_score_per_position-2.png)<!-- -->
 
 ``` r
-# H2AX 
-# ggplot(
-#   protein.feature.dt[grepl("P16104", Accession)],
-#   aes(
-#     x = position,
-#     y = K_ratio_score
-#   )
-# ) +
-#   coord_cartesian(ylim = c(0,0.5)) +
-#   geom_area(color = "black", fill = "steelblue", alpha = 0.6)
-
 #H3
 ggplot(
   protein.feature.dt[grepl("Q16695", Accession)],
@@ -1008,7 +997,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-08
+    ##  date     2026-06-12
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
