@@ -20,7 +20,7 @@ The script covers:
 
 1. Stoichiometry under hypoxia and normoxia — plots comparing hydroxylation stoichiometry between oxygen conditions, incorporating JMJD6 re-expression and diagnostic ion data
 2. Hydroxylation kinetics — estimation of t50 (time to half-maximal stoichiometry) and broader kinetic analysis of lysine hydroxylation
-3. Cross-dataset comparisons — XIC values benchmarked against stoichiometry data from MS_KR_1 (dataset_D),MS_SS (dataset_E), and PNAS datasets
+3. XIC values benchmarked against stoichiometry data from MS_KR_1 (dataset_D),MS_SS (dataset_E), and PNAS datasets
 4. Site-specific behaviour — examination of interactions between high and low stoichiometry sites, and the relationship between wildtype stoichiometry and hypoxia-induced changes
 5. Oxygen sensitivity — stoichiometry under hypoxia across varying doxycycline induction levels, with diagnostic ion
 
