@@ -7,8 +7,6 @@ An R-based pipeline for the study:
 
 > *Preprint available on bioRxiv:* DOI: https://doi.org/10.64898/2026.06.08.730680
 
-This pipeline uses the **`ptm.stoichiometry`** package to calculate the stoichiometry
-of lysine hydroxylations from LC-MS/MS data processed by **`MaxQuant`**.
 
 ![R](https://img.shields.io/badge/R-4.5.1-blue)
 ![bioRxiv](https://img.shields.io/badge/bioRxiv-preprint-red)
