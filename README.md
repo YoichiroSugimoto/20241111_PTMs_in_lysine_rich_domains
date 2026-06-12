@@ -213,8 +213,7 @@ The parameters of the MaxQuant search are available as mqpar.xml file, downloada
 │   │   ├── ptm
 │   │   │   ├── Oxidation (K) DISites.txt
 │   │   │   └── Oxidised Propionylation (K) DISites.txt
-│   │   ├── sample_info.csv
-│   │   └── ~$sample_info.csv
+│   │   └── sample_info.csv
 │   ├── MS_SS
 │   │   ├── MS_SS_evidence.txt
 │   │   ├── MS_SS_mqpar.xml
@@ -222,8 +221,7 @@ The parameters of the MaxQuant search are available as mqpar.xml file, downloada
 │   │   ├── ptm
 │   │   │   ├── Oxidation (K) DISites.txt
 │   │   │   └── Oxidised Propionylation (K) DISites.txt
-│   │   ├── sample_info.csv
-│   │   └── ~$sample_info.csv
+│   │   └── sample_info.csv
 │   └── PNAS2022
 │       ├── evidence
 │       │   ├── data-A_trp_m7_v7_def_evidence.txt
@@ -266,6 +264,7 @@ The parameters of the MaxQuant search are available as mqpar.xml file, downloada
 │   ├── ptm_replacement_de-propionylate_for_hydroxylysine.csv
 │   └── ptm_replacement_de-propionylate_for_hydroxylysine_fragpipe.csv
 └── xic_MS_SS.csv
+
 ```
 
 
