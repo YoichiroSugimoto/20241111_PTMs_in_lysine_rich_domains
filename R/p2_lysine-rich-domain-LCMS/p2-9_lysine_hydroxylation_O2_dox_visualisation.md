@@ -2,7 +2,7 @@
 induction — data visualisation
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-08 June, 2026
+12 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -42,9 +42,8 @@ The script covers:
     JMJD6 re-expression and diagnostic ion data
 2.  Hydroxylation kinetics — estimation of t50 (time to half-maximal
     stoichiometry) and broader kinetic analysis of lysine hydroxylation
-3.  Cross-dataset comparisons — XIC values benchmarked against
-    stoichiometry data from MS_KR_1 (dataset_D),MS_SS (dataset_E), and
-    PNAS datasets
+3.  XIC values benchmarked against stoichiometry data from MS_KR_1
+    (dataset_D),MS_SS (dataset_E), and PNAS datasets
 4.  Site-specific behaviour — examination of interactions between high
     and low stoichiometry sites, and the relationship between wildtype
     stoichiometry and hypoxia-induced changes
@@ -528,7 +527,7 @@ ggplot(
   ggtitle("All the sites")
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/Dox_plus_minus_JMJD6_21_O2pc-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/Dox_plus_minus_JMJD6_21_O2pc-1.png)<!-- -->
 
 ``` r
 plot_long_pc2wt_21pc[, .N, by = induction]
@@ -581,7 +580,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/Dox_plus_minus_JMJD6_21_O2pc-2.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/Dox_plus_minus_JMJD6_21_O2pc-2.png)<!-- -->
 
 ``` r
 # Create data table  
@@ -774,7 +773,7 @@ ggplot(
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/kinetics-1.png)<!-- -->
 
 ``` r
 # Spearman correlation between WT stoichiometry and normalized stoichiometry 
@@ -834,7 +833,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/kinetics-2.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/kinetics-2.png)<!-- -->
 
 ``` r
 kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
@@ -892,7 +891,7 @@ ggplot(
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/XIC_vs_stoic-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/XIC_vs_stoic-1.png)<!-- -->
 
 ``` r
 xic_stoic %$%
@@ -947,7 +946,7 @@ ggplot(
   scale_color_manual(values = c("XIC" = "black", "Stoichiometry" = "darkred"))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/xic_per_pos-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/xic_per_pos-1.png)<!-- -->
 
 # 2.9.8 Interaction
 
@@ -1182,7 +1181,7 @@ ggplot(
   theme(aspect.ratio = 4)
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/interaction-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/interaction-1.png)<!-- -->
 
 ``` r
 ggplot(
@@ -1204,7 +1203,7 @@ ggplot(
   ggtitle("BRD4 K535-K537 interaction")
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/interaction-2.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/interaction-2.png)<!-- -->
 
 # 2.9.9 Oxygen sensitivity - Comparing hypoxia stoichiometry under varying dox incubation (+ diagnostic ion)
 
@@ -1257,7 +1256,7 @@ ggplot(
   ggtitle("Min WT stoichiometry > 0")
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-1.png)<!-- -->
 
 ``` r
 pc2wt_on[, .N, by = oxygen]
@@ -1291,7 +1290,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-2.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/normoxia_vs_varying_hypoxia_pc_overnightdox-2.png)<!-- -->
 
 ``` r
 oxygen_t_test <- data.table()
@@ -1349,7 +1348,7 @@ ggplot(
 
     ## `geom_smooth()` using formula = 'y ~ x'
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/normoxia_vs_hypoxia_scatterplot-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/normoxia_vs_hypoxia_scatterplot-1.png)<!-- -->
 
 ``` r
 oxygen_out <- data.table()
@@ -1470,7 +1469,7 @@ ggplot(
   coord_cartesian(ylim = c(0, 1), xlim = c(0, 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-1.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/hypoxic_sensitivity-1.png)<!-- -->
 
 ``` r
 rsq_out_dt <- data.table()
@@ -1530,7 +1529,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-2.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/hypoxic_sensitivity-2.png)<!-- -->
 
 ``` r
 ggplot(
@@ -1553,7 +1552,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-3.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/hypoxic_sensitivity-3.png)<!-- -->
 
 ``` r
 # QC
@@ -1576,7 +1575,7 @@ ggplot(
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
 ```
 
-![](p2-8_MS_SS_KR_plots_v3-2_files/figure-gfm/hypoxic_sensitivity-4.png)<!-- -->
+![](p2-9_lysine_hydroxylation_O2_dox_visualisation_files/figure-gfm/hypoxic_sensitivity-4.png)<!-- -->
 
 ``` r
 pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
@@ -1613,7 +1612,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-08
+    ##  date     2026-06-12
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
