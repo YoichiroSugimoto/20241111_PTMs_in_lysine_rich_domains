@@ -26,14 +26,14 @@ The repository contains:
 
 # Required Package
 
-Install the required [`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) package from GitHub:
+All the required packages are listed in the (R)markdown package (see below).
+
+[`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) is available from GitHub.
 
 ```r
 install.packages("devtools")
 devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
-
-All other packages are available from CRAN or Bioconductor.
 
 ---
 
@@ -45,16 +45,16 @@ Analyses were performed with Rmarkdown scripts stored in R directory.
 - **p2_lysine-rich-domain-LCMS**
   - The scripts take MaxQuant output as input and progress through PTM stoichiometry calculation, parameter optimisation, diagnostic ion analysis, and visualisation of site-specific lysine hydroxylations.
 
-> Figures for the manuscript were generated using these scripts, and are saved in the corresponding `_files` folder created when knitting the `.Rmd` file.
+> Figures for the manuscript were generated using these Rmardkown scripts, and were saved in the corresponding `_files` folder.
 
 ## data
 
 LC-MS/MS data must first be processed using `MaxQuant`. The pipeline uses the following `MaxQuant` output files:
 
-- `evidence.txt` — peptide-level search results including retention times, intensities, and modifications
+- `evidence.txt` — peptide-level search results including information on their intensities, and modifications
 - `sample_info.csv` — sample metadata and experimental design information
-- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified via diagnostic ions
-- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
+- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified
+- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified
 
 The output files can be retrieved from the PRoteomics IDEntification Database (PRIDE) using the following accession numbers:
 
