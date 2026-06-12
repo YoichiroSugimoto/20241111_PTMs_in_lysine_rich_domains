@@ -99,25 +99,6 @@ To run the pipeline, the `MaxQuant` output files and other raw data shuold be pl
 │       │   ├── data-D_trp_m2_v2_def_evidence.txt
 │       │   ├── data-D_trp_m5_v5_def_evidence.txt
 │       │   └── data-D_trp_m7_v7_def_evidence.txt
-│       ├── mqpar
-│       │   ├── data-A_argC_m2_v7_def_mqpar.xml
-│       │   ├── data-A_trp_m2_v2_def_mqpar.xml
-│       │   ├── data-A_trp_m3_v3_def_mqpar.xml
-│       │   ├── data-A_trp_m4_v4_def_mqpar.xml
-│       │   ├── data-A_trp_m5_v5_def_mqpar.xml
-│       │   ├── data-A_trp_m6_v6_def_mqpar.xml
-│       │   ├── data-A_trp_m7_v7_def_mqpar.xml
-│       │   ├── data-A_trp_m8_v8_def_mqpar.xml
-│       │   ├── data-B_trp_m2_v2_mCC_mqpar.xml
-│       │   ├── data-B_trp_m5_v5_mCC_mqpar.xml
-│       │   ├── data-B_trp_m7_v7_mCC_mqpar.xml
-│       │   ├── data-C_trp_m2_v2_mCC_mqpar.xml
-│       │   ├── data-C_trp_m5_v5_mCC_mqpar.xml
-│       │   ├── data-C_trp_m7_v7_mCC_mqpar.xml
-│       │   ├── data-C_trp_m8_v8_mCC_mqpar.xml
-│       │   ├── data-D_trp_m2_v2_def_mqpar.xml
-│       │   ├── data-D_trp_m5_v5_def_mqpar.xml
-│       │   └── data-D_trp_m7_v7_def_mqpar.xml
 │       ├── runtime
 │       │   ├── data-A_argC_m2_v7_def_runningTimes.txt
 │       │   ├── data-A_trp_m2_v2_def_runningTimes.txt
@@ -145,16 +126,12 @@ To run the pipeline, the `MaxQuant` output files and other raw data shuold be pl
 ├── MQ_with_DI_no_waterloss
 │   ├── MS_KR_1
 │   │   ├── MS_KR_1_evidence.txt
-│   │   ├── MS_KR_1_mqpar.xml
-│   │   ├── MS_KR_1_proteinGroups.txt
 │   │   ├── ptm
 │   │   │   ├── Oxidation (K) DISites.txt
 │   │   │   └── Oxidised Propionylation (K) DISites.txt
 │   │   └── sample_info.csv
 │   ├── MS_SS
 │   │   ├── MS_SS_evidence.txt
-│   │   ├── MS_SS_mqpar.xml
-│   │   ├── MS_SS_proteinGroups.txt
 │   │   ├── ptm
 │   │   │   ├── Oxidation (K) DISites.txt
 │   │   │   └── Oxidised Propionylation (K) DISites.txt
@@ -165,16 +142,6 @@ To run the pipeline, the `MaxQuant` output files and other raw data shuold be pl
 │       │   ├── data-B1_trp_m7_v7_mCC_evidence.txt
 │       │   ├── data-B2_trp_m7_v7_mCC_evidence.txt
 │       │   └── data-C_trp_m7_v7_mCC_evidence.txt
-│       ├── mqpar
-│       │   ├── data-A_trp_m7_v7_def_mqpar.xml
-│       │   ├── data-B1_trp_m7_v7_mCC_mqpar.xml
-│       │   ├── data-B2_trp_m7_v7_mCC_mqpar.xml
-│       │   └── data-C_trp_m7_v7_mCC_mqpar.xml
-│       ├── proteingroups
-│       │   ├── data-A_trp_m7_v7_def_proteinGroups.txt
-│       │   ├── data-B1_trp_m7_v7_mCC_proteinGroups.txt
-│       │   ├── data-B2_trp_m7_v7_mCC_proteinGroups.txt
-│       │   └── data-C_trp_m7_v7_mCC_proteinGroups.txt
 │       ├── ptm
 │       │   ├── data-A_trp_m7_v7_def_ptm
 │       │   │   ├── Oxidation (K) DISites.txt
