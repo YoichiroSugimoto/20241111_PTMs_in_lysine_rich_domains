@@ -1,7 +1,7 @@
 2-7. Lysine hydroxylations in varying O2 pc and dox induction time
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-02 March, 2026
+12 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -253,8 +253,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4203238 224.5    8206781 438.3  8206781 438.3
-    ## Vcells 17324525 132.2   52642996 401.7 65476054 499.6
+    ## Ncells  4203238 224.5    8206777 438.3  8206777 438.3
+    ## Vcells 17324525 132.2   52642996 401.7 65475975 499.6
 
 # Session information
 
@@ -272,7 +272,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-03-02
+    ##  date     2026-06-12
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
@@ -307,7 +307,7 @@ sessioninfo::session_info()
     ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.5.1)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.5.1)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.5.1)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-16 [1] local
+    ##  ptm.stoichiometry * 0.0.0.9000 2026-05-15 [1] local
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.5.1)
     ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.5.1)
     ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.5.1)
