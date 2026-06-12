@@ -1,6 +1,6 @@
 
 # Introduction
-An R-based pipeline for studying lysine hydroxylations from LC-MS/MS data for the study:
+An R-based pipeline for the study:
 
  **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
  residue-dependent oxygen sensitivity**
