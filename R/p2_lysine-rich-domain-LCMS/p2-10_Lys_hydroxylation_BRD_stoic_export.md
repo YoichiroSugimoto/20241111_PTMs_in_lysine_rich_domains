@@ -2,7 +2,7 @@
 excel data export
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-08 June, 2026
+12 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -17,8 +17,7 @@ Yoichiro Sugimoto and Pallavi Kesavan
 # Overview
 
 This script exports processed lysine hydroxylation stoichiometry data
-for BRD protein sites to a formatted Excel sheet as part of the oxygen
-sensitivity analysis pipeline.
+for BRD protein sites to a formatted Excel sheet.
 
 # Environment setup
 
@@ -694,7 +693,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-08
+    ##  date     2026-06-12
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
