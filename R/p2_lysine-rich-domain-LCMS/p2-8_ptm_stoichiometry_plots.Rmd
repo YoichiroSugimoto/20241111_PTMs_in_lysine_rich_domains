@@ -1,5 +1,5 @@
 ---
-title: "2-9. Site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction time"
+title: "2-8. Site-specific stoichiometry of lysine hydroxylations in varying O2% and dox induction time"
 author: "Yoichiro Sugimoto and Pallavi Kesavan"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 vignette: >
@@ -40,7 +40,7 @@ project.dir <-
 
 ```
 
-# 2.9.1 Install,load essential functions and libraries
+# 2.8.1 Install,load essential functions and libraries
 
 ```{r load_essential_functions_current_session}
 
@@ -62,7 +62,7 @@ library("ptm.stoichiometry")
 
 ```
 
-# 2.9.2 Import human protein reference data 
+# 2.8.2 Import human protein reference data 
 
 ```{r import_data, warning=FALSE}
 
@@ -85,7 +85,7 @@ p2_MS_SS_KR <- file.path(results.dir, "p2_MS_SS_KR")
 
 ```
 
-# 2.9.3 Defining functions and data preprocessing
+# 2.8.3 Defining functions and data preprocessing
 
 ```{r Define_important_functions}
 
@@ -215,7 +215,7 @@ MS_SS_KR_PNAS_dt[, `:=`(
 
 ```
 
-# 2.9.4 Plotting raw stoichiometry values of normoxia data with re-expression of JMJD6 
+# 2.8.4 Plotting raw stoichiometry values of normoxia data with re-expression of JMJD6 
 
 ```{r stoichiometry_BRD2_at_21pc}
 
@@ -319,7 +319,7 @@ plot_ptm_stoichiometry(
 
 ```
 
-# 2.9.5 Plotting raw stoichiometry values of normoxia and hypoxia data with re-expression of JMJD6 
+# 2.8.5 Plotting raw stoichiometry values of normoxia and hypoxia data with re-expression of JMJD6 
 
 ```{r stoichiometry_BRD2_at_hypoxia_pc}
 
