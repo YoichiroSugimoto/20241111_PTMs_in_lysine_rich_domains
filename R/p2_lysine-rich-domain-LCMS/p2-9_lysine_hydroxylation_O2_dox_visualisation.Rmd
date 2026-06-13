@@ -60,7 +60,7 @@ P2_functions <- sapply(list.files
                        source)
 
 ## Install private package 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 # install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
