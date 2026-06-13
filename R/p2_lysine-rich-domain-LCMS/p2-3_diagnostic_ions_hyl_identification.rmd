@@ -49,10 +49,10 @@ P2_functions <-
   source)
 
 ### Install private packages 
-# Install ptm.stiochiometry package - package installed 
+# Install ptm.stoichiometry package - package installed 
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry,readxl and janitor
+# Load Libraries - ptm.stoichiometry,readxl and janitor
 library("readxl")
 library("janitor")
 library("ptm.stoichiometry")

@@ -48,10 +48,10 @@ P2_functions <-
 
 
 ## Install private packages 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry and readxl
+# Load Libraries - ptm.stoichiometry and readxl
 library(ptm.stoichiometry)
 library("readxl")
 
@@ -82,7 +82,7 @@ all_sample_run_info <- read_excel(
   sheet = "MQ_standard"
 ) %>% data.table
 
-# Define path for protein feature data
+# Load protein feature data
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
 # Change column names
@@ -114,7 +114,7 @@ read_evidence <- function(prefix, dir_path){
 evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
   all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
-  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
 ) %>% rbindlist
 
 data.count.dt <- evidence.dt[, list(
@@ -154,7 +154,7 @@ rel_count.dt[, `:=`(
 )]
 
 rel_count_stat.dt <- rel_count.dt[, list(
-  meab_rel_total_peptide_count = mean(rel_total_peptide_count),
+  mean_rel_total_peptide_count = mean(rel_total_peptide_count),
   sd_rel_total_peptide_count = sd(rel_total_peptide_count),
   mean_rel_msms_count = mean(rel_msms_count),
   sd_rel_msms_count = sd(rel_msms_count),

@@ -11,13 +11,13 @@ Yoichiro Sugimoto and Pallavi Kesavan
   data](#212-import-human-protein-reference-data)
 - [2.1.3 Calculation of Stoichiometry without diagnostic ion
   consideration](#213-calculation-of-stoichiometry-without-diagnostic-ion-consideration)
-- [2.1.4 Calculation of Stoichiometry of MQ_DI without
-  waterloss](#214-calculation-of-stoichiometry-of-mq_di-without-waterloss)
+- [2.1.4 Calculation of Stoichiometry of MQ_DI data (with diagnostic ion
+  consideration)](#214-calculation-of-stoichiometry-of-mq_di-data-with-diagnostic-ion-consideration)
 - [Session information](#session-information)
 
 # Overview
 
-This script calculates the stoichiomtery of PTMs using MaxQuant outputs.
+This script calculates the stoichiometry of PTMs using MaxQuant outputs.
 
 # Environment setup
 
@@ -151,10 +151,10 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
 ``` r
 ## Install private package 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry and readxl
+# Load Libraries - ptm.stoichiometry and readxl
 library(ptm.stoichiometry)
 library("readxl")
 ```
@@ -264,19 +264,19 @@ process_stoichiometry <- function(MQ_standard_data,
 }
 
 
-# Define file path common PTM mapping file
+# Define file path common to PTM mapping file
 ptm_mapping_file <- file.path(
   project.dir,
   "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
 )
 
-## MSMS + SECEP
+## MSMS + SECPEP
 
 # Subset data-A and data-D from MQ_standard_data
 samples_to_process <- MQ_standard_data[data %in% c("data-A", "data-D")]
 
 # Define output directory for MSMS + SECPEP results
-MQ_Std_MSMS_SECEP_dir <- file.path(results.dir, "p2-analysis-setting","MQ_Std_MSMS_SECEP")
+MQ_Std_MSMS_SECEP_dir <- file.path(results.dir, "p2-analysis-setting","MQ_Std_MSMS_SECPEP")
 
 # Run stoichiometry processing for MSMS + SECPEP
 process_stoichiometry(
@@ -364,7 +364,7 @@ process_stoichiometry(
 
     ## Processing: data-D_trp_m7_v7_def_evidence.txt
 
-# 2.1.4 Calculation of Stoichiometry of MQ_DI without waterloss
+# 2.1.4 Calculation of Stoichiometry of MQ_DI data (with diagnostic ion consideration)
 
 ``` r
 # Load data into environment
@@ -391,7 +391,7 @@ MQ_DI_noH2O_run_info[, sample_id := 1:.N]
 ```
 
 ``` r
-# For each sample ID calculate the stoichiomtery
+# For each sample ID calculate the stoichiometry
 for (i in seq_len(nrow(MQ_DI_noH2O_run_info))){ # Takes each row from the MQ_DI_noH2O_run_info
   
   prefix <- MQ_DI_noH2O_run_info$prefix[i]
