@@ -211,7 +211,7 @@ process_stoichiometry(
 )
 ```
 
-# 2.1.4 Calculation of Stoichiometry of MQ_DI without waterloss 
+# 2.1.4 Calculation of Stoichiometry of MQ_DI (with diagnostic ion consideration)  
 
 ```{r data_directory_w_di_no_H2O}
 
