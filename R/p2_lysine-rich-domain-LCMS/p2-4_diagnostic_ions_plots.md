@@ -1,7 +1,7 @@
 2-4. Analysis of lysine hydroxylations using diagnostic ions
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -152,11 +152,11 @@ P2_functions <-
 
 ``` r
 ### Install private packages 
-# Install ptm.stiochiometry package - package installed 16.12.2025
+# Install ptm.stoichiometry package - package installed 16.12.2025
 # install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 
-# Load Libraries - ptm.stiochiometry,readxl and janitor
+# Load Libraries - ptm.stoichiometry,readxl and janitor
 library("readxl")
 library("janitor")
 ```
@@ -192,14 +192,14 @@ ref_protein_dt <- import_reference_fasta(
 #----------------
 
 # Load sample run info data (MQ DI with no waterloss)
-MQ_DI_noH2O_run_info <- read_excel(
+MQ_DI_noH2Oloss_run_info <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
   sheet = "MQ_with_DI_noH2O" 
 ) %>% data.table
 
 # Add a new column 'sample_id' that assigns a unique sequential number to each 
 #row (1:N), where N is the total number of rows in the data.table
-MQ_DI_noH2O_run_info[, sample_id := 1:.N]
+MQ_DI_noH2Oloss_run_info[, sample_id := 1:.N]
 ```
 
 # 2.4.2 Definition of functions
@@ -217,24 +217,24 @@ read_stoic_data <- function(prefix, pre_prefix, post_fix = "", dir_path){
 # 2.4.3 The effect of diagnostic ion on precision
 
 ``` r
-# Read stoichiometry data for MQ_DI (change from the older version: a potential diagnostic ions with water loss is no longer considered)
-MQ_DI_noH20_stoic_dt <- lapply(
-  MQ_DI_noH2O_run_info[, prefix],
+# Read stoichiometry data for MQ_DI 
+MQ_DI_noH2Oloss_stoic_dt <- lapply(
+  MQ_DI_noH2Oloss_run_info[, prefix],
   read_stoic_data,
   pre_prefix = "DI_noH2O_", 
   post_fix = "_DI",
   dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI_noH2O")
 ) %>% rbindlist
 
-# fwrite(MQ_DI_noH20_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
+# fwrite(MQ_DI_noH2Oloss_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
 
-MQ_DI_noH20_stoic_dt <- MQ_DI_noH20_stoic_dt[aa == "K"]
-MQ_DI_noH20_stoic_dt[, genotype := str_split_fixed(sample_name, "_", n = 3)[, 2] %>% factor(levels = c("HeLaWT", "HeLaJMJD6KO"))]
+MQ_DI_noH2Oloss_stoic_dt <- MQ_DI_noH2Oloss_stoic_dt[aa == "K"]
+MQ_DI_noH2Oloss_stoic_dt[, genotype := str_split_fixed(sample_name, "_", n = 3)[, 2] %>% factor(levels = c("HeLaWT", "HeLaJMJD6KO"))]
 
 # Extract the sites with diagnostic ions
-DI_sites <- MQ_DI_noH20_stoic_dt[diagnostic_peak == "+"][!duplicated(paste(protein_accession, aa_pos)), .(protein_accession, aa_pos)]
+DI_sites <- MQ_DI_noH2Oloss_stoic_dt[diagnostic_peak == "+"][!duplicated(paste(protein_accession, aa_pos)), .(protein_accession, aa_pos)]
 
-MQ_DI_noH20_stoic_dt[, DI_site :=
+MQ_DI_noH2Oloss_stoic_dt[, DI_site :=
   paste(protein_accession, aa_pos) %in% DI_sites[, paste(protein_accession, aa_pos)] 
 ]
 
@@ -252,18 +252,18 @@ protein.feature.dt[, `:=`( #create a new column 'met_within_2'
 )]
 
 # Merge data tables by protein_accession and aa_pos (MQ_DI)
-wt_vs_KO_MQ_DI_noH20_stoic_dt <- copy(MQ_DI_noH20_stoic_dt)
+wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt <- copy(MQ_DI_noH2Oloss_stoic_dt)
 
-wt_vs_KO_MQ_DI_noH20_stoic_dt <- merge(
-  wt_vs_KO_MQ_DI_noH20_stoic_dt,
+wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt <- merge(
+  wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt,
   protein.feature.dt,
   by = c("protein_accession", "aa_pos")
 )
 
 # Only analyse the sites with a coverage with 2 PSMs in both JMJD6 WT and KO data
-wt_data_coverage <- wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT"][
+wt_data_coverage <- wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaWT"][
   , list(total_wt_sum_psm_mapped = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos)]
-KO_data_coverage <- wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO"][
+KO_data_coverage <- wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaJMJD6KO"][
   , list(total_ko_sum_psm_mapped = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos)]
 
 all_data_coverage <- merge(
@@ -272,13 +272,13 @@ all_data_coverage <- merge(
   by = c("protein_accession", "aa_pos")
 )
 
-wt_vs_KO_MQ_DI_noH20_stoic_dt <- wt_vs_KO_MQ_DI_noH20_stoic_dt[
+wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt <- wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[
   paste(protein_accession, aa_pos) %in% 
     all_data_coverage[total_wt_sum_psm_mapped > 0 & total_ko_sum_psm_mapped > 0][, paste(protein_accession, aa_pos)]
 ]
 
 # The # of sites analysed
-wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_pos))][, .N, by = genotype]
+wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_pos))][, .N, by = genotype]
 ```
 
     ##       genotype     N
@@ -287,11 +287,11 @@ wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_
     ## 2: HeLaJMJD6KO 26074
 
 ``` r
-koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- wt_vs_KO_MQ_DI_noH20_stoic_dt[ptm == "[Oxidation (K)]"]
-koh_wt_vs_KO_MQ_DI_noH20_stoic_dt <- koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[order(-DI_site)][!duplicated(paste(genotype, protein_accession, aa_pos))]
+koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt <- wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[ptm == "[Oxidation (K)]"]
+koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt <- koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[order(-DI_site)][!duplicated(paste(genotype, protein_accession, aa_pos))]
 
 g1 <- ggplot(
-  data = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge"],
+  data = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[met_within_2 != "edge"],
   aes(
     x = genotype,
     fill = met_within_2
@@ -303,7 +303,7 @@ g1 <- ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90))
 
 g2 <- ggplot(
-  data = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge" & DI_site == TRUE],
+  data = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[met_within_2 != "edge" & DI_site == TRUE],
   aes(
     x = genotype,
     fill = met_within_2
@@ -315,7 +315,7 @@ g2 <- ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90))
 
 # Number of sites for plotting g2
-koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[met_within_2 != "edge" & DI_site == TRUE][
+koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[met_within_2 != "edge" & DI_site == TRUE][
   , .N, by = list(met_within_2, genotype)
 ]
 ```
@@ -339,7 +339,7 @@ g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ``` r
 koh_per_site <- dcast(
-  koh_wt_vs_KO_MQ_DI_noH20_stoic_dt,
+  koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt,
   protein_accession + aa_pos + DI_site + met_within_2 ~ genotype,
   fun.aggregate = length 
 )
@@ -374,7 +374,7 @@ g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
 ``` r
 merge(
-  koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
+  koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
   koh_per_site[DI_site == TRUE & Hyl_found_in == "both"]
 )
 ```
@@ -455,8 +455,8 @@ library("eulerr")
 library("RColorBrewer")
 
 vennlist <-  list(
-  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT", paste(protein_accession, aa_pos)],
-  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO", paste(protein_accession, aa_pos)]
+  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaWT", paste(protein_accession, aa_pos)],
+  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaJMJD6KO", paste(protein_accession, aa_pos)]
 )
 
 # Changing the circle size based on the number in the circle
@@ -476,8 +476,8 @@ plot(venn_size_based,
 
 ``` r
 vennlist <-  list(
-  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaWT" & DI_site == TRUE, paste(protein_accession, aa_pos)],
-  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH20_stoic_dt[genotype == "HeLaJMJD6KO" & DI_site == TRUE, paste(protein_accession, aa_pos)]
+  WT_DI_site = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaWT" & DI_site == TRUE, paste(protein_accession, aa_pos)],
+  KO_DI_site = koh_wt_vs_KO_MQ_DI_noH2Oloss_stoic_dt[genotype == "HeLaJMJD6KO" & DI_site == TRUE, paste(protein_accession, aa_pos)]
 )
 
 # Changing the circle size based on the number in the circle
@@ -510,16 +510,16 @@ pnas2022.stoic.dt[, `:=`(
 )]
 
 # Check how many hydroxylation sites that were reported by PNAS2022 are identified by the new workflow
-MQ_DI_noH20_stoic_dt[, `:=`( 
+MQ_DI_noH2Oloss_stoic_dt[, `:=`( 
   curated_oxK_site = 
     paste0(protein_accession, "_", aa_pos) %in%
     pnas2022.stoic.dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)] 
 )]
 
-MQ_DI_d.hydroxyK_dt <- MQ_DI_noH20_stoic_dt[ptm == "[Oxidation (K)]" & genotype == "HeLaWT"][order(genotype, DI_site)][!duplicated(paste(protein_accession, aa_pos))]
+MQ_DI_d_hydroxyK_dt <- MQ_DI_noH2Oloss_stoic_dt[ptm == "[Oxidation (K)]" & genotype == "HeLaWT"][order(genotype, DI_site)][!duplicated(paste(protein_accession, aa_pos))]
 
 # Convert the data table into table and sum the number of diagnostic peak and curated oxK sites
-hyl_precision <- MQ_DI_d.hydroxyK_dt[, table(DI_site, curated_oxK_site) %>% addmargins] %>% data.table
+hyl_precision <- MQ_DI_d_hydroxyK_dt[, table(DI_site, curated_oxK_site) %>% addmargins] %>% data.table
 hyl_precision <- hyl_precision[DI_site %in% c("Sum", "TRUE") & curated_oxK_site != "Sum"]
 
 hyl_precision
@@ -548,7 +548,7 @@ ggplot(
   theme(aspect.ratio = 3.5)
 ```
 
-![](p2-4_diagnostic_ions_plots_files/figure-gfm/pnas2022_comparison_MQ_DI_noH20loss-1.png)<!-- -->
+![](p2-4_diagnostic_ions_plots_files/figure-gfm/pnas2022_comparison_MQ_DI_noH2Oloss-1.png)<!-- -->
 
 ``` r
 dcast(
@@ -587,7 +587,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
