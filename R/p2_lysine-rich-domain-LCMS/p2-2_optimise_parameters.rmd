@@ -207,7 +207,7 @@ read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
 all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
-  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
 ) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(

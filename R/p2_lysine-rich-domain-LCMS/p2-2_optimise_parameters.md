@@ -1,7 +1,7 @@
 2-2. Optimise MQ parameters
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -153,10 +153,10 @@ P2_functions <-
 
 ``` r
 ## Install private packages 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry and readxl
+# Load Libraries - ptm.stoichiometry and readxl
 library(ptm.stoichiometry)
 library("readxl")
 
@@ -185,7 +185,7 @@ all_sample_run_info <- read_excel(
   sheet = "MQ_standard"
 ) %>% data.table
 
-# Define path for protein feature data
+# Load protein feature data
 protein.feature.dt <- fread(file.path(data.dir, "PNAS2022/all_protein_feature_per_position.csv"))
 
 # Change column names
@@ -214,7 +214,7 @@ read_evidence <- function(prefix, dir_path){
 evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
   all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
   read_evidence,
-  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
 ) %>% rbindlist
 
 data.count.dt <- evidence.dt[, list(
@@ -254,7 +254,7 @@ rel_count.dt[, `:=`(
 )]
 
 rel_count_stat.dt <- rel_count.dt[, list(
-  meab_rel_total_peptide_count = mean(rel_total_peptide_count),
+  mean_rel_total_peptide_count = mean(rel_total_peptide_count),
   sd_rel_total_peptide_count = sd(rel_total_peptide_count),
   mean_rel_msms_count = mean(rel_msms_count),
   sd_rel_msms_count = sd(rel_msms_count),
@@ -309,7 +309,7 @@ read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
 all_per_pos_with_SECPEP.dt <- lapply(
   all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
   read_all_per_pos_data_with_SECPEP,
-  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECEP")
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
 ) %>% rbindlist
 
 all_per_pos_with_SECPEP.dt[, `:=`(
@@ -695,7 +695,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
