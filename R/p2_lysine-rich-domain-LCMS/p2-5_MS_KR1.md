@@ -1,7 +1,7 @@
 2-5. Lysine hydroxylations in hypoxia and normoxia
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -156,7 +156,7 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
 ``` r
 ## Install private package 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 # install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
@@ -259,7 +259,7 @@ gc()
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
     ## Ncells  4225793 225.7    8206197 438.3  8206197 438.3
-    ## Vcells 16653201 127.1   47107112 359.4 47022463 358.8
+    ## Vcells 16653201 127.1   47107112 359.4 47022459 358.8
 
 # 2.5.4 Plotting Stoichiometry values of hypoxia and normoxia data (+ diagnostic ion)
 
@@ -510,7 +510,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
