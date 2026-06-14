@@ -336,16 +336,6 @@ plot_ptm_stoichiometry(
 # minusDox_BRD23 - iJ6_0h_21pc_SS
 # HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
 
-
-# HeLaWT_NA_N_NA - WT_Inf_21pc_KR
-# JQ1_HeLaWT_derivatised - WT_Inf_21pc_PNAS
-# JQ1_HeLaJMJD6KO_derivatised - iJ6_Inf_21pc_PNAS
-# HeLaiJMJD6_Dox_N_NA - iJ6_24h_21pc_KR
-# 18h_4pc_BRD23 - iJ6_18h_4pc_SS
-# 18h_1pc_BRD23 - iJ6_18h_1pc_SS
-# HeLaiJMJD6_Dox_01O224h_NA - iJ6_24h_01pc_KR
-# HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
-
 #------
 # BRD2
 #------
