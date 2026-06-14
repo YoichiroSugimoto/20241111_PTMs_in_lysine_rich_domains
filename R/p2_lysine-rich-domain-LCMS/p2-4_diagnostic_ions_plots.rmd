@@ -121,7 +121,7 @@ MQ_DI_noH2O_stoic_dt <- lapply(
 
 # fwrite(MQ_DI_noH2O_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
 
-MQ_DI_noH2O_stoic_dt <- MQ_DI_noH20_stoic_dt[aa == "K"]
+MQ_DI_noH2O_stoic_dt <- MQ_DI_noH2O_stoic_dt[aa == "K"]
 MQ_DI_noH2O_stoic_dt[, genotype := str_split_fixed(sample_name, "_", n = 3)[, 2] %>% factor(levels = c("HeLaWT", "HeLaJMJD6KO"))]
 
 # Extract the sites with diagnostic ions
@@ -173,7 +173,7 @@ wt_vs_KO_MQ_DI_noH2O_stoic_dt <- wt_vs_KO_MQ_DI_noH2O_stoic_dt[
 # The # of sites analysed
 wt_vs_KO_MQ_DI_noH2O_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_pos))][, .N, by = genotype]
 
-koh_wt_vs_KO_MQ_DI_noH2O_stoic_dt <- wt_vs_KO_MQ_DI_noH20_stoic_dt[ptm == "[Oxidation (K)]"]
+koh_wt_vs_KO_MQ_DI_noH2O_stoic_dt <- wt_vs_KO_MQ_DI_noH2O_stoic_dt[ptm == "[Oxidation (K)]"]
 koh_wt_vs_KO_MQ_DI_noH2O_stoic_dt <- koh_wt_vs_KO_MQ_DI_noH2O_stoic_dt[order(-DI_site)][!duplicated(paste(genotype, protein_accession, aa_pos))]
 
 g1 <- ggplot(
@@ -305,7 +305,7 @@ plot(venn_size_based,
 
 # 2.4.5 Comparison with previous PNAS 2022 paper
 
-```{r pnas2022_comparison_MQ_DI_noH20loss}
+```{r pnas2022_comparison_MQ_DI_noH2Oloss}
 
 # Define file path to load 'long_K_stiochiometry_data'  
 pnas2022.stoic.dt <- fread(file.path(data.dir, "PNAS2022/long_K_stoichiometry_data.csv"))
