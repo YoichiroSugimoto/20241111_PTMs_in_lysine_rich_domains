@@ -26,7 +26,7 @@ The repository contains:
 
 # Required Package
 
-All the required packages are listed in the (R)markdown package (see below).
+All the required packages are listed in the (R) Markdown package (see below).
 
 [`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) is available from GitHub.
 
