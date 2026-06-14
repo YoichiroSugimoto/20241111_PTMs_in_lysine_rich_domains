@@ -1,7 +1,7 @@
 2-3. Identify diagnostic ions that can mark lysine hydroxylations
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -147,10 +147,10 @@ P2_functions <-
 
 ``` r
 ### Install private packages 
-# Install ptm.stiochiometry package - package installed 
+# Install ptm.stoichiometry package - package installed 
 #install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
-# Load Libraries - ptm.stiochiometry,readxl and janitor
+# Load Libraries - ptm.stoichiometry,readxl and janitor
 library("readxl")
 library("janitor")
 ```
@@ -439,7 +439,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
