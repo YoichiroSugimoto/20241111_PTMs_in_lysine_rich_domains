@@ -1,7 +1,7 @@
 2-7. Lysine hydroxylations in varying O2 pc and dox induction time
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -151,7 +151,7 @@ P2_functions <- sapply(list.files(file.path(project.dir, "R/functions"), pattern
 
 ``` r
 ## Install private package 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 # install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
@@ -253,8 +253,8 @@ gc()
 ```
 
     ##            used  (Mb) gc trigger  (Mb) max used  (Mb)
-    ## Ncells  4203238 224.5    8206777 438.3  8206777 438.3
-    ## Vcells 17324525 132.2   52642996 401.7 65475975 499.6
+    ## Ncells  4203238 224.5    8206781 438.3  8206781 438.3
+    ## Vcells 17324525 132.2   52642996 401.7 65476054 499.6
 
 # Session information
 
@@ -272,7 +272,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
