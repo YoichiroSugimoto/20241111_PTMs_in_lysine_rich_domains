@@ -39,7 +39,7 @@ devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 
 # Directory Structure 
 ## R
-Analyses were performed with Rmarkdown scripts stored in R directory.
+Analyses were performed with R Markdown scripts stored in R directory.
 - **p1_lysine-rich-domain-biology**
   - This script characterises lysine-rich domains of proteins
 - **p2_lysine-rich-domain-LCMS**
