@@ -1,7 +1,7 @@
 2-1. Calculate PTM stoichiometry
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-13 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -470,7 +470,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-13
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
