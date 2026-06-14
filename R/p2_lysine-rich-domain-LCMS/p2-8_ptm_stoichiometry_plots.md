@@ -2,7 +2,7 @@
 and dox induction time
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-12 June, 2026
+14 June, 2026
 
 - [Overview](#overview)
 - [Environment setup](#environment-setup)
@@ -164,7 +164,7 @@ P2_functions <- sapply(list.files
 
 ``` r
 ## Install private package 
-# Install ptm.stiochiometry package
+# Install ptm.stoichiometry package
 # install.packages("/fast/AG_Sugimoto/home/users/pallavi/projects/ptm.stoichiometry", repos = NULL, type = "source")
 
 # Load Libraries
@@ -442,16 +442,6 @@ plot_ptm_stoichiometry(
 # minusDox_BRD23 - iJ6_0h_21pc_SS
 # HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
 
-
-# HeLaWT_NA_N_NA - WT_Inf_21pc_KR
-# JQ1_HeLaWT_derivatised - WT_Inf_21pc_PNAS
-# JQ1_HeLaJMJD6KO_derivatised - iJ6_Inf_21pc_PNAS
-# HeLaiJMJD6_Dox_N_NA - iJ6_24h_21pc_KR
-# 18h_4pc_BRD23 - iJ6_18h_4pc_SS
-# 18h_1pc_BRD23 - iJ6_18h_1pc_SS
-# HeLaiJMJD6_Dox_01O224h_NA - iJ6_24h_01pc_KR
-# HeLaiJMJD6_noDox_N_NA - iJ6_0h_21pc_KR
-
 #------
 # BRD2
 #------
@@ -572,7 +562,7 @@ sessioninfo::session_info()
     ##  collate  C.UTF-8
     ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-12
+    ##  date     2026-06-14
     ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
     ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
