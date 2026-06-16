@@ -1,0 +1,520 @@
+---
+title: "p2-02 · Optimise database search"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Determine optimal MaxQuant database-search settings for
+lysine-derivatised samples — effect of miscleavages and modifications on MS/MS
+counts, coverage of lysine-rich regions, and runtime.
+
+**Inputs:** MaxQuant evidence / runtime / mqpar under `data/MQ_Std/PNAS2022/`; protein feature data.
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** p2-01. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+## Script-specific results subdirectory
+p2_results_dir <- file.path(results.dir, "p2-analysis-setting")
+
+```
+
+# Import data
+
+Loads the sample run-info table, the protein feature data, and the reference proteome used in the comparisons below.
+
+```{r import_basic_data}
+
+# Define path for data directory
+data.dir <- file.path(project.dir, "data")
+
+# Load sample run info using defined file path
+all_sample_run_info <- read_excel(
+  file.path(data.dir, "analysis_setting", "PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_Std"
+) %>% data.table
+
+# Define path for protein feature data
+protein.feature.dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/all_protein_feature_per_position.csv"))
+
+# Change column names
+setnames(protein.feature.dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+```
+
+
+# MS/MS counts by setting
+
+Compares the number of MS/MS identifications obtained under each MaxQuant search setting.
+
+```{r MS_MS_count}
+
+# Define "read_evidence" function 
+read_evidence <- function(prefix, dir_path){
+  input.file <- file.path(
+    dir_path, 
+    paste0("including_SECPEP_", prefix, "all_processed_evidence_data.csv")
+  )
+  if(file.exists(input.file)){
+    dt <- fread(input.file)
+    dt[, condition := gsub("_$", "", prefix)]
+  } else {
+    dt <- data.table()
+  }
+  return(dt)
+}
+
+# Apply the function 'read_evidence' to each selected 'prefix' value
+evidence.dt <- lapply( # Filter data-A and data-D and retrieve corresponding prefix
+  # Benchmark the search settings on data-A and data-D.
+  # NOTE: confirm the rationale for choosing these two datasets.
+  all_sample_run_info[data %in% c("data-A", "data-D") & !is.na(prefix), prefix], 
+  read_evidence,
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
+) %>% rbindlist
+
+data.count.dt <- evidence.dt[, list(
+  total_peptide_count = .N, # Count total number of rows (peptides)
+  total_msms_count = sum(psm_mapped), # Sum of 'psm_mapped'
+  total_intensity = sum(peak_intensity) # Sum of 'peak_intensity'
+), by = list(file_name, sample_name, condition, type)] 
+
+data.count.dt[, `:=`(
+  propionylation = case_when(
+    grepl("^data-D", condition) ~ "no_propionylation",
+    TRUE ~ "propionylation"
+  ),
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+"),
+  protease_setting = str_split_fixed(condition, "_", n = 3)[, 2]
+)]
+
+data_col = c("total_peptide_count", "total_msms_count", "total_intensity")
+
+m2_v2.dt <- data.count.dt[
+  MQ_setting == "m2_v2" & type == "MULTI-MSMS"
+][, c("file_name", data_col), with = FALSE]
+setnames(m2_v2.dt, old = data_col, new = paste0("m2_v2_", data_col))
+
+rel_count.dt <- data.count.dt
+
+rel_count.dt <- merge(
+  rel_count.dt,
+  m2_v2.dt,
+  by = c("file_name")
+)
+
+rel_count.dt[, `:=`(
+  rel_total_peptide_count = total_peptide_count / m2_v2_total_peptide_count,
+  rel_msms_count = total_msms_count / m2_v2_total_msms_count,
+  rel_intensity = total_intensity / m2_v2_total_intensity 
+)]
+
+rel_count_stat.dt <- rel_count.dt[, list(
+  mean_rel_total_peptide_count = mean(rel_total_peptide_count),
+  sd_rel_total_peptide_count = sd(rel_total_peptide_count),
+  mean_rel_msms_count = mean(rel_msms_count),
+  sd_rel_msms_count = sd(rel_msms_count),
+  mean_rel_intensity = mean(rel_intensity),
+  sd_rel_intensity = sd(rel_intensity)
+), by = list(propionylation, MQ_setting, protease_setting, type)]
+
+rel_count_stat.dt[, `:=`(
+  protease_setting = factor(protease_setting, levels = c("trp", "argC")),
+  type = factor(type, levels = c("MULTI-MSMS", "MULTI-SECPEP"))
+)]
+
+
+ggplot(
+  rel_count_stat.dt[type == "MULTI-MSMS"],
+  aes(
+    x = MQ_setting,
+    y = mean_rel_msms_count,
+    fill = type
+  )
+) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(aes(
+    ymin = mean_rel_msms_count - sd_rel_msms_count,
+    ymax = mean_rel_msms_count + sd_rel_msms_count
+  ), width = 0.5, position = position_dodge(width = 0.9)) +
+  facet_grid(~ propionylation + protease_setting, scales = "free", space = "free") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ylab("Relative MS/MS count") +
+  scale_fill_manual(values = c("MULTI-MSMS" = "#4477AA")) #+
+# scale_color_manual(values = c("MULTI-MSMS" = "#4477AA", "MULTI-SECPEP" = "#66CCEE"))
+
+
+```
+
+The results indicate that the setting with 7 miscleavage and 7 variable modifications identify the highest MS/MS count.
+
+
+# Propionylation position QC
+
+Quality control: checks the positional distribution of propionylated lysines, confirming efficient lysine derivatisation.
+
+```{r QC_by_propionylated_lysine_position}
+
+read_all_per_pos_data_with_SECPEP <- function(prefix, dir_path){
+  dt <- fread(file.path(dir_path, paste0("including_SECPEP_", prefix, "all_per_pos_data.csv")))
+  dt[, condition := gsub("_$", "", prefix)]
+  return(dt)
+}
+
+all_per_pos_with_SECPEP.dt <- lapply(
+  # QC uses data-A searched with m7_v7 (7 miscleavages).
+  # NOTE: confirm why data-A / m7_v7 specifically.
+  all_sample_run_info[data %in% c("data-A") & grepl("m7_v7", prefix) & !is.na(prefix), prefix],
+  read_all_per_pos_data_with_SECPEP,
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS_SECPEP")
+) %>% rbindlist
+
+all_per_pos_with_SECPEP.dt[, `:=`(
+  propionylation = case_when(
+    grepl("^data-D", condition) ~ "no_propionylation",
+    TRUE ~ "propionylation"
+  ),
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+"),
+  protease_setting = str_split_fixed(condition, "_", n = 3)[, 2],
+  is_peptide_C_term = peptide_end == aa_pos,
+  is_propionylated = ptm %in% c("[Propionylation]", "[Oxidised Propionylation]")
+)]
+
+all_per_K_pos_with_SECPEP.dt <- all_per_pos_with_SECPEP.dt[aa == "K"]
+
+propionylated_K_count.dt <- all_per_K_pos_with_SECPEP.dt[
+  , list(total_MS_MS_count = sum(psm_mapped)),
+  by = list(is_propionylated, is_peptide_C_term, type)
+]
+
+propionylated_K_count.dt
+
+ggplot(
+  propionylated_K_count.dt,
+  aes(
+    x = is_peptide_C_term,
+    y = total_MS_MS_count,
+    fill = is_propionylated
+  )
+) +
+  geom_bar(stat = "identity", position="fill") +
+  scale_fill_manual(values = c("TRUE" = "#4477AA", "FALSE" = "#BBBBBB")) +
+  facet_grid(~ type) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+```
+
+
+Based on the analyses here, we decided to focus on using MULTI-MSMS data.
+
+
+# Coverage by K score
+
+Examines how the search settings change coverage as a function of lysine richness (K score).
+
+```{r MQ_setting_by_k_score}
+
+all_stoic_pos.dt <- lapply(
+  all_sample_run_info[
+    data != "data-D" & 
+      grepl("_trp_", prefix) &
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[257]_v[257]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_stoic_data,
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS")
+) %>% rbindlist
+
+all_stoic_pos.dt[, `:=`(
+  MQ_setting = str_extract(condition, "m\\d+_v\\d+")
+)]
+
+ms_ms_count.dt <- all_stoic_pos.dt[
+  , list(total_ms_ms_count = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos, MQ_setting)
+]
+
+ms_ms_count.dt <- merge(
+  ms_ms_count.dt,
+  protein.feature.dt[, .(protein_accession, aa_pos, K_ratio, K_ratio_score, IUPRED2)],
+  by = c("protein_accession", "aa_pos")
+)
+
+d.ms_ms_count.dt <- dcast(
+  copy(ms_ms_count.dt)[, IUPRED2 := NULL],
+  protein_accession + aa_pos + K_ratio + K_ratio_score ~ MQ_setting,
+  value.var = "total_ms_ms_count", fill = 0
+  
+)
+
+library("RColorBrewer")
+library("patchwork")
+
+d.ms_ms_count.dt[, table(K_ratio)]
+
+p1 <- ggplot(
+  d.ms_ms_count.dt[order(K_ratio)],
+  aes(
+    x = m2_v2,
+    y = m5_v5
+  )
+) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60") +
+  geom_point() +
+  coord_cartesian(xlim = c(0, 1000), ylim = c(0, 1000)) +
+  theme(aspect.ratio = 1)
+
+p2 <- ggplot(
+  d.ms_ms_count.dt[order(K_ratio)],
+  aes(
+    x = m5_v5,
+    y = m7_v7
+  )
+) +
+  geom_abline(slope = 1, intercept = 0, color = "gray60") +
+  geom_point() +
+  coord_cartesian(xlim = c(0, 1000), ylim = c(0, 1000)) +
+  theme(aspect.ratio = 1)
+
+p1 + p2
+
+p3 <- ggplot(
+  d.ms_ms_count.dt,
+  aes(
+    x = factor(K_ratio),
+    y = m5_v5 - m2_v2
+  )
+) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(outlier.shape = NA, fill = "steelblue") +
+  coord_cartesian(ylim = c(-15, 25)) +
+  theme(aspect.ratio = 1)
+
+p4 <- ggplot(
+  d.ms_ms_count.dt,
+  aes(
+    x = factor(K_ratio),
+    y = m7_v7 - m5_v5
+  )
+) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(outlier.shape = NA, fill = "steelblue") +
+  coord_cartesian(ylim = c(-15, 25))
+
+p3 + p4
+
+```
+
+
+# Runtime by setting
+
+Compares MaxQuant search runtime across the settings.
+
+```{r MQ_setting_on_runtime}
+
+read_runtime_data <- function(prefix, dir_path){
+  mq_setting <- gsub("_$", "", sub("^data-[^_]+_", "", prefix))
+  dt <- fread(file.path(dir_path, mq_setting, paste0(prefix, "runningTimes.txt")))
+  dt[, condition := gsub("_$", "", prefix)]
+  
+  dt <- janitor::clean_names(dt)
+  
+  dt[, job := 
+       janitor::clean_names(setNames(nm = job)) %>%
+       names %>% as.character
+  ]
+  
+  dt[, `:=`(
+    job = dplyr::case_when(
+      job == "ms_ms_first_search" ~ "First_search",
+      job == "ms_ms_main_search" ~ "Main_search",
+      job == "second_peptide_search" ~ "Second_peptide_search",
+      TRUE ~ job
+    )
+  )]
+  return(dt)
+}
+
+all_runtime.dt <- lapply(
+  all_sample_run_info[
+    data == "data-A" & 
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_runtime_data,
+  dir_path = file.path(data.dir, "MQ_Std/PNAS2022/data-A")
+) %>% rbindlist
+
+job_names <- all_runtime.dt[, unique(job)]
+
+all_runtime.dt[, `:=`(
+  job = factor(job, levels = rev(job_names)),
+  condition = factor(condition, levels = c(
+    all_sample_run_info[
+      data == "data-A" & 
+        !grepl("including_SECPEP", prefix) &
+        grepl("m[2-8]_v[2-8]_(def|mCC)", prefix) & 
+        !is.na(prefix), prefix
+    ] %>% {gsub("_$", "", .)}
+  ))
+)]
+
+all_runtime.dt[, `:=`(
+  protease_setting = 
+    str_split_fixed(condition, "_", n = 5)[, 2] %>%
+    factor(levels = c("trp", "argC"))
+)]
+
+runtime_plot_colors <- setNames(
+  rep("gray80", times = length(job_names)), nm = job_names
+) 
+
+runtime_plot_colors[c("First_search", "Main_search", "Second_peptide_search")] <- c("royalblue1", "royalblue2", "royalblue3")
+
+ggplot(
+  data = all_runtime.dt,
+  aes(
+    x = condition,
+    y = running_time_min,
+    fill = job
+  ),
+  color = NA
+) + 
+  geom_bar(stat = "identity") +
+  scale_fill_manual(
+    breaks = c("First_search", "Main_search", "Second_peptide_search"),
+    values = runtime_plot_colors
+  ) +
+  facet_grid(~ protease_setting, scales = "free_x", space = "free") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ylab("Run time [min]")
+
+```
+
+# BRD2/3/4 coverage
+
+Coverage of the lysine-rich regions of BRD2, BRD3 and BRD4 under each setting.
+
+```{r coverage}
+
+all_stoic_pos.dt <- lapply(
+  all_sample_run_info[
+    data == "data-A" & 
+      grepl("_trp_", prefix) &
+      !grepl("including_SECPEP", prefix) &
+      grepl("m[257]_v[257]_(def|mCC)", prefix) & 
+      !is.na(prefix), prefix
+  ],
+  read_stoic_data,
+  dir_path = file.path(p2_results_dir, "MQ_Std_MSMS")
+) %>% rbindlist
+
+list.files(data.dir)
+
+plot_coverage <- function(stoichiometry_data, sl.accession, sl.plot_range){
+  coverage_dt <- 
+    lapply(
+      c("data-A_trp_m2_v2_def", "data-A_trp_m5_v5_def", "data-A_trp_m7_v7_def"),
+      function(x){
+        preprocess_stoichiometry_data_for_plotting(
+          stoichiometry_data = stoichiometry_data[sample_name == "JQ1_HeLaWT_derivatised" & condition == x], 
+          accession = sl.accession, 
+          plot_range = sl.plot_range, 
+          all.protein.bs = all.protein.bs
+        )$coverage_data %>%
+          {.[, condition := x]}
+      }
+    ) %>% rbindlist
+  
+  g <- ggplot(
+    data = coverage_dt,
+    aes(
+      x = aa_pos,
+      y = psm_coverage,
+      color = condition
+    )
+  ) +
+    geom_line() +
+    scale_x_continuous(
+      breaks = sl.plot_range[1]:sl.plot_range[2],
+      labels = all.protein.bs[
+        str_split_fixed(names(all.protein.bs), "\\|", n = 3)[, 2] == sl.accession
+      ] %>%
+        {strsplit(as.character(.), "")[[1]]} %>%
+        {.[sl.plot_range[1]:sl.plot_range[2]]}      # Use amino acids as labels
+    ) +
+    scale_color_bright() +
+    theme(
+      axis.ticks.x = element_blank(),
+      aspect.ratio = 0.3
+    )
+  
+  return(g)
+}
+
+# BRD4
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "O60885", sl.plot_range = c(531, 581)
+)
+
+# BRD3
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "Q15059", sl.plot_range = c(483, 533)
+)
+
+# BRD2
+plot_coverage(
+  stoichiometry_data = all_stoic_pos.dt, sl.accession = "P25440", sl.plot_range = c(540, 590)
+) 
+
+
+
+
+
+```
+
+
+# Notes
+
+The following sites were identified by non-unique peptides (therefore total number used here is 153 instead of 150 in the paper).
+
+           Accession position curated_oxK_site    screen
+1:  Q14331|FRG1_HUMAN       27  JMJD6_substrate FLAGJMJD6
+2:  Q14331|FRG1_HUMAN       29  JMJD6_substrate FLAGJMJD6
+3:  Q14331|FRG1_HUMAN       30  JMJD6_substrate FLAGJMJD6
+4: Q9UQ35|SRRM2_HUMAN      241  JMJD6_substrate FLAGJMJD6
+5: Q9UQ35|SRRM2_HUMAN      243  JMJD6_substrate FLAGJMJD6
+6: Q9UQ35|SRRM2_HUMAN      244  JMJD6_substrate FLAGJMJD6
+
+In the end, 91% of hydroxylated sites were covered by the data, and 80% (120 / 150) of reported hydroxylation sites were identified by this workflow.
+
+
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```

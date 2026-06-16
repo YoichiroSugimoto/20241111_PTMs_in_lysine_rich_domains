@@ -52,3 +52,47 @@ setMethod("getSeq", "XStringSet",
         ans
     }
 )
+
+
+## Read a PTM-stoichiometry table written by ptm.stoichiometry.
+## Reconstructs the path as <dir_path>/<pre_prefix><prefix>PTM_stoichiometry<post_fix>.csv
+## (pre_prefix/post_fix default to "" so MQ_Std tables read with prefix + dir_path alone).
+read_stoic_data <- function(prefix, pre_prefix = "", post_fix = "", dir_path) {
+    dt <- fread(file.path(
+        dir_path, paste0(pre_prefix, prefix, "PTM_stoichiometry", post_fix, ".csv")
+    ))
+    dt[, condition := gsub("_$", "", prefix)] # drop trailing "_" from prefix
+    return(dt)
+}
+
+
+## Load and preprocess the MS_KR_1, MS_SS and PNAS stoichiometry tables that
+## p2-07 and p2-08 share. Returns a named list of data.tables. Each diagnostic-ion
+## table gains a logical `is_diagnostic_peak`; the curated PNAS table is column-renamed.
+load_stoichiometry_datasets <- function(results.dir, data.dir) {
+    read_di <- function(prefix, subdir) read_stoic_data(
+        prefix = prefix, pre_prefix = "", post_fix = "_DI",
+        dir_path = file.path(results.dir, "p2-analysis-setting", subdir)
+    )
+
+    MS_KR1_stoic_dt <- read_di("MS_KR_1_", "MS_KR_1")
+    MS_KR1_stoic_dt[, is_diagnostic_peak := diagnostic_peak == "+"]
+
+    MS_SS_stoic_dt <- read_di("MS_SS_", "MS_SS")
+    MS_SS_stoic_dt[, is_diagnostic_peak := diagnostic_peak == "+"]
+
+    pnas2022_stoic_dt <- read_di("DI_data-A_trp_m7_v7_def_", "MQ_DI")
+    pnas2022_stoic_dt[, is_diagnostic_peak := diagnostic_peak == "+"]
+
+    pnas2022_dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/long_K_stoichiometry_data.csv"))
+    setnames(
+        pnas2022_dt,
+        old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source",
+                "total_n_feature_oxK", "total_n_feature_K"),
+        new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name",
+                "sum_psm_mapped", "sum_psm_mapped_per_position")
+    )
+
+    list(MS_KR1_stoic_dt = MS_KR1_stoic_dt, MS_SS_stoic_dt = MS_SS_stoic_dt,
+         pnas2022_stoic_dt = pnas2022_stoic_dt, pnas2022_dt = pnas2022_dt)
+}

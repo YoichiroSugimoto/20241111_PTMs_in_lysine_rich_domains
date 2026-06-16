@@ -1,6 +1,7 @@
-## All hidden files except .gitignore
+## All hidden files except .gitignore and the project-root sentinel
 .*
 !/.gitignore
+!/.here
 
 ## cluster runnning log won't be included
 ## slurm-*
@@ -19,7 +20,6 @@ rawdata/
 Rawdata/
 annotation/
 results/
-data/
 ## ignore sofrware directory
 software/
 temp/
@@ -128,3 +128,19 @@ Thumbs.db
 # renv
 R/renv/
 .Rproj.user
+
+## ----------------------------------------------------------------------------
+## data/ : commit the small inputs, ignore the large downloads.
+## git cannot filter by size, so large files are matched by name/type below.
+## Add a pattern here if you introduce another large input.
+## ----------------------------------------------------------------------------
+## Large MaxQuant / FragPipe / derived files — fetch from PRIDE / UniProt:
+data/**/*_evidence.txt
+data/**/*proteinGroups.txt
+data/**/all_protein_feature_per_position.csv
+data/**/long_K_stoichiometry_data.csv
+## (psm.tsv and *.diagnosticIons.tsv are already ignored by the *.tsv rule above)
+
+## Re-include the small data files that the global rules above would hide:
+!data/**/*.xlsx
+!data/**/.gitkeep

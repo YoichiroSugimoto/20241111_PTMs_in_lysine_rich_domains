@@ -1,0 +1,533 @@
+---
+title: "p2-09 · Export stoichiometry tables"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Export processed BRD stoichiometry (MS_SS, MS_KR_1, PNAS) to a
+formatted Excel workbook (supplementary data).
+
+**Inputs:** stoichiometry tables from p2-01; reference proteome.
+
+**Outputs:** Excel workbook under `results/`.
+
+**Upstream:** p2-01. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+library("janitor")
+library("openxlsx")
+
+```
+
+# Export tables to Excel
+
+Assembles the per-site stoichiometry tables (PNAS data-A/B/C, MS_KR_1, MS_SS) and writes them to a formatted Excel workbook for the supplementary data.
+
+```{r PNAS_DI_load_data_excel}
+
+
+
+#---------------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant with DI (dataset A)
+#---------------------------------------------------------------------
+
+ MQ_DI_dtA_stoic_dt <- read_stoic_data(
+  prefix = "DI_data-A_trp_m7_v7_def_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MQ_DI_dtA_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+#--------------------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant with DI (dataset B1 and B2)
+#--------------------------------------------------------------------------
+
+# Load sample run info data (MQ DI with no waterloss)
+MQ_DI_run_info <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_DI" 
+) %>% data.table
+
+# Add a new column 'sample_id' that assigns a unique sequential number to each 
+#row (1:N), where N is the total number of rows in the data.table
+MQ_DI_run_info[, sample_id := 1:.N]
+
+MQ_DI_dtB_stoic_dt <- lapply(
+  MQ_DI_run_info[data != c("data-A", "data-C"), prefix],
+  read_stoic_data,
+  pre_prefix = "DI_", 
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+) %>% rbindlist
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MQ_DI_dtB_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+#---------------------------------------------------------------------
+# Load PNAS stoichiometry data analysed by MaxQuant with DI (dataset C)
+#---------------------------------------------------------------------
+
+ MQ_DI_dtC_stoic_dt <- read_stoic_data(
+  prefix = "DI_data-C_trp_m7_v7_mCC_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_DI"))
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MQ_DI_dtC_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+
+#------------------------------------------------------
+# Load PNAS stoichiometry data manually curated sites
+#------------------------------------------------------
+
+# Load PNAS stoichiometry data
+pnas2022_stoic_dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/long_K_stoichiometry_data.csv"))
+
+# Replace old column names with new ones
+setnames(
+  pnas2022_stoic_dt, 
+  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source", "total_n_feature_oxK", "total_n_feature_K"), 
+  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name", "sum_psm_mapped", "sum_psm_mapped_per_position")
+)
+
+# Merge the reference protein data with the PNAS stoichiometry data by protein accession ID
+pnas2022_stoic_dt <- merge(
+  ref_protein_dt[, .(protein_accession, gene_name)], # Take columns protein_accession and gene_name from the ref data 
+  pnas2022_stoic_dt,
+  by = "protein_accession" #combine both data.table by protein accession ID
+)
+
+## Add columns to pnas2022.stoic.dt metadata
+# new columns: accession_position, ptm, sample_name 
+pnas2022_stoic_dt[, `:=`(
+  accession_position = paste0(protein_accession, "_", aa_pos), #this column combines data from protein_accession and aa_pos
+    ptm = fifelse(curated_oxK_site == TRUE, "[Oxidation (K)]", " ")
+    )
+  ]
+
+#Change col names to make it same across datasets
+setnames(pnas2022_stoic_dt, c("stoichiometry", "protein_accession", "gene_name", "aa_pos", "curated_oxK_site"),  c("Stoichiometry_PNAS2022", "Protein_accession", "Gene_name", "Amino_acid_pos", "PNAS2022_curated_oxK_site"))
+
+#-----------------------------
+# Load MS_KR_1 stoichiometry data (Dataset D)
+#-----------------------------
+
+## Read stoichiometry data for MS_KR1 data
+ MS_KR1_stoic_dt <- read_stoic_data(
+  prefix = "MS_KR_1_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_KR_1"))
+
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_KR1_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+#-----------------------------
+# Load MS_SS stoichiometry data (Dataset E)
+#-----------------------------
+
+## Read stoichiometry data for MS_SS data 
+ MS_SS_stoic_dt <- read_stoic_data(
+  prefix = "MS_SS_",
+  pre_prefix = "",
+  post_fix = "_DI",
+  dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS"))
+
+ #[Oxidation (K)] 
+
+# Create a logical column for diagnostic peak. For rows where diagnostic peak is 
+# present "+", logical vector is "TRUE", or else "FALSE"
+MS_SS_stoic_dt[, `:=`(
+  is_diagnostic_peak = diagnostic_peak == "+" 
+)]
+
+```
+
+
+```{r PNAS_MQ_DI_data_A}
+
+# Subset the data to contain only Lysine
+MQ_DI_dtA_stoic_dt <- MQ_DI_dtA_stoic_dt[aa == "K"]
+
+# removing unused data columns from data table
+MQ_DI_dtA_stoic_dt <-  MQ_DI_dtA_stoic_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition"
+                                          
+) := NULL]
+
+# changing stoichiometry column position 
+setcolorder(
+  MQ_DI_dtA_stoic_dt,
+  append(setdiff(names(MQ_DI_dtA_stoic_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+ 
+# changing sample_group column position 
+setcolorder(
+  MQ_DI_dtA_stoic_dt,
+  append(setdiff(names(MQ_DI_dtA_stoic_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+ # changing column names - publication ready
+setnames(MQ_DI_dtA_stoic_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_Name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+# Merge MQ_DI stoic dataset A and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MQ_DI_dtA_stoic_dt <- MQ_DI_dtA_stoic_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
+
+ # Write to csv table to identify "K" with DI 
+write.xlsx(MQ_DI_dtA_stoic_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_dtA_stoic_dt.xlsx"))
+
+```
+
+
+```{r PNAS_MQ_DI_data_B}
+
+# Subset the data to contain only Lysine
+MQ_DI_dtB_stoic_dt <- MQ_DI_dtB_stoic_dt[aa == "K"]
+
+# removing unused data columns from data table
+MQ_DI_dtB_stoic_dt <-  MQ_DI_dtB_stoic_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition"
+                                          
+) := NULL]
+
+# changing stoichiometry column position 
+setcolorder(
+  MQ_DI_dtB_stoic_dt,
+  append(setdiff(names(MQ_DI_dtB_stoic_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+ 
+# changing sample_group column position 
+setcolorder(
+  MQ_DI_dtB_stoic_dt,
+  append(setdiff(names(MQ_DI_dtB_stoic_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+ # changing column names - publication ready
+setnames(MQ_DI_dtB_stoic_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Total_number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+# Merge MQ_DI stoic dataset B1 and B2 and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MQ_DI_dtB_stoic_dt <- MQ_DI_dtB_stoic_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
+
+ # Write to csv table to identify "K" with DI 
+write.xlsx(MQ_DI_dtB_stoic_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_dtB_stoic_dt.xlsx"))
+
+```
+
+
+```{r PNAS_MQ_DI_data_C}
+
+# Subset the data to contain only Lysine
+MQ_DI_dtC_stoic_dt <- MQ_DI_dtC_stoic_dt[aa == "K"]
+
+# removing unused data columns from data table
+MQ_DI_dtC_stoic_dt <-  MQ_DI_dtC_stoic_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition"
+                                          
+) := NULL]
+
+# changing stoichiometry column position 
+setcolorder(
+  MQ_DI_dtC_stoic_dt,
+  append(setdiff(names(MQ_DI_dtC_stoic_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+ 
+# changing sample_group column position 
+setcolorder(
+  MQ_DI_dtC_stoic_dt,
+  append(setdiff(names(MQ_DI_dtC_stoic_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+# changing column names - publication ready
+setnames(MQ_DI_dtC_stoic_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_Name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+# Merge MQ_DI stoic dataset C and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MQ_DI_dtC_stoic_dt <- MQ_DI_dtC_stoic_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
+ 
+ # Write to csv table to identify "K" with DI 
+write.xlsx(MQ_DI_dtC_stoic_dt, file.path(results.dir, "p2_MS_SS_KR", "MQ_DI_dtC_stoic_dt.xlsx"))
+
+```
+
+
+```{r MS_KR_excel}
+
+# Subset the data to contain only Lysine
+MS_KR1_stoic_K_dt <- MS_KR1_stoic_dt[aa == "K"]
+
+# removing unused data columns from data table
+MS_KR1_stoic_K_dt <-  MS_KR1_stoic_K_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition") := NULL]
+
+# changing stoichiometry column position 
+setcolorder(
+  MS_KR1_stoic_K_dt,
+  append(setdiff(names(MS_KR1_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+ 
+# changing sample_group column position 
+setcolorder(
+  MS_KR1_stoic_K_dt,
+  append(setdiff(names(MS_KR1_stoic_K_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+ # changing column names - publication ready
+setnames(MS_KR1_stoic_K_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_Name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+
+# Merge MS_KR_1 and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MS_KR1_stoic_K_dt <- MS_KR1_stoic_K_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
+
+ # Write to Excel table
+write.xlsx(MS_KR1_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_KR1_stoic_K.xlsx"))
+
+```
+
+
+```{r MS_SS_excel}
+
+# Subset the data to contain only Lysine
+MS_SS_stoic_K_dt <- MS_SS_stoic_dt[aa == "K"]
+
+# removing unsed data columns from data table
+MS_SS_stoic_K_dt <-  MS_SS_stoic_K_dt[, c("sum_intensity_per_position",
+                                          "sum_psm_mapped_per_position",
+                                          "sum_the_number_of_peptide",
+                                          "localization_prob",
+                                          "score_for_localization",
+                                          "best_localization_ms_ms_id",
+                                          "best_localization_raw_file",
+                                          "max_score",
+                                          "diagnostic_peak",
+                                          "condition") := NULL]
+
+# Remove BRD2/3 samples reporting BRD4 stoichiometry and vice versa
+# These samples are removed as it could be false positives reported by the system 
+MS_SS_stoic_K_dt <- MS_SS_stoic_K_dt[
+  # Drop cross-protein false positives: BRD4 signal reported in BRD2/3 samples
+  # (and vice versa), e.g. from shared / homologous peptides.
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
+]
+
+# changing stoichiometry column position 
+setcolorder(
+  MS_SS_stoic_K_dt,
+  append(setdiff(names(MS_SS_stoic_K_dt), "stoichiometry"), "stoichiometry", after = 6)
+)
+
+# changing sample_group column position 
+setcolorder(
+  MS_SS_stoic_K_dt,
+  append(setdiff(names(MS_SS_stoic_K_dt), "is_diagnostic_peak"), "is_diagnostic_peak", after = 13)
+)
+
+ # changing column names - publication ready
+setnames(MS_SS_stoic_K_dt, c("sample_name",
+                              "protein_accession",
+                              "gene_name",
+                              "aa",
+                              "aa_pos",
+                              "ptm", 
+                              "stoichiometry",
+                              "sum_peak_intensity",
+                              "sum_psm_mapped",
+                              "the_number_of_peptide",
+                              "is_diagnostic_peak"), 
+         c("Sample_Name",
+           "Protein_accession",
+           "Gene_name",
+           "Amino_acid",
+           "Amino_acid_pos",
+           "PTM_type",
+           "Stoichiometry",
+           "Total_peak_intensity",
+           "Total_PSM_mapped",
+           "Number_of_peptide",
+           "Diagnostic_peak_presence"))
+
+
+# Merge MS_SS and pnas2022 manually curated sites by 'Protein_accession' and 'Amino_acid_pos'
+ MS_SS_stoic_K_dt <- MS_SS_stoic_K_dt[, `:=`( 
+  PNAS2022_curated_oxK_site = 
+    paste0(Protein_accession, "_", Amino_acid_pos) %in%
+    pnas2022_stoic_dt[PNAS2022_curated_oxK_site == TRUE, paste0(Protein_accession, "_", Amino_acid_pos)] 
+)]
+
+ # Write to Excel table
+write.xlsx(MS_SS_stoic_K_dt, file.path(results.dir, "p2_MS_SS_KR", "MS_SS_stoic_K.xlsx"))
+
+```
+
+
+# Session information
+
+```{r session_Info}
+
+sessioninfo::session_info()
+
+```
