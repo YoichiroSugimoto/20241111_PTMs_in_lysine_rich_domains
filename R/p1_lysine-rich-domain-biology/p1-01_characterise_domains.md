@@ -1,21 +1,32 @@
----
-title: "p1-01 · Characterise lysine-rich domains"
-author: "Yoichiro Sugimoto and Pallavi Kesavan"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-   github_document:
-     toc: yes
-     toc_depth: 3
----
+p1-01 · Characterise lysine-rich domains
+================
+Yoichiro Sugimoto and Pallavi Kesavan
+17 June, 2026
+
+- [Overview](#overview)
+- [Setup](#setup)
+- [Import data](#import-data)
+- [Maximum K score and protein
+  length](#maximum-k-score-and-protein-length)
+- [K score distributions](#k-score-distributions)
+- [Subcellular localisation](#subcellular-localisation)
+- [K score by compartment](#k-score-by-compartment)
+- [Functional class enrichment](#functional-class-enrichment)
+- [K score in histones](#k-score-in-histones)
+- [K score in disordered regions](#k-score-in-disordered-regions)
+- [Session information](#session-information)
 
 # Overview
 
-**Purpose:** Characterise lysine-rich domains across the human proteome — maximum
-K-score vs protein length, subcellular localisation, functional-class enrichment,
-and K-scores in histones.
+**Purpose:** Characterise lysine-rich domains across the human proteome
+— maximum K-score vs protein length, subcellular localisation,
+functional-class enrichment, and K-scores in histones.
 
-**Inputs:** `data/processed_data_from_PNAS2022/all_protein_feature_per_position.csv`, the cd-code annotation table under `data/public_data/`, and the UniProt reference proteome;
-annotation packages `org.Hs.eg.db` and `subcellularvis` (loaded where used).
+**Inputs:**
+`data/processed_data_from_PNAS2022/all_protein_feature_per_position.csv`,
+the cd-code annotation table under `data/public_data/`, and the UniProt
+reference proteome; annotation packages `org.Hs.eg.db` and
+`subcellularvis` (loaded where used).
 
 **Outputs:** figures (rendered on knit).
 
@@ -23,8 +34,7 @@ annotation packages `org.Hs.eg.db` and `subcellularvis` (loaded where used).
 
 # Setup
 
-```{r setup, message = FALSE, warning = FALSE}
-
+``` r
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -33,15 +43,14 @@ repo_root <- local({
   p
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
-
 ```
 
 # Import data
 
-Loads the per-position protein feature table, maps UniProt IDs to gene symbols, and prepares the K-score data used throughout.
+Loads the per-position protein feature table, maps UniProt IDs to gene
+symbols, and prepares the K-score data used throughout.
 
-```{r import_data, warning=FALSE}
-
+``` r
 ## Define paths to directory
 data.dir <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
@@ -55,7 +64,28 @@ protein.feature.dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/al
 
 ## Load library  
 library("org.Hs.eg.db")
+```
 
+    ## Loading required package: AnnotationDbi
+
+    ## Loading required package: Biobase
+
+    ## Welcome to Bioconductor
+    ## 
+    ##     Vignettes contain introductory material; view with
+    ##     'browseVignettes()'. To cite Bioconductor, see
+    ##     'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+    ## 
+    ## Attaching package: 'AnnotationDbi'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     select
+
+    ## 
+
+``` r
 ## Convert gene id and names
 # Map UniProt IDs to gene symbols and ENSEMBL IDs
 gene.id.dt <- select(
@@ -65,7 +95,11 @@ gene.id.dt <- select(
     keytype = "UNIPROT"
 ) %>%
     data.table
+```
 
+    ## 'select()' returned 1:many mapping between keys and columns
+
+``` r
 # Rename columns 
 setnames(
     gene.id.dt,
@@ -83,9 +117,10 @@ fwrite(gene.id.dt, file.path(p1.results.dir,"uniprot-ensembl.csv"))
 
 # Maximum K score and protein length
 
-Computes each protein's maximum K score (lysine richness) and its length.
+Computes each protein’s maximum K score (lysine richness) and its
+length.
 
-```{r Maximum_K_score_Protein_Length}
+``` r
 #-----------------------------------
 # Maximum K score and Protein Length
 #-----------------------------------
@@ -111,20 +146,29 @@ max.k.score.dt <- merge(
 fwrite(max.k.score.dt, file.path(p1.results.dir, "max-k-score-per-protein.csv")) 
 
 print("The ratio of proteins with the max K ratio > 0.3")
+```
+
+    ## [1] "The ratio of proteins with the max K ratio > 0.3"
+
+``` r
 nrow(max.k.score.dt[max_k_ratio > 0.3]) / nrow(max.k.score.dt)
+```
 
+    ## [1] 0.3809687
 
+``` r
 # Median K score of all region in human proteome#
 protein.feature.dt[, median(K_ratio)]
-
 ```
+
+    ## [1] 0
 
 # K score distributions
 
-Visualises the distribution of K scores and the relationship between maximum K score and protein length.
+Visualises the distribution of K scores and the relationship between
+maximum K score and protein length.
 
-```{r Data_Visualization_Max_K_Score_&_Protein_Length}
-
+``` r
 #---------------------------------------------------------
 # Data Visualization - K score, Maximum K score and Protein Length
 #---------------------------------------------------------
@@ -132,7 +176,15 @@ Visualises the distribution of K scores and the relationship between maximum K s
 ## K_ratio distribution 
 # Count how many proteins have each K_ratio value
 protein.feature.dt[, table(K_ratio)] 
+```
 
+    ## K_ratio
+    ##       0     0.1     0.2     0.3     0.4     0.5     0.6     0.7     0.8     0.9 
+    ## 6672182 3249314 1066633  255694   52006   11627    2951     979     322      54 
+    ##       1 
+    ##       2
+
+``` r
 # Create a new column `K_ratio_group` based on the K_ratio
 protein.feature.dt[, K_ratio_group := case_when(
   K_ratio >= 0.9 ~ 0.9, #If K_ratio is 0.9 or higher, assign value 0.9
@@ -148,8 +200,11 @@ ggplot(
 ) +
     geom_bar() +
     scale_x_continuous(breaks=seq(0, 1, 0.1))
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-1.png)<!-- -->
 
+``` r
 # Plot - The number of proteins per max K score
 ggplot(
     max.k.score.dt,
@@ -160,9 +215,18 @@ ggplot(
     geom_bar() +
     scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
   labs(x = "max_k_ratio", y = "number of protein_count")
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-2.png)<!-- -->
+
+``` r
 #Median - 24112025
 median(max.k.score.dt[, max_k_ratio])
+```
+
+    ## [1] 0.3
+
+``` r
 # 0.3
 
 # Plot - Max K ratio vs protein length
@@ -175,7 +239,11 @@ ggplot(
 ) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
   labs(x = "max_K_ratio", y = "protein_length") +
   coord_cartesian(ylim = c(0, 2000))
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-3.png)<!-- -->
+
+``` r
 # Plot - K_score of disordered regions of proteins 
 # This plot indicates K score depending on the level of protein disorderliness
 
@@ -187,8 +255,11 @@ ggplot(
   )
 ) + 
   geom_boxplot(fill = "steelblue", outlier.shape = NA)
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-4.png)<!-- -->
 
+``` r
 # Plot - Protein charge versus K_ratio_group
 ggplot(
   protein.feature.dt,
@@ -199,15 +270,19 @@ ggplot(
 ) + 
   geom_hline(yintercept = 0, color = "gray60") +
   geom_boxplot(fill = "steelblue", outlier.shape = NA)
-
 ```
+
+    ## Warning: Removed 211124 rows containing non-finite outside the scale range
+    ## (`stat_boxplot()`).
+
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Max_K_Score_&_Protein_Length-5.png)<!-- -->
 
 # Subcellular localisation
 
-Annotates proteins with subcellular localisation to relate lysine richness to cellular compartment.
+Annotates proteins with subcellular localisation to relate lysine
+richness to cellular compartment.
 
-```{r subcellular_localisation_analysis}
-
+``` r
 #--------------------------------------
 # Sub-cellular localisation analysis
 #--------------------------------------
@@ -281,15 +356,13 @@ d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.sco
 
 # Assign Compartment names as rownames of the matrix 
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
-
 ```
 
 # K score by compartment
 
 Visualises lysine richness across subcellular compartments.
 
-```{r Data_Visualization_Subcellular_Localisation}
-
+``` r
 # Load libraries -  'RColorBrewer' and 'pheatmap'
 library(RColorBrewer)
 library("pheatmap")
@@ -303,7 +376,11 @@ pheatmap(
   color = colorRampPalette(c("white", "steelblue"))(length(mat_breaks)),
   breaks = mat_breaks
 )
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Subcellular_Localisation-1.png)<!-- -->
+
+``` r
 # Plot - max_k_score versus −log10(FDR) of nuclear localisation enrichment
 ggplot(
   data = k.score.compartment.dt[Compartment == "Nucleus"],
@@ -316,16 +393,39 @@ ggplot(
   geom_hline(yintercept = -log10(0.05), color = "gray60") +
   ylab("-log10(FDR) of nuclear localisation enrichment") +
   xlab("Maximum K score of protein")
-
 ```
+
+![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Subcellular_Localisation-2.png)<!-- -->
 
 # Functional class enrichment
 
-Tests which functional protein classes are enriched among lysine-rich proteins.
+Tests which functional protein classes are enriched among lysine-rich
+proteins.
 
-```{r functional_classes}
-
+``` r
 library("mgcv")
+```
+
+    ## Loading required package: nlme
+
+    ## 
+    ## Attaching package: 'nlme'
+
+    ## The following object is masked from 'package:Biostrings':
+    ## 
+    ##     collapse
+
+    ## The following object is masked from 'package:IRanges':
+    ## 
+    ##     collapse
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     collapse
+
+    ## This is mgcv 1.9-1. For overview type 'help("mgcv-package")'.
+
+``` r
 library("subcellularvis")
 
 comp.out <- compartmentData(
@@ -406,7 +506,56 @@ functional_class_summary[, `:=`(
 )]
 
 functional_class_summary
+```
 
+    ##     functional_type               subtype         coef          se
+    ##              <fctr>                <fctr>        <num>       <num>
+    ##  1:    localisation               Histone  0.163573821 0.015153259
+    ##  2:    localisation              Ribosome  0.094719538 0.007785273
+    ##  3:    localisation               Nucleus  0.044130892 0.001641308
+    ##  4:    localisation          Cytoskeleton  0.008931795 0.002546917
+    ##  5:    localisation             Cytoplasm  0.004000254 0.001617667
+    ##  6:    localisation         Mitochondrion -0.002150944 0.002939521
+    ##  7:    localisation Endoplasmic reticulum -0.010155542 0.002687986
+    ##  8:    localisation Intracellular vesicle -0.011941747 0.002451759
+    ##  9:    localisation  Extracellular region -0.013043133 0.001990705
+    ## 10:    localisation              Endosome -0.017430567 0.003699277
+    ## 11:    localisation       Plasma membrane -0.018304547 0.001817210
+    ## 12:    localisation       Golgi apparatus -0.018694085 0.002980457
+    ## 13:    localisation            Peroxisome -0.019337922 0.009531725
+    ## 14:    localisation               Vacuole -0.029113620 0.004065612
+    ## 15:    localisation              Lysosome -0.031381737 0.004308968
+    ## 16:     condensates            Cajal body  0.091028126 0.013163794
+    ## 17:     condensates             Nucleolus  0.076694198 0.003220552
+    ## 18:     condensates       Nuclear speckle  0.054212632 0.007903436
+    ## 19:     condensates                P-body  0.048065116 0.005231583
+    ## 20:     condensates        Stress granule  0.034788726 0.003997924
+    ##     functional_type               subtype         coef          se
+    ##           p_value     n
+    ##             <num> <int>
+    ##  1:  4.320651e-27    56
+    ##  2:  6.148159e-34   214
+    ##  3: 1.643062e-156  7329
+    ##  4:  4.543272e-04  2276
+    ##  5:  1.341198e-02 11635
+    ##  6:  4.643401e-01  1618
+    ##  7:  1.584649e-04  1965
+    ##  8:  1.120462e-06  2421
+    ##  9:  5.812286e-11  4033
+    ## 10:  2.470576e-06   984
+    ## 11:  8.278909e-24  5351
+    ## 12:  3.630958e-10  1566
+    ## 13:  4.249208e-02   142
+    ## 14:  8.285065e-13   806
+    ## 15:  3.386400e-13   714
+    ## 16:  4.815930e-12    74
+    ## 17: 1.169497e-123  1411
+    ## 18:  7.114597e-12   207
+    ## 19:  4.396641e-20   536
+    ## 20:  3.513771e-18   905
+    ##           p_value     n
+
+``` r
 ggplot(
   data = functional_class_summary,
   aes(
@@ -420,7 +569,11 @@ ggplot(
   )) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   facet_grid(~ functional_type, scales = "free", space = "free")
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/functional_classes-1.png)<!-- -->
+
+``` r
 ggplot(
   data = max.k.score.dt,
   aes(
@@ -434,11 +587,14 @@ ggplot(
   coord_cartesian(ylim = c(0, 2500))
 ```
 
+![](p1-01_characterise_domains_files/figure-gfm/functional_classes-2.png)<!-- -->
+
 # K score in histones
 
-Examines histones — archetypal lysine-rich proteins — as a reference point.
+Examines histones — archetypal lysine-rich proteins — as a reference
+point.
 
-```{r histone_versus_max_K_score}
+``` r
 library("RColorBrewer")
 
 #install.packages("ggpubr")
@@ -450,10 +606,18 @@ histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
 
 median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
 print(median_k_ratio)
+```
 
+    ## [1] 0.4
+
+``` r
 range_max_k <- histone_protein_dt[, range(max_k_ratio, na.rm = TRUE)]
 print(range_max_k)
+```
 
+    ## [1] 0.1 0.6
+
+``` r
 H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
 H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
 H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
@@ -523,10 +687,29 @@ P5_H4 <- ggplot(
   ylab("")
 
 P2_H2A
-P3_H2B
-P4_H3
-P5_H4
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-1.png)<!-- -->
+
+``` r
+P3_H2B
+```
+
+![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-2.png)<!-- -->
+
+``` r
+P4_H3
+```
+
+![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-3.png)<!-- -->
+
+``` r
+P5_H4
+```
+
+![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-4.png)<!-- -->
+
+``` r
 # combined <- ggarrange(
 #   P2_H2A, P3_H2B, P4_H3, P5_H4,
 #   ncol = 2, nrow = 2,
@@ -544,14 +727,13 @@ P5_H4
 #   left   = text_grob("Max K Score", rot = 90, size = 10),
 #   bottom = text_grob("Histone", size = 10)
 # )
-
-
 ```
 
-The definition of histone tail was obtained from "Histone post-translational modifications — cause and consequence of genome function (https://doi.org/10.1038/s41576-022-00468-7)".
+The definition of histone tail was obtained from “Histone
+post-translational modifications — cause and consequence of genome
+function (<https://doi.org/10.1038/s41576-022-00468-7>)”.
 
-```{r histone_k_score_per_position}
-
+``` r
 #H2A
 ggplot(
   protein.feature.dt[grepl("Q6FI13", Accession)],
@@ -564,7 +746,11 @@ ggplot(
   annotate("rect", xmin = 2, xmax = 26, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
   geom_area(fill = "gray40") +
   ggtitle(protein.feature.dt[grepl("Q6FI13", Accession)][1, Accession])
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/histone_k_score_per_position-1.png)<!-- -->
+
+``` r
 #H2B
 ggplot(
   protein.feature.dt[grepl("P33778", Accession)],
@@ -577,7 +763,11 @@ ggplot(
   annotate("rect", xmin = 2, xmax = 33, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
   geom_area(fill = "gray40") +
   ggtitle(protein.feature.dt[grepl("P33778", Accession)][1, Accession])
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/histone_k_score_per_position-2.png)<!-- -->
+
+``` r
 #H3
 ggplot(
   protein.feature.dt[grepl("Q16695", Accession)],
@@ -590,7 +780,11 @@ ggplot(
   annotate("rect", xmin = 2, xmax = 44, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
   geom_area(fill = "gray40") +
   ggtitle(protein.feature.dt[grepl("Q16695", Accession)][1, Accession])
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/histone_k_score_per_position-3.png)<!-- -->
+
+``` r
 #H4
 ggplot(
   protein.feature.dt[grepl("P62805", Accession)],
@@ -603,23 +797,32 @@ ggplot(
   annotate("rect", xmin = 2, xmax = 24, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
   geom_area(fill = "gray40") +
   ggtitle(protein.feature.dt[grepl("P62805", Accession)][1, Accession])
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/histone_k_score_per_position-4.png)<!-- -->
+
+``` r
 print("Median K score of histone tails")
+```
+
+    ## [1] "Median K score of histone tails"
+
+``` r
 rbindlist(list(
   protein.feature.dt[grepl("Q6FI13", Accession)][2:26],
   protein.feature.dt[grepl("P33778", Accession)][2:33],
   protein.feature.dt[grepl("Q16695", Accession)][2:44],
   protein.feature.dt[grepl("P62805", Accession)][2:24]
 ))[, median(K_ratio_score)]
-
 ```
+
+    ## [1] 0.3
 
 # K score in disordered regions
 
 Relates lysine richness to protein disorder.
 
-```{r kscore_disorderedness_other_proteins}
-
+``` r
 library("patchwork")
 
 dkc1.1 <- ggplot(
@@ -647,8 +850,11 @@ dkc1.2 <- ggplot(
   ggtitle(protein.feature.dt[grepl("O60832", Accession)][1, Accession])
 
 dkc1.1 / dkc1.2
+```
 
+![](p1-01_characterise_domains_files/figure-gfm/kscore_disorderedness_other_proteins-1.png)<!-- -->
 
+``` r
 ARL6IP4.1 <- ggplot(
   protein.feature.dt[grepl("Q66PJ3", Accession)],
   aes(
@@ -674,14 +880,130 @@ ARL6IP4.2 <- ggplot(
   ggtitle(protein.feature.dt[grepl("Q66PJ3", Accession)][1, Accession])
 
 ARL6IP4.1 / ARL6IP4.2
-
-
 ```
+
+![](p1-01_characterise_domains_files/figure-gfm/kscore_disorderedness_other_proteins-2.png)<!-- -->
 
 # Session information
 
-```{r sessionInfo}
-
+``` r
 sessioninfo::session_info()
-
 ```
+
+    ## ─ Session info ───────────────────────────────────────────────────────────────
+    ##  setting  value
+    ##  version  R version 4.4.3 (2025-02-28)
+    ##  os       Ubuntu 24.04.2 LTS
+    ##  system   x86_64, linux-gnu
+    ##  ui       X11
+    ##  language (EN)
+    ##  collate  C.UTF-8
+    ##  ctype    C.UTF-8
+    ##  tz       Europe/Berlin
+    ##  date     2026-06-17
+    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ## 
+    ## ─ Packages ───────────────────────────────────────────────────────────────────
+    ##  package           * version    date (UTC) lib source
+    ##  AnnotationDbi     * 1.68.0     2024-10-29 [1] Bioconduc~
+    ##  Biobase           * 2.66.0     2024-10-29 [1] Bioconduc~
+    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
+    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
+    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.4.3)
+    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.4.3)
+    ##  blob                1.2.4      2023-03-17 [1] CRAN (R 4.4.3)
+    ##  cachem              1.1.0      2024-05-16 [1] CRAN (R 4.4.3)
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
+    ##  colourpicker        1.3.0      2023-08-21 [1] CRAN (R 4.4.3)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
+    ##  DBI                 1.2.3      2024-06-02 [1] CRAN (R 4.4.3)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
+    ##  formattable         0.2.1      2021-01-07 [1] CRAN (R 4.4.3)
+    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
+    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
+    ##  gridExtra           2.3        2017-09-09 [1] CRAN (R 4.4.3)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
+    ##  htmlwidgets         1.6.4      2023-12-06 [1] CRAN (R 4.4.3)
+    ##  httpuv              1.6.16     2025-04-16 [1] CRAN (R 4.4.3)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
+    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
+    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  KEGGREST            1.46.0     2024-10-29 [1] Bioconduc~
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
+    ##  later               1.4.2      2025-04-08 [1] CRAN (R 4.4.3)
+    ##  lattice             0.22-5     2023-10-24 [4] CRAN (R 4.3.3)
+    ##  lazyeval            0.2.2      2019-03-15 [1] CRAN (R 4.4.3)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
+    ##  Matrix              1.7-3      2025-03-11 [1] CRAN (R 4.4.3)
+    ##  memoise             2.0.1      2021-11-26 [1] CRAN (R 4.4.3)
+    ##  mgcv              * 1.9-1      2023-12-21 [1] CRAN (R 4.4.3)
+    ##  mime                0.13       2025-03-17 [1] CRAN (R 4.4.3)
+    ##  miniUI              0.1.2      2025-04-17 [1] CRAN (R 4.4.3)
+    ##  nlme              * 3.1-168    2025-03-31 [4] CRAN (R 4.4.3)
+    ##  org.Hs.eg.db      * 3.20.0     2025-10-31 [1] Bioconductor
+    ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.4.3)
+    ##  pheatmap          * 1.0.13     2025-06-05 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
+    ##  plotly              4.11.0     2025-06-19 [1] CRAN (R 4.4.3)
+    ##  plyr                1.8.9      2023-10-02 [1] CRAN (R 4.4.3)
+    ##  png                 0.1-8      2022-11-29 [1] CRAN (R 4.4.3)
+    ##  promises            1.3.3      2025-05-29 [1] CRAN (R 4.4.3)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
+    ##  purrr               1.1.0      2025-07-10 [1] CRAN (R 4.4.3)
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.4.3)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
+    ##  RSQLite             2.4.3      2025-08-20 [1] CRAN (R 4.4.3)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
+    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
+    ##  shiny               1.11.1     2025-07-03 [1] CRAN (R 4.4.3)
+    ##  shinythemes         1.2.0      2021-01-25 [1] CRAN (R 4.4.3)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
+    ##  subcellularvis    * 0.0.0.9000 2025-10-31 [1] local
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
+    ##  tidyr               1.3.1      2024-01-24 [1] CRAN (R 4.4.3)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
+    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
+    ##  UpSetR              1.4.0      2019-05-22 [1] CRAN (R 4.4.3)
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  viridisLite         0.4.2      2023-05-02 [1] CRAN (R 4.4.3)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
+    ##  xtable              1.8-4      2019-04-21 [1] CRAN (R 4.4.3)
+    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
+    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
+    ## 
+    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
+    ##  [2] /usr/local/lib/R/site-library
+    ##  [3] /usr/lib/R/site-library
+    ##  [4] /usr/lib/R/library
+    ##  * ── Packages attached to the search path.
+    ## 
+    ## ──────────────────────────────────────────────────────────────────────────────
