@@ -10,7 +10,7 @@ output:
 
 # Overview
 
-**Purpose:** Compare PSM coverage of lysine-rich domains across miscleavage
+**Purpose:** Compare PSM coverage of the lysine-rich domain of BRD4 across miscleavage
 settings (m2 / m5 / m7).
 
 **Inputs:** stoichiometry tables from p2-01 (`results/p2-analysis-setting/`); sample matrix.
@@ -31,7 +31,7 @@ repo_root <- local({
   p
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
-library("patchwork")
+library("khroma")
 
 ```
 
@@ -62,29 +62,30 @@ mq_std_stoic_dt <- lapply(
 ```
 
 
-```{r plot_psm_by_miscleavage}
+```{r plot_psm_by_miscleavage, fig.height = 3}
 
-## BRD4 PSM coverage across miscleavage settings (m2, m5, m7), WT derivatised
+## BRD4 PSM coverage across miscleavage settings (m2, m5, m7), WT derivatised,
+## overlaid on a single axis (one coloured line per setting).
 
-# PSM-coverage plot for one search setting, on a common y-axis
-brd4_psm_plot <- function(setting) {
-  plot_psm_coverage(
-    mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == setting],
-    accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA
-  )$coverage_plot_g +
-    coord_cartesian(ylim = c(0, 350))
+brd4_settings <- c("data-A_trp_m2_v2_def", "data-A_trp_m5_v5_def", "data-A_trp_m7_v7_def")
+
+# Per-position PSM coverage profile for one search setting
+brd4_coverage_data <- function(setting) {
+  preprocess_stoichiometry_data_for_plotting(
+    stoichiometry_data = mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == setting],
+    accession = "O60885", plot_range = c(531, 581), all.protein.bs = all.protein.bs
+  )$coverage_data[, miscleavage := setting]
 }
 
-m2_g <- brd4_psm_plot("data-A_trp_m2_v2_def") + labs(title = "BRD4 PSM miscleavages m2")
-m5_g <- brd4_psm_plot("data-A_trp_m5_v5_def")
-m7_g <- brd4_psm_plot("data-A_trp_m7_v7_def")
+brd4_coverage_dt <- rbindlist(lapply(brd4_settings, brd4_coverage_data))
+brd4_coverage_dt[, miscleavage := factor(miscleavage, levels = brd4_settings, labels = c("m2", "m5", "m7"))]
 
-m2_g / m5_g / m7_g
-
-plot_ptm_stoichiometry(
-  mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"],
-  accession = "O60885", plot_range = c(531, 581), all.protein.bs
-)
+ggplot(brd4_coverage_dt, aes(x = aa_pos, y = psm_coverage, color = miscleavage)) +
+  geom_line() +
+  coord_cartesian(ylim = c(0, 350)) +
+  labs(title = "BRD4 PSM coverage by miscleavage",
+       x = "Amino-acid position", y = "PSM coverage", color = "Miscleavage") +
+  scale_color_bright()
 
 ```
 
