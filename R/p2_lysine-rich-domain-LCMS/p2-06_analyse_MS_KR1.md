@@ -7,8 +7,6 @@ Yoichiro Sugimoto and Pallavi Kesavan
 - [Setup](#setup)
 - [Per-site stoichiometry across
   conditions](#per-site-stoichiometry-across-conditions)
-- [Normoxia vs hypoxia (JMJD6
-  re-expression)](#normoxia-vs-hypoxia-jmjd6-re-expression)
 - [Session information](#session-information)
 
 # Overview
@@ -91,107 +89,6 @@ plot_brd_stoic("P25440", c(540, 590))  # BRD2
 
 ![](p2-06_analyse_MS_KR1_files/figure-gfm/plot_brd_stoichiometry-5.png)<!-- -->![](p2-06_analyse_MS_KR1_files/figure-gfm/plot_brd_stoichiometry-6.png)<!-- -->
 
-# Normoxia vs hypoxia (JMJD6 re-expression)
-
-Restricts the data to the two JMJD6 re-expression conditions (+Dox:
-normoxia vs 0.1% O2), contrasts per-site stoichiometry between them, and
-tests whether the normoxia − hypoxia difference differs between BRD2/3/4
-(ANOVA and boxplot).
-
-``` r
-# Keep only the JMJD6 re-expression (+Dox) conditions; the parental WT and the
-# un-induced (no-Dox) samples are dropped because this comparison isolates the
-# oxygen effect on JMJD6-dependent hydroxylation, which requires JMJD6 expression.
-ms_kr1_stoic_dt <- droplevels(
-  ms_kr1_stoic_dt[!sample_name %in% c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA")]
-)
-ms_kr1_stoic_dt[, sample_name :=
-  factor(sample_name, levels = c("HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA"))
-]
-
-# Restrict to BRD2/3/4 and label the oxygen condition
-ms_kr1_stoic_dt <- ms_kr1_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4")]
-ms_kr1_stoic_dt[, oxygen_levels := factor(
-  fcase(
-    grepl("^HeLaiJMJD6_Dox_N_NA", sample_name),       "HeLaNormoxia_JMJD6KO_reexp",
-    grepl("^HeLaiJMJD6_Dox_01O224h_NA", sample_name), "HeLaHypoxia",
-    default = NA_character_
-  ),
-  levels = c("HeLaNormoxia_JMJD6KO_reexp", "HeLaHypoxia")
-)]
-
-# Derive the oxygen status (Normoxia / Hypoxia) used to group the contrast.
-# The per-sample zero-fill keys on the finer 'oxygen_levels' label.
-ms_kr1_stoic_dt[, oxygen_stat := str_extract(oxygen_levels, "(?<=HeLa)(Normoxia|Hypoxia)")]
-
-# Zero-fill non-hydroxylated K and reshape to one column per oxygen status.
-# (Shared helper contrast_hydroxylation() lives in R/functions/2-useful_functions.R.)
-ms_kr1_hydroxy_dt <- contrast_hydroxylation(
-  ms_kr1_stoic_dt,
-  group_col  = "oxygen_stat",
-  sample_col = "oxygen_levels"
-)
-
-# Per-site diagnostic-peak status (most confident row per site)
-di_info_dt <- ms_kr1_stoic_dt[
-  , .(protein_accession, aa_pos, diagnostic_peak)
-][
-  order(protein_accession, aa_pos, -diagnostic_peak)
-][
-  !duplicated(paste(protein_accession, aa_pos))
-]
-
-ms_kr1_hydroxy_dt <- merge(ms_kr1_hydroxy_dt, di_info_dt, by = c("protein_accession", "aa_pos"))
-ms_kr1_hydroxy_dt[, is_diagnostic_peak := diagnostic_peak == "+"]
-
-# Keep only sites whose hydroxylation is confirmed by the diagnostic (immonium) ion
-ms_kr1_hydroxy_dt <- ms_kr1_hydroxy_dt[is_diagnostic_peak == TRUE]
-
-# Normoxia - hypoxia stoichiometry difference, per site
-ms_kr1_hydroxy_dt[, Stoic_diff := Normoxia - Hypoxia]
-ms_kr1_hydroxy_dt[, gene_name := factor(gene_name)]
-```
-
-``` r
-# Analyse only sites with appreciable normoxic hydroxylation (stoichiometry >= 0.1).
-# little signal for a normoxia-hypoxia difference.
-ms_kr1_hydroxy_dt <- subset(ms_kr1_hydroxy_dt, Normoxia >= 0.1)
-
-ms_kr1_hydroxy_dt[, table(gene_name)]
-```
-
-    ## gene_name
-    ## BRD2 BRD3 BRD4 
-    ##    8    8   11
-
-``` r
-# ANOVA: does the normoxia - hypoxia difference vary between BRD2/3/4?
-anova_ms_kr1 <- aov(Stoic_diff ~ gene_name, data = ms_kr1_hydroxy_dt)
-summary(anova_ms_kr1)
-```
-
-    ##             Df Sum Sq Mean Sq F value Pr(>F)  
-    ## gene_name    2 0.3554 0.17770   5.199 0.0133 *
-    ## Residuals   24 0.8204 0.03418                 
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-# Stoichiometry difference (normoxia - hypoxia) between BRD2, 3 and 4
-ggplot(
-  ms_kr1_hydroxy_dt[is_diagnostic_peak == TRUE],
-  aes(x = gene_name, y = Stoic_diff)
-) +
-  stat_boxplot(geom = "errorbar", width = 0.25) +
-  geom_boxplot() +
-  geom_point() +
-  labs(title = "Stoichiometry difference (Normoxia 0.1 between BRD2, 3 and 4") +
-  theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
-  theme(legend.position = "none")
-```
-
-![](p2-06_analyse_MS_KR1_files/figure-gfm/plot_stoic_diff-1.png)<!-- -->
-
 # Session information
 
 ``` r
@@ -238,7 +135,6 @@ sessioninfo::session_info()
     ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
     ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
     ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
-    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
     ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
     ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
     ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
