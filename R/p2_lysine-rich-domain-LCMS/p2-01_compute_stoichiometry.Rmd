@@ -42,288 +42,260 @@ source(file.path(repo_root, "R", "functions", "_setup.R"))
 
 ```
 
-# Stoichiometry without diagnostic ions
+# Helper functions and shared settings
 
-Computes stoichiometry for the PNAS2022 standard MaxQuant search — once including secondary-peptide identifications (MULTI-MSMS + MULTI-SECPEP) and once with MULTI-MSMS only.
+Defines the two stoichiometry wrappers used throughout this script and the common
+PTM-mapping file. Every dataset section below routes through one of these wrappers:
 
-```{r data_directory_wo_di}
+- `process_stoichiometry()` — standard MaxQuant search (no diagnostic ions); loops
+  over a sample matrix and calls `calculate_stoichiometry()`.
+- `process_stoichiometry2()` — diagnostic-ion search; processes a single dataset
+  (locating its per-PTM site files) and calls `calculate_stoichiometry2()`.
 
-# Load data into environment
-pnas2022_data <- file.path(
-  project.dir,
-  "data/MQ_Std/PNAS2022" 
-)
+```{r helper_functions}
 
-# Load sample info data 
-MQ_Std_data <- read_excel(
-  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_Std"
-) %>% data.table
-
-# Add a new column 'sample_id' that assigns a unique sequential number to each row (1:N), 
-#where N is the total number of rows in the data.table
-MQ_Std_data[, sample_id := 1:.N]
-
-```
-
-```{r calculate_stoichiometry_wo_di}
-
-## Stoichiometry analysis using with MULTI-MSMS with 
-# MULTI-SECPEP (secondary peptide) and MULTI-MSMS only
-
-# Automate stoichiometry calculations across MaxQuant datasets (MULTI-MSMS + 
-# MULTI-SECPEP and MULTI-MSMS only)
-process_stoichiometry <- function(MQ_Std_data,
-                                  output_dir,
-                                  ref_protein_dt,
-                                  ptm_mapping_file,
-                                  selected_type = NA,
-                                  prefix_label = "") {
-  
-  # Create output directory if it does not already exist 
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  
-  # For each sample_id in the MQ_Std data, calculate the stoichiometry
-  for (i in seq_len(nrow(MQ_Std_data))) {
-    prefix    <- MQ_Std_data$prefix[i] # Extract the prefix column
-    MQ_Std_sample <- MQ_Std_data$data[i] # Extract the data column 
-    mq_setting <- gsub("_$", "", sub("^data-[^_]+_", "", prefix)) # search setting
-    
-    # Define file path to MaxQuant evidence files
-    mq_evidence_data <- file.path(pnas2022_data, 
-                                  MQ_Std_sample, mq_setting, 
-                                  paste0(prefix, "evidence.txt"))
-    
-    # Print which sample id is being processed
-    message("Processing: ", basename(mq_evidence_data)) 
-    
-    
-    # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
-    if (file.exists(mq_evidence_data)) {
-      
-      # Define corresponding sample information (metadata) file
-      sample_info_file <- file.path(
-        pnas2022_data, MQ_Std_sample,
-        paste0("MS_dataset_overview_PXD031221_", MQ_Std_sample, ".csv")
-      )
-      
-      # Define output prefix for results
-      output_prefix <- file.path(output_dir, paste0(prefix_label, prefix))
-      
-      # Run main stoichiometry calculation
-      calculate_stoichiometry(
-        mq_evidence_data = mq_evidence_data,
-        sample_info_file = sample_info_file,
-        ref_protein_dt   = ref_protein_dt,
-        output_prefix    = output_prefix,
-        ptm_mapping_file = ptm_mapping_file,
-        K_only           = FALSE,
-        selected_type    = selected_type
-      )
-      
-    } else {
-      # If evidence.txt does not exist, skip the function and print below message
-      message("File does not exist: ", mq_evidence_data)
-    }
-    # Garbage collection - to free up memory 
-    gc()
-  }
-}
-
-
-# Define file path common PTM mapping file
+# Common PTM mapping file, shared by all datasets
 ptm_mapping_file <- file.path(
   project.dir,
   "data/analysis_setting/ptm_replacement_de-propionylate_for_hydroxylysine.csv"
 )
 
-## MSMS + SECPEP
+# Automate stoichiometry calculations across standard-search MaxQuant datasets
+# (e.g. MULTI-MSMS + MULTI-SECPEP and MULTI-MSMS only). `sample_dt` is the sample
+# matrix (one row per run); `data_dir` is the MaxQuant output root for the dataset.
+process_stoichiometry <- function(sample_dt,
+                                  data_dir,
+                                  out_dir,
+                                  ref_protein_dt,
+                                  ptm_mapping_file,
+                                  selected_type = NA,
+                                  prefix_label = "") {
+
+  # Create output directory (and parents) if it does not already exist
+  create.dir(out_dir)
+
+  # For each run in the sample matrix, calculate the stoichiometry
+  for (i in seq_len(nrow(sample_dt))) {
+    prefix     <- sample_dt$prefix[i]                          # run prefix
+    sample     <- sample_dt$data[i]                            # dataset folder
+    mq_setting <- gsub("_$", "", sub("^data-[^_]+_", "", prefix))  # search setting
+
+    # Path to this run's MaxQuant evidence file
+    mq_evidence_file <- file.path(
+      data_dir, sample, mq_setting, paste0(prefix, "evidence.txt")
+    )
+
+    message("Processing: ", basename(mq_evidence_file))
+
+    # Proceed only if the evidence file exists, otherwise skip with a message
+    if (file.exists(mq_evidence_file)) {
+
+      # Corresponding sample information (metadata) file
+      sample_info_file <- file.path(
+        data_dir, sample,
+        paste0("MS_dataset_overview_PXD031221_", sample, ".csv")
+      )
+
+      # Run main stoichiometry calculation
+      calculate_stoichiometry(
+        mq_evidence_data = mq_evidence_file,
+        sample_info_file = sample_info_file,
+        ref_protein_dt   = ref_protein_dt,
+        output_prefix    = file.path(out_dir, paste0(prefix_label, prefix)),
+        ptm_mapping_file = ptm_mapping_file,
+        K_only           = FALSE,
+        selected_type    = selected_type
+      )
+
+    } else {
+      message("File does not exist: ", mq_evidence_file)
+    }
+    gc()  # free memory between runs
+  }
+}
+
+# Automate diagnostic-ion stoichiometry calculations for a single dataset.
+# Counterpart to process_stoichiometry(), but wraps calculate_stoichiometry2()
+# (which additionally needs the per-PTM site files in `ptm_dir`).
+process_stoichiometry2 <- function(mq_evidence_file,
+                                   sample_info_file,
+                                   ptm_dir,
+                                   output_prefix,
+                                   ref_protein_dt,
+                                   ptm_mapping_file,
+                                   selected_type = "MULTI-MSMS",
+                                   parse_protein_accession_function = NA) {
+
+  message("Processing: ", basename(mq_evidence_file))
+
+  # Proceed only if the evidence file exists, otherwise skip with a message
+  if (file.exists(mq_evidence_file)) {
+
+    # Locate all PTM site files within the ptm folder
+    ptm_files <- list.files(ptm_dir, full.names = TRUE)
+
+    # Generate PTM names from file names: add brackets, drop "Sites.txt"
+    ptm_names <- paste0(
+      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
+    )
+
+    # Run the stoichiometry calculation
+    calculate_stoichiometry2(
+      mq_evidence_data = mq_evidence_file,
+      sample_info_file = sample_info_file,
+      ref_protein_dt   = ref_protein_dt,
+      ptm_files        = ptm_files,
+      ptm_names        = ptm_names,
+      output_prefix    = output_prefix,
+      ptm_mapping_file = ptm_mapping_file,
+      K_only           = FALSE,
+      selected_type    = selected_type,
+      parse_protein_accession_function = parse_protein_accession_function
+    )
+  } else {
+    message("File does not exist: ", mq_evidence_file)
+  }
+  gc()  # free memory
+}
+
+```
+
+# Stoichiometry without diagnostic ions
+
+Computes stoichiometry for the PNAS2022 standard MaxQuant search — once including secondary-peptide identifications (MULTI-MSMS + MULTI-SECPEP) and once with MULTI-MSMS only.
+
+```{r load_mq_std}
+
+# MaxQuant output root for the standard (no diagnostic ion) PNAS2022 search
+mq_std_data_dir <- file.path(project.dir, "data/MQ_Std/PNAS2022")
+
+# Sample matrix (one row per run)
+mq_std_sample_dt <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_Std"
+) %>% data.table
+
+# Sequential sample id (1:N)
+mq_std_sample_dt[, sample_id := 1:.N]
+
+```
+
+```{r run_mq_std}
+
+## Stoichiometry analysis using MULTI-MSMS with MULTI-SECPEP (secondary peptide)
+## and, separately, MULTI-MSMS only.
+
+## --- MULTI-MSMS + MULTI-SECPEP ---------------------------------------------
 
 # Restrict the standard search to data-A and data-D for the MULTI-MSMS +
 # MULTI-SECPEP comparison.
-# NOTE: confirm why data-A and data-D specifically (vs the other MQ_Std datasets).
-samples_to_process <- MQ_Std_data[data %in% c("data-A", "data-D")]
+# Data-A and data-D — BRD proteins with or without derivatisation — are analysed to assess the effect of derivatisation.
+mq_std_secpep_sample_dt <- mq_std_sample_dt[data %in% c("data-A", "data-D")]
 
-# Define output directory for MSMS + SECPEP results
-MQ_Std_MSMS_SECPEP_dir <- file.path(results.dir, "p2-analysis-setting","MQ_Std_MSMS_SECPEP")
+mq_std_msms_secpep_dir <- file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS_SECPEP")
 
-# Run stoichiometry processing for MSMS + SECPEP
 process_stoichiometry(
-  MQ_Std_data = samples_to_process,
-  output_dir       = MQ_Std_MSMS_SECPEP_dir,
-  ref_protein_dt = ref_protein_dt,
+  sample_dt        = mq_std_secpep_sample_dt,
+  data_dir         = mq_std_data_dir,
+  out_dir          = mq_std_msms_secpep_dir,
+  ref_protein_dt   = ref_protein_dt,
   ptm_mapping_file = ptm_mapping_file,
   selected_type    = NA,
   prefix_label     = "including_SECPEP_"
 )
 
-##MSMS only
+## --- MULTI-MSMS only -------------------------------------------------------
 
-# Define output directory for MSMS-only results
-MQ_Std_MSMS_dir <- file.path(results.dir,"p2-analysis-setting", "MQ_Std_MSMS")
+mq_std_msms_dir <- file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 
-# Run stoichiometry processing for MSMS-only
 process_stoichiometry(
-  MQ_Std_data = MQ_Std_data,
-  output_dir       = MQ_Std_MSMS_dir,
-  ref_protein_dt = ref_protein_dt,
+  sample_dt        = mq_std_sample_dt,
+  data_dir         = mq_std_data_dir,
+  out_dir          = mq_std_msms_dir,
+  ref_protein_dt   = ref_protein_dt,
   ptm_mapping_file = ptm_mapping_file,
   selected_type    = c("MULTI-MSMS"),
   prefix_label     = ""
 )
+
 ```
 
 # Stoichiometry with diagnostic ions — PNAS
 
 Computes stoichiometry for the diagnostic-ion (no water-loss) MaxQuant search of the PNAS2022 datasets (A, B1, B2, C).
 
-```{r data_directory_MQ_DI}
+```{r load_mq_di}
 
-# Load data into environment
-MQ_DI_data <- file.path(
-  project.dir,
-  "data/MQ_DI/PNAS2022" 
-)
+# MaxQuant output root for the diagnostic-ion PNAS2022 search
+mq_di_data_dir <- file.path(project.dir, "data/MQ_DI/PNAS2022")
 
-# Create file path for results
-MQ_DI_dir <- file.path(results.dir, "p2-analysis-setting", "MQ_DI")
-create.dir(MQ_DI_dir)
+# Output directory for results
+mq_di_dir <- file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+create.dir(mq_di_dir)
 
-
-```
-
-
-```{r sample_info_MQ_DI}
-
-# Load sample run info data 
-MQ_DI_run_info <- read_excel(
+# Sample matrix (one row per run)
+mq_di_sample_dt <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_DI" 
+  sheet = "MQ_DI"
 ) %>% data.table
 
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_DI_run_info[, sample_id := 1:.N]
+# Sequential sample id (1:N)
+mq_di_sample_dt[, sample_id := 1:.N]
 
 ```
 
+```{r run_mq_di}
 
-```{r calculate_stoichiometry_MQ_DI}
+# For each run in the sample matrix, calculate the stoichiometry
+for (i in seq_len(nrow(mq_di_sample_dt))) {
 
-# For each sample ID calculate the stoichiometry
-for (i in seq_len(nrow(MQ_DI_run_info))){ # Takes each row from the MQ_DI_run_info
-  
-  prefix <- MQ_DI_run_info$prefix[i]
-  mq_setting <- gsub("_$", "", sub("^data-[^_]+_", "", prefix)) # search setting
-  
-  # Retrieves the evidence.txt file for each sample ID 
-  mq_evidence_data = file.path(MQ_DI_data,
-                               MQ_DI_run_info[i, data], mq_setting,
-                               paste0(prefix, "evidence.txt"))
-  
-  print(paste0("Processing: ", basename(mq_evidence_data)))
-  
-  # Checks whether the sample ID has the corresponding evidence.txt file. If yes, then proceed
-  if (file.exists(mq_evidence_data)) { 
-    
-    # Locate and fetch all PTM site files within the ptm folder
-    ptm_files <- list.files(
-      file.path(MQ_DI_data, MQ_DI_run_info[i, data], mq_setting, "ptm"),
-      full.names = TRUE)
-    
-    # Generate PTM names based on file names, add brackets and remove "Sites.txt"
-    ptm_names <- paste0(
-      "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-    )
-    
-    # Run the stoichiometry calculation 
-    stoic.dt <- calculate_stoichiometry2(
-      mq_evidence_data = mq_evidence_data,
-      sample_info_file = file.path( # Corresponding sample info data 
-        MQ_DI_data,
-        MQ_DI_run_info[i, data],
-        paste0(
-          "MS_dataset_overview_PXD031221_",
-          MQ_DI_run_info[i, data],
-          ".csv"
-        )
-      ),
-      ref_protein_dt = ref_protein_dt,
-      ptm_files = ptm_files,
-      ptm_names = ptm_names,
-      output_prefix = file.path(MQ_DI_dir,  # Define output prefix for results
-                                paste0("DI_", MQ_DI_run_info[i, prefix])),
-      ptm_mapping_file = ptm_mapping_file,
-      K_only = FALSE,
-      selected_type = c("MULTI-MSMS"),
-    )
-    # If evidence.txt does not exist, skip the function and print below message
-  } else {
-    print(paste0("File does not exist: ", mq_evidence_data))
-  }
-  
-  
-  gc()
-  
+  prefix     <- mq_di_sample_dt$prefix[i]
+  mq_setting <- gsub("_$", "", sub("^data-[^_]+_", "", prefix))  # search setting
+
+  # Per-run directory holding the evidence file and the ptm/ folder
+  run_dir <- file.path(mq_di_data_dir, mq_di_sample_dt[i, data], mq_setting)
+
+  process_stoichiometry2(
+    mq_evidence_file = file.path(run_dir, paste0(prefix, "evidence.txt")),
+    sample_info_file = file.path(
+      mq_di_data_dir,
+      mq_di_sample_dt[i, data],
+      paste0("MS_dataset_overview_PXD031221_", mq_di_sample_dt[i, data], ".csv")
+    ),
+    ptm_dir          = file.path(run_dir, "ptm"),
+    output_prefix    = file.path(mq_di_dir, paste0("DI_", prefix)),
+    ref_protein_dt   = ref_protein_dt,
+    ptm_mapping_file = ptm_mapping_file
+  )
 }
 
 ```
-
-
 
 # Stoichiometry with diagnostic ions — MS_KR_1
 
 Computes stoichiometry for the MS_KR_1 dataset (dataset D: hypoxia vs normoxia, with JMJD6 re-expression).
 
-```{r data_directory_MS_KR_1}
+```{r load_ms_kr1}
 
 # MaxQuant output directory for the MS_KR_1 dataset
-MS_KR1_data <- file.path(
-  project.dir,
-  "data/MQ_DI/MS_KR_1"
-)
+ms_kr1_data_dir <- file.path(project.dir, "data/MQ_DI/MS_KR_1")
 
 # Output directory for results
-MS_KR_1_dir <- file.path(results.dir, "p2-analysis-setting", "MS_KR_1")
-create.dir(MS_KR_1_dir)
+ms_kr1_dir <- file.path(results.dir, "p2-analysis-setting", "MS_KR_1")
+create.dir(ms_kr1_dir)
 
 ```
 
-```{r calculate_stoichiometry_MS_KR_1}
+```{r run_ms_kr1}
 
-# Define file path to MaxQuant evidence file
-mq_evidence_data <- file.path(MS_KR1_data, "MS_KR_1_evidence.txt")
-
-message("Processing: ", basename(mq_evidence_data))
-
-if (file.exists(mq_evidence_data)) {
-
-  # Locate all PTM site files within the ptm folder
-  ptm_files <- list.files(file.path(MS_KR1_data, "ptm"), full.names = TRUE)
-
-  # Generate PTM names from file names: add brackets, drop "Sites.txt"
-  ptm_names <- paste0(
-    "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-  )
-
-  # Run the stoichiometry calculation
-  stoic.dt <- calculate_stoichiometry2(
-    mq_evidence_data = mq_evidence_data,
-    sample_info_file = file.path(MS_KR1_data, "sample_info.csv"),
-    ref_protein_dt   = ref_protein_dt,
-    ptm_files        = ptm_files,
-    ptm_names        = ptm_names,
-    output_prefix    = file.path(MS_KR_1_dir, "MS_KR_1_"),
-    ptm_mapping_file = ptm_mapping_file,
-    K_only           = FALSE,
-    selected_type    = "MULTI-MSMS",
-    parse_protein_accession_function = NA
-  )
-} else {
-  message("File does not exist: ", mq_evidence_data)
-}
-
-gc()
+process_stoichiometry2(
+  mq_evidence_file = file.path(ms_kr1_data_dir, "MS_KR_1_evidence.txt"),
+  sample_info_file = file.path(ms_kr1_data_dir, "sample_info.csv"),
+  ptm_dir          = file.path(ms_kr1_data_dir, "ptm"),
+  output_prefix    = file.path(ms_kr1_dir, "MS_KR_1_"),
+  ref_protein_dt   = ref_protein_dt,
+  ptm_mapping_file = ptm_mapping_file
+)
 
 ```
 
@@ -331,61 +303,33 @@ gc()
 
 Computes stoichiometry for the MS_SS dataset (dataset E: O2 and doxycycline titration).
 
-```{r data_directory_MS_SS}
+```{r load_ms_ss}
 
 # MaxQuant output directory for the MS_SS dataset
-MS_SS_data <- file.path(
-  project.dir,
-  "data/MQ_DI/MS_SS"
-)
+ms_ss_data_dir <- file.path(project.dir, "data/MQ_DI/MS_SS")
 
 # Output directory for results
-MS_SS_dir <- file.path(results.dir, "p2-analysis-setting", "MS_SS")
-create.dir(MS_SS_dir)
+ms_ss_dir <- file.path(results.dir, "p2-analysis-setting", "MS_SS")
+create.dir(ms_ss_dir)
 
 ```
 
-```{r calculate_stoichiometry_MS_SS}
+```{r run_ms_ss}
 
-# Define file path to MaxQuant evidence file
-mq_evidence_data <- file.path(MS_SS_data, "MS_SS_evidence.txt")
-
-message("Processing: ", basename(mq_evidence_data))
-
-if (file.exists(mq_evidence_data)) {
-
-  # Locate all PTM site files within the ptm folder
-  ptm_files <- list.files(file.path(MS_SS_data, "ptm"), full.names = TRUE)
-
-  # Generate PTM names from file names: add brackets, drop "Sites.txt"
-  ptm_names <- paste0(
-    "[", str_replace_all(basename(ptm_files), "Sites.txt", ""), "]"
-  )
-
-  # Run the stoichiometry calculation
-  stoic.dt <- calculate_stoichiometry2(
-    mq_evidence_data = mq_evidence_data,
-    sample_info_file = file.path(MS_SS_data, "sample_info.csv"),
-    ref_protein_dt   = ref_protein_dt,
-    ptm_files        = ptm_files,
-    ptm_names        = ptm_names,
-    output_prefix    = file.path(MS_SS_dir, "MS_SS_"),
-    ptm_mapping_file = ptm_mapping_file,
-    K_only           = FALSE,
-    selected_type    = "MULTI-MSMS",
-    parse_protein_accession_function = NA
-  )
-} else {
-  message("File does not exist: ", mq_evidence_data)
-}
-
-gc()
+process_stoichiometry2(
+  mq_evidence_file = file.path(ms_ss_data_dir, "MS_SS_evidence.txt"),
+  sample_info_file = file.path(ms_ss_data_dir, "sample_info.csv"),
+  ptm_dir          = file.path(ms_ss_data_dir, "ptm"),
+  output_prefix    = file.path(ms_ss_dir, "MS_SS_"),
+  ref_protein_dt   = ref_protein_dt,
+  ptm_mapping_file = ptm_mapping_file
+)
 
 ```
 
 # Session information
 
-```{r sessionInfo}
+```{r session_info}
 
 sessioninfo::session_info()
 

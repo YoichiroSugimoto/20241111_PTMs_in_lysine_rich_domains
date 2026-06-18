@@ -1,9 +1,9 @@
 library("Biostrings")
 
+## Create a directory (and any missing parents) if it does not already exist.
+## Idempotent and silent: no-op / no warning when the directory is already there.
 create.dir <- function(dir.name){
-    if(dir.exists(dir.name) == FALSE) {
-        dir.create(dir.name)
-    }
+    dir.create(dir.name, recursive = TRUE, showWarnings = FALSE)
 }
 
 create.dirs <- function(dirs){
@@ -17,8 +17,8 @@ system.cat <- function(cmd){
     return(stdout.text)
 }
 
-setMethod("getSeq", "XStringSet", 
-    function(x, names) 
+setMethod("getSeq", "XStringSet",
+    function(x, names)
     {
         stopifnot(is.character(names) || is(names, "GRanges") ||
                   is(names, "GRangesList"),
@@ -95,4 +95,70 @@ load_stoichiometry_datasets <- function(results.dir, data.dir) {
 
     list(MS_KR1_stoic_dt = MS_KR1_stoic_dt, MS_SS_stoic_dt = MS_SS_stoic_dt,
          pnas2022_stoic_dt = pnas2022_stoic_dt, pnas2022_dt = pnas2022_dt)
+}
+
+
+## Zero-fill non-hydroxylated lysines and reshape hydroxylation stoichiometry to
+## one column per group. Shared by p2-06 and p2-08, which differ only in which
+## column defines the groups (`group_col`, used for the wide output) and which
+## defines a sample for the per-sample zero-fill (`sample_col`, defaults to
+## `group_col`).
+##
+## For every position with >=1 oxidation event anywhere, samples lacking an
+## oxidation row get an explicit stoichiometry = 0 row, so the wide output holds
+## a value (not NA) wherever the site was observed. Positions are kept only with
+## sum_psm_mapped_per_position > 2, and the most-hydroxylated row per
+## protein/gene/position/group is retained before casting wide.
+##
+## NOTE: modifies `all_stoic_dt` by reference (adds pos_id / sample_pos_id), as
+## the original per-script functions did.
+contrast_hydroxylation <- function(all_stoic_dt, group_col, sample_col = group_col) {
+    dt <- all_stoic_dt
+
+    # Position and per-sample-position identifiers used for the zero-fill
+    dt[, `:=`(
+        pos_id        = paste0(protein_accession, "_", aa_pos),
+        sample_pos_id = paste0(get(sample_col), "_", protein_accession, "_", aa_pos)
+    )]
+
+    # Positions / sample-positions that carry at least one oxidation event
+    oxidation_ids <- dt[
+        grepl("[Oxidation (K)]", ptm, fixed = TRUE), unique(pos_id)
+    ]
+    oxidation_sample_ids <- dt[
+        grepl("[Oxidation (K)]", ptm, fixed = TRUE), unique(sample_pos_id)
+    ]
+
+    # Non-hydroxylated K rows for hydroxylated positions that lack an oxidation
+    # row in a given sample -> these become explicit stoichiometry = 0 entries
+    no_hydroxyK_dt <- copy(dt[aa == "K"])
+    no_hydroxyK_dt <- no_hydroxyK_dt[pos_id %in% oxidation_ids] %>%
+        {.[!sample_pos_id %in% oxidation_sample_ids]}
+
+    no_hydroxyK_dt[, `:=`(
+        sum_psm_mapped = 0,
+        stoichiometry  = 0,
+        ptm            = "[Oxidation (K)]"
+    )]
+
+    # Combine measured oxidation rows with the zero-filled rows
+    hydroxyK_dt <- rbind(
+        dt[grepl("[Oxidation (K)]", ptm, fixed = TRUE)],
+        no_hydroxyK_dt
+    )
+
+    # Drop sparsely covered positions (>2 PSMs required for a reliable estimate)
+    hydroxyK_dt <- hydroxyK_dt[sum_psm_mapped_per_position > 2]
+
+    # Keep the most-hydroxylated row per protein/gene/position/group
+    hydroxyK_dt <- hydroxyK_dt[order(stoichiometry, decreasing = TRUE)][
+        !duplicated(paste0(protein_accession, gene_name, aa_pos, get(group_col)))
+    ]
+
+    # Reshape long -> wide: one stoichiometry column per group
+    dcast(
+        hydroxyK_dt,
+        stats::as.formula(paste("protein_accession + gene_name + aa_pos ~", group_col)),
+        value.var = "stoichiometry"
+    )
 }

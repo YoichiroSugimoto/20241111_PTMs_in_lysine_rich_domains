@@ -31,6 +31,7 @@ repo_root <- local({
   p
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
+library("patchwork")
 
 ```
 
@@ -38,99 +39,60 @@ source(file.path(repo_root, "R", "functions", "_setup.R"))
 
 Compares PSM coverage of lysine-rich domains between the m2, m5 and m7 miscleavage search settings.
 
-```{r comparison_PNAS2022_PTM_PSM}
+```{r load_mq_std}
 
-pnas2022.stoic.dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/long_K_stoichiometry_data.csv"))
-
-setnames(
-  pnas2022.stoic.dt, 
-  old = c("uniprot_id", "position", "residue", "oxK_ratio", "data_source"), 
-  new = c("protein_accession", "aa_pos", "aa", "stoichiometry", "sample_name")
-)
-
-pnas2022.stoic.dt[, `:=`(
-  sum_psm_mapped = total_n_feature_K + total_n_feature_oxK
-)]
-
-pnas2022.stoic.dt <- merge(
-  ref_protein_dt[, .(protein_accession, gene_name)],
-  pnas2022.stoic.dt,
-  by = "protein_accession"
-)
-
-pnas2022.stoic.dt[, `:=`(
-  accession_position = paste0(protein_accession, "_", aa_pos),
-  ptm = "[Oxidation (K)]",
-  sample_name = gsub("HeLa_", "HeLa", sample_name) %>%
-    {gsub("HeLaJMJD6FLAG", "HeLaWT_JMJD6FLAG", .)}
-)]
-
-
-# Load library 
-library(ggplot2)
-
-```
-
-```{r comparison_MQ_Std_PSM_PTM}
-
-# Load sample run info data (MQ standard)
-MQ_Std_run_info <- read_excel(
+# Sample run info (one row per run)
+mq_std_sample_dt <- read_excel(
   file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
-  sheet = "MQ_Std" 
+  sheet = "MQ_Std"
 ) %>% data.table
 
-# Add a new column 'sample_id' that assigns a unique sequential number to each 
-#row (1:N), where N is the total number of rows in the data.table
-MQ_Std_run_info[, sample_id := 1:.N]
+# Sequential sample id (1:N)
+mq_std_sample_dt[, sample_id := 1:.N]
 
-## Read stoichiometry data for MQ_Std
-MQ_Std_stoic_dt <- lapply(
-  MQ_Std_run_info[, prefix],
+# Stoichiometry tables for the MQ_Std (MULTI-MSMS) search
+mq_std_stoic_dt <- lapply(
+  mq_std_sample_dt[, prefix],
   read_stoic_data,
-  pre_prefix = "", 
-  post_fix = "",
-  dir_path = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
+  pre_prefix = "",
+  post_fix   = "",
+  dir_path   = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
 ) %>% rbindlist
-
-
 
 ```
 
 
-```{r MQ_Std_PSM_miscleavages}
+```{r plot_psm_by_miscleavage}
 
-## MQ_DI PSM coverage according to miscleavages (m2, m5, m7)
+## BRD4 PSM coverage across miscleavage settings (m2, m5, m7), WT derivatised
 
-# m2
-MQ_PSM_WT <- plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m2_v2_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA) 
-m2.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350)) +
-    labs(title = "BRD4 PSM miscleavages m2")
+# PSM-coverage plot for one search setting, on a common y-axis
+brd4_psm_plot <- function(setting) {
+  plot_psm_coverage(
+    mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == setting],
+    accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA
+  )$coverage_plot_g +
+    coord_cartesian(ylim = c(0, 350))
+}
 
-# m5
-MQ_PSM_WT <- plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m5_v5_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-m5.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+m2_g <- brd4_psm_plot("data-A_trp_m2_v2_def") + labs(title = "BRD4 PSM miscleavages m2")
+m5_g <- brd4_psm_plot("data-A_trp_m5_v5_def")
+m7_g <- brd4_psm_plot("data-A_trp_m7_v7_def")
 
-# m7
-MQ_PSM_WT <- plot_psm_coverage(
-  MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs, sample_colors = NA)
-m7.g <- MQ_PSM_WT$coverage_plot_g + coord_cartesian(ylim = c(0, 350))
+m2_g / m5_g / m7_g
 
-library("patchwork")
-m2.g / m5.g / m7.g
-
-plot_ptm_stoichiometry(MQ_Std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"], accession = "O60885", plot_range = c(531, 581), all.protein.bs)
-
+plot_ptm_stoichiometry(
+  mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == "data-A_trp_m7_v7_def"],
+  accession = "O60885", plot_range = c(531, 581), all.protein.bs
+)
 
 ```
 
 
 # Session information
 
-```{r sessionInfo}
+```{r session_info}
 
 sessioninfo::session_info()
 
 ```
-

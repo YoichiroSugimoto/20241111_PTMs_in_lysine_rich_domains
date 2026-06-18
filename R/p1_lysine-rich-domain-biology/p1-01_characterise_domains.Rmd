@@ -284,40 +284,7 @@ rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 
 ```
 
-# K score by compartment
 
-Visualises lysine richness across subcellular compartments.
-
-```{r Data_Visualization_Subcellular_Localisation}
-
-# Load libraries -  'RColorBrewer' and 'pheatmap'
-library(RColorBrewer)
-library("pheatmap")
-
-mat_breaks <- seq(min(d.k.score.compartment.mat), max(d.k.score.compartment.mat), length.out = 40)
-
-# Plot - heatmap of subcellular localisation
-pheatmap(
-  d.k.score.compartment.mat,
-  cluster_cols = FALSE,
-  color = colorRampPalette(c("white", "steelblue"))(length(mat_breaks)),
-  breaks = mat_breaks
-)
-
-# Plot - max_k_score versus −log10(FDR) of nuclear localisation enrichment
-ggplot(
-  data = k.score.compartment.dt[Compartment == "Nucleus"],
-  aes(
-    x = factor(class_name),
-    y = mlog10FDR
-  )
-) +
-  geom_bar(stat = "identity") +
-  geom_hline(yintercept = -log10(0.05), color = "gray60") +
-  ylab("-log10(FDR) of nuclear localisation enrichment") +
-  xlab("Maximum K score of protein")
-
-```
 
 # Functional class enrichment
 
@@ -436,117 +403,7 @@ ggplot(
 
 # K score in histones
 
-Examines histones — archetypal lysine-rich proteins — as a reference point.
-
-```{r histone_versus_max_K_score}
-library("RColorBrewer")
-
-#install.packages("ggpubr")
-#library("ggpubr")
-
-# Filter the K scores for histones 1-4
-max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
-histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
-
-median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
-print(median_k_ratio)
-
-range_max_k <- histone_protein_dt[, range(max_k_ratio, na.rm = TRUE)]
-print(range_max_k)
-
-H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
-H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
-H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
-H4_dt <- histone_protein_dt[grepl("^H4", gene_name)]
-
-
-# Plot - Histones 
-P2_H2A <- ggplot(
-  data = H2A_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-
-P3_H2B <- ggplot(
-  data = H2B_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P4_H3 <- ggplot(
-  data = H3_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P5_H4 <- ggplot(
-  data = H4_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P2_H2A
-P3_H2B
-P4_H3
-P5_H4
-
-# combined <- ggarrange(
-#   P2_H2A, P3_H2B, P4_H3, P5_H4,
-#   ncol = 2, nrow = 2,
-#   labels = c("H2A", "H2B", "H3", "H4"),
-#   label.x = 0.0,          
-#   label.y = 1,  
-#   hjust = -0.5, 
-#   vjust = 1,
-#   heights = 1,
-#   font.label = list(size = 8, face = "bold")
-# )
-
-# annotate_figure(
-#   combined,
-#   left   = text_grob("Max K Score", rot = 90, size = 10),
-#   bottom = text_grob("Histone", size = 10)
-# )
-
-
-```
+Examines histones — well-defined lysine-rich proteins — as a reference point.
 
 The definition of histone tail was obtained from "Histone post-translational modifications — cause and consequence of genome function (https://doi.org/10.1038/s41576-022-00468-7)".
 

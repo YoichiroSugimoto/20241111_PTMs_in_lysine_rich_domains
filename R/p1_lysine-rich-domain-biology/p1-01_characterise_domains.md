@@ -10,7 +10,6 @@ Yoichiro Sugimoto and Pallavi Kesavan
   length](#maximum-k-score-and-protein-length)
 - [K score distributions](#k-score-distributions)
 - [Subcellular localisation](#subcellular-localisation)
-- [K score by compartment](#k-score-by-compartment)
 - [Functional class enrichment](#functional-class-enrichment)
 - [K score in histones](#k-score-in-histones)
 - [K score in disordered regions](#k-score-in-disordered-regions)
@@ -358,45 +357,6 @@ d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.sco
 rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
 ```
 
-# K score by compartment
-
-Visualises lysine richness across subcellular compartments.
-
-``` r
-# Load libraries -  'RColorBrewer' and 'pheatmap'
-library(RColorBrewer)
-library("pheatmap")
-
-mat_breaks <- seq(min(d.k.score.compartment.mat), max(d.k.score.compartment.mat), length.out = 40)
-
-# Plot - heatmap of subcellular localisation
-pheatmap(
-  d.k.score.compartment.mat,
-  cluster_cols = FALSE,
-  color = colorRampPalette(c("white", "steelblue"))(length(mat_breaks)),
-  breaks = mat_breaks
-)
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Subcellular_Localisation-1.png)<!-- -->
-
-``` r
-# Plot - max_k_score versus −log10(FDR) of nuclear localisation enrichment
-ggplot(
-  data = k.score.compartment.dt[Compartment == "Nucleus"],
-  aes(
-    x = factor(class_name),
-    y = mlog10FDR
-  )
-) +
-  geom_bar(stat = "identity") +
-  geom_hline(yintercept = -log10(0.05), color = "gray60") +
-  ylab("-log10(FDR) of nuclear localisation enrichment") +
-  xlab("Maximum K score of protein")
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/Data_Visualization_Subcellular_Localisation-2.png)<!-- -->
-
 # Functional class enrichment
 
 Tests which functional protein classes are enriched among lysine-rich
@@ -591,143 +551,8 @@ ggplot(
 
 # K score in histones
 
-Examines histones — archetypal lysine-rich proteins — as a reference
+Examines histones — well-defined lysine-rich proteins — as a reference
 point.
-
-``` r
-library("RColorBrewer")
-
-#install.packages("ggpubr")
-#library("ggpubr")
-
-# Filter the K scores for histones 1-4
-max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
-histone_protein_dt <- max.k.score.dt[histone_protein == "TRUE"]
-
-median_k_ratio <- histone_protein_dt[, median(max_k_ratio, na.rm = TRUE)]
-print(median_k_ratio)
-```
-
-    ## [1] 0.4
-
-``` r
-range_max_k <- histone_protein_dt[, range(max_k_ratio, na.rm = TRUE)]
-print(range_max_k)
-```
-
-    ## [1] 0.1 0.6
-
-``` r
-H2A_dt <- histone_protein_dt[grepl("^H2A", gene_name)]
-H2B_dt <- histone_protein_dt[grepl("^H2B", gene_name)]
-H3_dt <- histone_protein_dt[grepl("^H3", gene_name)]
-H4_dt <- histone_protein_dt[grepl("^H4", gene_name)]
-
-
-# Plot - Histones 
-P2_H2A <- ggplot(
-  data = H2A_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-
-P3_H2B <- ggplot(
-  data = H2B_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P4_H3 <- ggplot(
-  data = H3_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P5_H4 <- ggplot(
-  data = H4_dt,
-  mapping = aes(
-    x = gene_name,
-    y = max_k_ratio,
-  )
-) +
-  geom_col(fill = "steelblue") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme(axis.text.x = element_text(size = 8),
-        axis.text.y = element_text(size = 8)) +
-  ggtitle("") + 
-  xlab("") + 
-  ylab("")
-
-P2_H2A
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-1.png)<!-- -->
-
-``` r
-P3_H2B
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-2.png)<!-- -->
-
-``` r
-P4_H3
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-3.png)<!-- -->
-
-``` r
-P5_H4
-```
-
-![](p1-01_characterise_domains_files/figure-gfm/histone_versus_max_K_score-4.png)<!-- -->
-
-``` r
-# combined <- ggarrange(
-#   P2_H2A, P3_H2B, P4_H3, P5_H4,
-#   ncol = 2, nrow = 2,
-#   labels = c("H2A", "H2B", "H3", "H4"),
-#   label.x = 0.0,          
-#   label.y = 1,  
-#   hjust = -0.5, 
-#   vjust = 1,
-#   heights = 1,
-#   font.label = list(size = 8, face = "bold")
-# )
-
-# annotate_figure(
-#   combined,
-#   left   = text_grob("Max K Score", rot = 90, size = 10),
-#   bottom = text_grob("Histone", size = 10)
-# )
-```
 
 The definition of histone tail was obtained from “Histone
 post-translational modifications — cause and consequence of genome
@@ -958,7 +783,6 @@ sessioninfo::session_info()
     ##  nlme              * 3.1-168    2025-03-31 [4] CRAN (R 4.4.3)
     ##  org.Hs.eg.db      * 3.20.0     2025-10-31 [1] Bioconductor
     ##  patchwork         * 1.3.2      2025-08-25 [1] CRAN (R 4.4.3)
-    ##  pheatmap          * 1.0.13     2025-06-05 [1] CRAN (R 4.4.3)
     ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
     ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
     ##  plotly              4.11.0     2025-06-19 [1] CRAN (R 4.4.3)
@@ -968,7 +792,7 @@ sessioninfo::session_info()
     ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
     ##  purrr               1.1.0      2025-07-10 [1] CRAN (R 4.4.3)
     ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
-    ##  RColorBrewer      * 1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
     ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.4.3)
     ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
     ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)

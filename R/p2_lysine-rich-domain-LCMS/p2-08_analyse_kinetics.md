@@ -1,20 +1,29 @@
----
-title: "p2-08 · Analyse hydroxylation kinetics"
-author: "Yoichiro Sugimoto and Pallavi Kesavan"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-   github_document:
-     toc: yes
-     toc_depth: 3
----
+p2-08 · Analyse hydroxylation kinetics
+================
+Yoichiro Sugimoto and Pallavi Kesavan
+18 June, 2026
+
+- [Overview](#overview)
+- [Setup](#setup)
+- [Load and preprocess data](#load-and-preprocess-data)
+- [Normoxia vs hypoxia](#normoxia-vs-hypoxia)
+- [Normoxia dox time course](#normoxia-dox-time-course)
+- [t50 (time to half-maximal)](#t50-time-to-half-maximal)
+- [Kinetics](#kinetics)
+- [XIC vs stoichiometry](#xic-vs-stoichiometry)
+- [Neighbouring-site interaction](#neighbouring-site-interaction)
+- [Oxygen sensitivity](#oxygen-sensitivity)
+- [Baseline vs hypoxic change](#baseline-vs-hypoxic-change)
+- [Session information](#session-information)
 
 # Overview
 
-**Purpose:** Analyse and visualise hydroxylation across conditions — hypoxia
-vs normoxia, kinetics (t50), cross-dataset XIC-vs-stoichiometry, neighbouring-site
-interaction, and O2 / dox sensitivity.
+**Purpose:** Analyse and visualise hydroxylation across conditions —
+hypoxia vs normoxia, kinetics (t50), cross-dataset XIC-vs-stoichiometry,
+neighbouring-site interaction, and O2 / dox sensitivity.
 
-**Inputs:** MS_KR_1 / MS_SS / PNAS stoichiometry tables from p2-01; XIC data (`data/xic_MS_SS.csv`); reference proteome.
+**Inputs:** MS_KR_1 / MS_SS / PNAS stoichiometry tables from p2-01; XIC
+data (`data/xic_MS_SS.csv`); reference proteome.
 
 **Outputs:** figures (rendered on knit).
 
@@ -22,8 +31,7 @@ interaction, and O2 / dox sensitivity.
 
 # Setup
 
-```{r setup, message = FALSE, warning = FALSE}
-
+``` r
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -32,18 +40,16 @@ repo_root <- local({
   p
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
-
 ```
 
 # Load and preprocess data
 
-Loads the MS_KR_1 / MS_SS / PNAS stoichiometry tables and harmonises sample labels.
-The grouped zero-fill / reshape used below is the shared `contrast_hydroxylation()`
-helper in `R/functions/2-useful_functions.R` (p2-06 uses the same helper, grouped by
-oxygen status).
+Loads the MS_KR_1 / MS_SS / PNAS stoichiometry tables and harmonises
+sample labels. The grouped zero-fill / reshape used below is the shared
+`contrast_hydroxylation()` helper in `R/functions/2-useful_functions.R`
+(p2-06 uses the same helper, grouped by oxygen status).
 
-```{r load_data}
-
+``` r
 # Load and preprocess the MS_KR_1, MS_SS and PNAS stoichiometry tables
 # (see load_stoichiometry_datasets() in R/functions/2-useful_functions.R).
 .stoic_data       <- load_stoichiometry_datasets(results.dir, data.dir)
@@ -51,12 +57,9 @@ ms_kr1_stoic_dt   <- .stoic_data$MS_KR1_stoic_dt
 ms_ss_stoic_dt    <- .stoic_data$MS_SS_stoic_dt
 pnas2022_stoic_dt <- .stoic_data$pnas2022_stoic_dt
 pnas2022_dt       <- .stoic_data$pnas2022_dt
-
 ```
 
-
-```{r preprocess}
-
+``` r
 # Remove BRD2/3 samples reporting BRD4 stoichiometry and vice versa: these are
 # cross-protein false positives (e.g. from shared / homologous peptides).
 ms_ss_stoic_dt <- ms_ss_stoic_dt[
@@ -88,15 +91,14 @@ ms_ss_kr_pnas_dt[, `:=`(
     sample_name == "JQ1_HeLaJMJD6KO_derivatised" ~ "iJ6_Inf_21pc_PNAS"
   )
 )]
-
 ```
 
 # Normoxia vs hypoxia
 
-Plots per-site stoichiometry under normoxia vs hypoxia with JMJD6 re-expression.
+Plots per-site stoichiometry under normoxia vs hypoxia with JMJD6
+re-expression.
 
-```{r merge_di_sites}
-
+``` r
 # Diagnostic-ion (or PNAS-curated) sites across MS_SS, MS_KR_1 and PNAS
 di_sites_dt <- rbind(
   ms_ss_stoic_dt[is_diagnostic_peak == TRUE, .(protein_accession, aa_pos)],
@@ -121,13 +123,9 @@ c_ms_ss_kr_pnas_dt[, `:=`(
   gene_name =  
     factor(gene_name, levels = c("BRD2", "BRD3", "BRD4"))
 )]
-
-
 ```
 
-
-```{r reshape_long}
-
+``` r
 # Change wide format to long format 
 lc_ms_ss_kr_pnas_dt <- melt(
   c_ms_ss_kr_pnas_dt,
@@ -158,15 +156,14 @@ lc_ms_ss_kr_pnas_dt <- lc_ms_ss_kr_pnas_dt[!is.na(Stoichiometry)]
 # counting the data per sample and size 
 lc_ms_ss_kr_pnas_dt[, data_size_per_sample := .N, by = list(sample_group)]
 lc_ms_ss_kr_pnas_dt[, data_size_per_site := .N, by = list(protein_accession, aa_pos)]
-
 ```
 
 # Normoxia dox time course
 
-Examines stoichiometry under normoxia across the doxycycline induction time course.
+Examines stoichiometry under normoxia across the doxycycline induction
+time course.
 
-```{r plot_dox_timecourse_normoxia}
-
+``` r
 # Subset data to WT normoxia (MS_KR_1 sample)
 wt_21pc <- lc_ms_ss_kr_pnas_dt[sample_group == "WT_Inf_21pc_KR", .(protein_accession, aa_pos, Stoichiometry)]
 setnames(wt_21pc, old = "Stoichiometry", "WT_stoichiometry")
@@ -215,10 +212,24 @@ ggplot(
   theme(aspect.ratio = 1.5) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   ggtitle("All the sites")
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_dox_timecourse_normoxia-1.png)<!-- -->
+
+``` r
 plot_long_pc2wt_21pc[, .N, by = induction]
+```
 
+    ##    induction     N
+    ##       <fctr> <int>
+    ## 1:        0h    42
+    ## 2:       18h    42
+    ## 3:       24h    42
+    ## 4:        4h    42
+    ## 5:        8h    42
+    ## 6:       Inf    42
 
+``` r
 # Plot ratio
 # Merge MS_SS normoxia data with MS_KR_1 WT normoxia data
 pc2wt_21pc <- merge(
@@ -254,7 +265,11 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.5)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_dox_timecourse_normoxia-2.png)<!-- -->
+
+``` r
 # Create data table  
 induction_t_test <- data.table()
 
@@ -280,15 +295,22 @@ induction_t_test[, significance := case_when(
 )]
 
 induction_t_test
-
 ```
+
+    ##    induction      p_value     n         padj significance
+    ##       <char>        <num> <int>        <num>       <char>
+    ## 1:        0h 3.428546e-07    42 1.714273e-06           **
+    ## 2:       18h 2.409872e-01    42 4.819744e-01         N.S.
+    ## 3:       24h 3.362069e-01    42 4.819744e-01         N.S.
+    ## 4:        4h 1.425583e-05    42 5.702331e-05           **
+    ## 5:        8h 6.817018e-03    42 2.045105e-02            *
 
 # t50 (time to half-maximal)
 
-Estimates t50 — the induction time to reach half-maximal stoichiometry — per site.
+Estimates t50 — the induction time to reach half-maximal stoichiometry —
+per site.
 
-```{r compute_t50}
-
+``` r
 # helper: convert time to numeric and replace Inf by a large finite value
 time_to_num <- function(x, inf_value = 100) {
   x_chr <- as.character(x)
@@ -354,15 +376,74 @@ t50_dt[, `:=`(
 )]
 
 t50_dt
-
 ```
+
+    ##     gene_name aa_pos       t50     n t50_bin
+    ##        <fctr>  <int>     <num> <int>  <fctr>
+    ##  1:      BRD4    291 62.000000     7     >8h
+    ##  2:      BRD4    329 13.000000     7     >8h
+    ##  3:      BRD4    332 10.875997     7     >8h
+    ##  4:      BRD4    535  5.205940     7    4-8h
+    ##  5:      BRD4    537 12.537167     7     >8h
+    ##  6:      BRD4    538  1.914826     7    0-4h
+    ##  7:      BRD4    539 20.354251     7     >8h
+    ##  8:      BRD4    541  2.000000     6    0-4h
+    ##  9:      BRD4    543  2.000000     6    0-4h
+    ## 10:      BRD4    544  2.202539     6    0-4h
+    ## 11:      BRD4    546 19.094271     6     >8h
+    ## 12:      BRD4    547  2.274141     6    0-4h
+    ## 13:      BRD4    548  2.757705     6    0-4h
+    ## 14:      BRD4    550  5.957624     6    4-8h
+    ## 15:      BRD4    552  4.641731     7    4-8h
+    ## 16:      BRD4    554 11.541566     7     >8h
+    ## 17:      BRD4    561 21.276581     7     >8h
+    ## 18:      BRD4    562 15.945181     7     >8h
+    ## 19:      BRD4    572  5.688024     7    4-8h
+    ## 20:      BRD4    574 19.155493     7     >8h
+    ## 21:      BRD4    575 14.865966     7     >8h
+    ## 22:      BRD4    727 12.503481     4     >8h
+    ## 23:      BRD2    546 19.201084     7     >8h
+    ## 24:      BRD2    551  4.166637     5    4-8h
+    ## 25:      BRD2    552  6.595157     5    4-8h
+    ## 26:      BRD2    554  4.482859     5    4-8h
+    ## 27:      BRD2    555  8.000000     4    4-8h
+    ## 28:      BRD2    556  8.000000     4    4-8h
+    ## 29:      BRD2    557  8.000000     4    4-8h
+    ## 30:      BRD2    585 21.000000     7     >8h
+    ## 31:      BRD2    586 19.995857     7     >8h
+    ## 32:      BRD2    589 13.918552     7     >8h
+    ## 33:      BRD2    713 21.000000     7     >8h
+    ## 34:      BRD2    718 21.000000     7     >8h
+    ## 35:      BRD2    755 19.116352     7     >8h
+    ## 36:      BRD2    756 42.153411     7     >8h
+    ## 37:      BRD3    245 37.736947     7     >8h
+    ## 38:      BRD3    364 31.555315     7     >8h
+    ## 39:      BRD3    487 61.640419     7     >8h
+    ## 40:      BRD3    489 10.259251     7     >8h
+    ## 41:      BRD3    490 20.979746     7     >8h
+    ## 42:      BRD3    491  5.273730     7    4-8h
+    ## 43:      BRD3    492  2.965761     7    0-4h
+    ## 44:      BRD3    494  3.306317     7    0-4h
+    ## 45:      BRD3    495  9.684812     7     >8h
+    ## 46:      BRD3    500 18.957295     7     >8h
+    ## 47:      BRD3    501  5.638917     7    4-8h
+    ## 48:      BRD3    502  3.837635     7    0-4h
+    ## 49:      BRD3    504  2.000000     7    0-4h
+    ## 50:      BRD3    538 10.701912     7     >8h
+    ## 51:      BRD3    591  1.758896     7    0-4h
+    ## 52:      BRD3    650 13.000000     7     >8h
+    ## 53:      BRD3    651  7.106203     7    4-8h
+    ## 54:      BRD3    655 13.000000     7     >8h
+    ## 55:      BRD3    683 58.749514     7     >8h
+    ## 56:      BRD3    684 10.794703     7     >8h
+    ##     gene_name aa_pos       t50     n t50_bin
 
 # Kinetics
 
-Summarises per-site hydroxylation kinetics (t50 distributions across BRD2/3/4).
+Summarises per-site hydroxylation kinetics (t50 distributions across
+BRD2/3/4).
 
-```{r kinetics}
-
+``` r
 # Kinetics uses the induction time course excluding 0h and 18h, and requires
 # detectable WT stoichiometry (> 0).
 kinetics_data <- pc2wt_21pc[!(induction %in% c("0h", "18h"))][WT_stoichiometry > 0]
@@ -385,7 +466,11 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.5)) +
   theme(aspect.ratio = 1) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/kinetics-1.png)<!-- -->
+
+``` r
 # Spearman correlation between WT stoichiometry and normalized stoichiometry 
 kinetics_out <- data.table()
 
@@ -395,13 +480,29 @@ for(i2 in kinetics_data[, unique(induction2)]){
   
   kinetics_out <- rbind(kinetics_out, data.table(induction2 = i2, rho = c1$estimate, p_val = c1$p.value, n = nrow(kinetics_data[induction2 == i2])))
 }
+```
 
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(x = WT_stoichiometry, y =
+    ## Stoichiometry/WT_stoichiometry, : Cannot compute exact p-value with ties
+
+``` r
 # Adjusted p-value
 kinetics_out[, padj := p.adjust(p_val, method = "holm")] # Holm correction for multiple comparisons
 
 kinetics_out
+```
 
+    ##    induction2       rho        p_val     n         padj
+    ##        <char>     <num>        <num> <int>        <num>
+    ## 1:     18-24h 0.1381575 3.490397e-01    48 3.490397e-01
+    ## 2:         4h 0.6632045 1.700021e-06    42 5.100062e-06
+    ## 3:         8h 0.4699430 7.513709e-04    48 1.502742e-03
 
+``` r
 kinetics_data <- merge(
   kinetics_data,
   t50_dt,
@@ -425,17 +526,26 @@ ggplot(
   coord_cartesian(ylim = c(0, 1)) +
   theme(aspect.ratio = 3) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
-
 ```
+
+![](p2-08_analyse_kinetics_files/figure-gfm/kinetics-2.png)<!-- -->
+
+``` r
+kinetics_data[!duplicated(paste(gene_name, aa_pos))][, table(gene_name, t50_bin)]
+```
+
+    ##          t50_bin
+    ## gene_name 0-4h 4-8h >8h
+    ##      BRD2    0    6   6
+    ##      BRD3    3    3  10
+    ##      BRD4    6    4  10
 
 # XIC vs stoichiometry
 
-Benchmarks extracted-ion-chromatogram (XIC) intensities against precursor-intensity stoichiometry across datasets.
+Benchmarks extracted-ion-chromatogram (XIC) intensities against
+precursor-intensity stoichiometry across datasets.
 
-```{r compare_xic_stoichiometry}
-
+``` r
 # Load XIC data
 xic_ms_ss_dt <- fread(file.path(data.dir, "XIC_MS_SS/xic_MS_SS.csv"))
 xic_ms_ss_dt[, induction2 := case_when(
@@ -473,13 +583,31 @@ ggplot(
   coord_cartesian(xlim = c(0, 0.7), ylim = c(0, 0.7)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/compare_xic_stoichiometry-1.png)<!-- -->
+
+``` r
 xic_stoic %$%
 cor.test(
   XIC,
   Stoichiometry
 )
+```
 
+    ## 
+    ##  Pearson's product-moment correlation
+    ## 
+    ## data:  XIC and Stoichiometry
+    ## t = 10.24, df = 38, p-value = 1.761e-12
+    ## alternative hypothesis: true correlation is not equal to 0
+    ## 95 percent confidence interval:
+    ##  0.7436956 0.9221384
+    ## sample estimates:
+    ##       cor 
+    ## 0.8567283
+
+``` r
 m_xic_stoic <- melt(
   xic_stoic,
   id.vars = c("gene_name", "aa_pos", "oxygen", "induction2"),
@@ -492,12 +620,9 @@ m_xic_stoic[, `:=`(
   oxygen = factor(oxygen, levels = rev(c("1pc", "4pc", "21pc"))),
   induction2 = factor(induction2, levels = c("4h", "8h", "18-24h"))
 )]
-
 ```
 
-
-```{r plot_xic_per_pos, fig.width=14, fig.height=4.5}
-
+``` r
 ggplot(
   m_xic_stoic,
   aes(
@@ -513,18 +638,37 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_color_manual(values = c("XIC" = "black", "Stoichiometry" = "darkred"))
-
 ```
+
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_xic_per_pos-1.png)<!-- -->
 
 # Neighbouring-site interaction
 
-Tests for interdependence between neighbouring hydroxylation sites (how one site's modification affects another).
+Tests for interdependence between neighbouring hydroxylation sites (how
+one site’s modification affects another).
 
-```{r analyse_site_interaction}
-
+``` r
 #t50 data subset to BRD4 region (amino acid position - 534 to 560)
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
+```
 
+    ##     gene_name aa_pos       t50     n t50_bin
+    ##        <fctr>  <int>     <num> <int>  <fctr>
+    ##  1:      BRD4    535  5.205940     7    4-8h
+    ##  2:      BRD4    537 12.537167     7     >8h
+    ##  3:      BRD4    538  1.914826     7    0-4h
+    ##  4:      BRD4    539 20.354251     7     >8h
+    ##  5:      BRD4    541  2.000000     6    0-4h
+    ##  6:      BRD4    543  2.000000     6    0-4h
+    ##  7:      BRD4    544  2.202539     6    0-4h
+    ##  8:      BRD4    546 19.094271     6     >8h
+    ##  9:      BRD4    547  2.274141     6    0-4h
+    ## 10:      BRD4    548  2.757705     6    0-4h
+    ## 11:      BRD4    550  5.957624     6    4-8h
+    ## 12:      BRD4    552  4.641731     7    4-8h
+    ## 13:      BRD4    554 11.541566     7     >8h
+
+``` r
 # For a high- and low-stoichiometry site pair, compare the low site's
 # hydroxylation fraction on peptides that do vs. do not also carry hydroxylation
 # at the high site (tests neighbouring-site interaction).
@@ -657,11 +801,35 @@ for(irow in 1:nrow(all_sites_to_analyse)){
 
 
 interaction_out_data
+```
 
+    ##    protein_accession high_stoic_aa_pos low_stoic_aa_pos       p_val     n
+    ##               <char>             <int>            <int>       <num> <int>
+    ## 1:            O60885               535              537 0.066869776     4
+    ## 2:            O60885               538              535 0.003700816     4
+    ## 3:            O60885               538              537 0.071239152     4
+    ## 4:            O60885               548              550 0.057590253     4
+    ## 5:            O60885               548              552 0.136244776     4
+
+``` r
 # paired t-test 
 all_interaction_summary %$%
   t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
+```
 
+    ## 
+    ##  Paired t-test
+    ## 
+    ## data:  low_hyl_stoic_without_high_hyl and low_hyl_stoic_with_high_hyl
+    ## t = -6.0346, df = 19, p-value = 8.345e-06
+    ## alternative hypothesis: true mean difference is not equal to 0
+    ## 95 percent confidence interval:
+    ##  -0.3614428 -0.1752847
+    ## sample estimates:
+    ## mean difference 
+    ##      -0.2683637
+
+``` r
 # convert table into long format for plotting 
 m_all_interaction_summary <- melt(
   all_interaction_summary, 
@@ -691,7 +859,11 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme_classic_2() +
   theme(aspect.ratio = 4)
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/analyse_site_interaction-1.png)<!-- -->
+
+``` r
 ggplot(
   data = m_all_interaction_summary[high_stoic_aa_pos == 535],
   aes(
@@ -709,15 +881,16 @@ ggplot(
   theme_classic_2() +
   theme(aspect.ratio = 4) +
   ggtitle("BRD4 K535-K537 interaction")
-
 ```
+
+![](p2-08_analyse_kinetics_files/figure-gfm/analyse_site_interaction-2.png)<!-- -->
 
 # Oxygen sensitivity
 
-Compares hydroxylation under hypoxia across doxycycline incubation times to assess oxygen sensitivity.
+Compares hydroxylation under hypoxia across doxycycline incubation times
+to assess oxygen sensitivity.
 
-```{r plot_oxygen_sensitivity}
-
+``` r
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
 # Data subset to overnight (18/24h) dox induction
 
@@ -764,10 +937,22 @@ ggplot(
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   ggtitle("Min WT stoichiometry > 0")
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_oxygen_sensitivity-1.png)<!-- -->
+
+``` r
 pc2wt_on[, .N, by = oxygen]
+```
 
+    ##    oxygen     N
+    ##    <fctr> <int>
+    ## 1:    1pc    48
+    ## 2:    4pc    48
+    ## 3:   01pc    48
+    ## 4:   21pc    48
 
+``` r
 # Boxplot - comparing normoxia versus hypoxia
 ggplot(
   data = pc2wt_on,
@@ -786,7 +971,11 @@ ggplot(
   coord_cartesian(ylim = c(0, 1.5)) +
   theme(aspect.ratio = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_oxygen_sensitivity-2.png)<!-- -->
+
+``` r
 oxygen_t_test <- data.table()
 
 for(i in pc2wt_on[, unique(oxygen)]){
@@ -809,16 +998,21 @@ oxygen_t_test[, significance := case_when(
 )]
 
 oxygen_t_test
-
-
 ```
+
+    ##    induction      p_value     n         padj significance
+    ##       <char>        <num> <int>        <num>       <char>
+    ## 1:       1pc 1.988958e-05    48 3.977917e-05           **
+    ## 2:       4pc 3.860210e-02    48 3.860210e-02            *
+    ## 3:      01pc 9.613294e-12    48 2.883988e-11           **
+    ## 4:      21pc          NaN    48          NaN         N.S.
 
 # Baseline vs hypoxic change
 
-Relates baseline (WT/normoxia) stoichiometry to the magnitude of hypoxic suppression per site.
+Relates baseline (WT/normoxia) stoichiometry to the magnitude of hypoxic
+suppression per site.
 
-```{r plot_baseline_vs_hypoxia}
-
+``` r
 ggplot(
   data = pc2wt_on[oxygen != "21pc"],
   aes(
@@ -836,8 +1030,13 @@ ggplot(
   ylab("Stoichiometry [% to WT]") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+    ## `geom_smooth()` using formula = 'y ~ x'
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_baseline_vs_hypoxia-1.png)<!-- -->
+
+``` r
 oxygen_out <- data.table()
 
 for(o2 in pc2wt_on[oxygen != "21pc"][, unique(oxygen)]){
@@ -848,17 +1047,28 @@ for(o2 in pc2wt_on[oxygen != "21pc"][, unique(oxygen)]){
   
     oxygen_out <- rbind(oxygen_out, data.table(oxygen = o2, rho = c2$estimate, p_val = c2$p.value, n = nrow(pc2wt_on[oxygen == o2])))
 }
+```
 
+    ## Warning in cor.test.default(WT_stoichiometry, Stoichiometry/WT_stoichiometry, :
+    ## Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(WT_stoichiometry, Stoichiometry/WT_stoichiometry, :
+    ## Cannot compute exact p-value with ties
+    ## Warning in cor.test.default(WT_stoichiometry, Stoichiometry/WT_stoichiometry, :
+    ## Cannot compute exact p-value with ties
+
+``` r
 oxygen_out[, padj := p.adjust(p_val, method = "holm")]
 
 oxygen_out
-
 ```
 
+    ##    oxygen       rho        p_val     n         padj
+    ##    <char>     <num>        <num> <int>        <num>
+    ## 1:    1pc 0.6117460 3.846637e-06    48 7.693273e-06
+    ## 2:    4pc 0.4209248 2.890543e-03    48 2.890543e-03
+    ## 3:   01pc 0.8053679 5.133028e-12    48 1.539908e-11
 
-```{r plot_hypoxic_sensitivity}
-
-
+``` r
 # Boxplot - Comparing the stoic between normoxia and varying pc of hypoxia
 on_01pc_ms_kr1_data <- lc_ms_ss_kr_pnas_dt[induction2 %in% c("18-24h", "Inf")][
   sample_group == "iJ6_24h_01pc_KR"
@@ -896,7 +1106,40 @@ induction2vsref_21pc[, data_size_per_site := .N, by = list(protein_accession, aa
 induction2vsref_21pc <- induction2vsref_21pc[data_size_per_site == max(induction2vsref_21pc[, data_size_per_site])]
 
 induction2vsref_21pc[, .N, by = list(sample_group, gene_name)][order(sample_group)]
+```
 
+    ##        sample_group gene_name     N
+    ##              <fctr>    <fctr> <int>
+    ##  1:  iJ6_18h_1pc_SS      BRD4    20
+    ##  2:  iJ6_18h_1pc_SS      BRD2     6
+    ##  3:  iJ6_18h_1pc_SS      BRD3    16
+    ##  4:  iJ6_18h_4pc_SS      BRD4    20
+    ##  5:  iJ6_18h_4pc_SS      BRD2     6
+    ##  6:  iJ6_18h_4pc_SS      BRD3    16
+    ##  7: iJ6_24h_21pc_KR      BRD4    20
+    ##  8: iJ6_24h_21pc_KR      BRD2     6
+    ##  9: iJ6_24h_21pc_KR      BRD3    16
+    ## 10:   iJ6_4h_1pc_SS      BRD4    20
+    ## 11:   iJ6_4h_1pc_SS      BRD2     6
+    ## 12:   iJ6_4h_1pc_SS      BRD3    16
+    ## 13:  iJ6_4h_21pc_SS      BRD4    20
+    ## 14:  iJ6_4h_21pc_SS      BRD2     6
+    ## 15:  iJ6_4h_21pc_SS      BRD3    16
+    ## 16:   iJ6_4h_4pc_SS      BRD4    20
+    ## 17:   iJ6_4h_4pc_SS      BRD2     6
+    ## 18:   iJ6_4h_4pc_SS      BRD3    16
+    ## 19:   iJ6_8h_1pc_SS      BRD4    20
+    ## 20:   iJ6_8h_1pc_SS      BRD2     6
+    ## 21:   iJ6_8h_1pc_SS      BRD3    16
+    ## 22:  iJ6_8h_21pc_SS      BRD4    20
+    ## 23:  iJ6_8h_21pc_SS      BRD2     6
+    ## 24:  iJ6_8h_21pc_SS      BRD3    16
+    ## 25:   iJ6_8h_4pc_SS      BRD4    20
+    ## 26:   iJ6_8h_4pc_SS      BRD2     6
+    ## 27:   iJ6_8h_4pc_SS      BRD3    16
+    ##        sample_group gene_name     N
+
+``` r
 ggplot(
   data = induction2vsref_21pc,
   aes(
@@ -910,7 +1153,11 @@ ggplot(
   facet_grid(oxygen ~ induction2) +
   theme(aspect.ratio = 1) +
   coord_cartesian(ylim = c(0, 1), xlim = c(0, 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_hypoxic_sensitivity-1.png)<!-- -->
+
+``` r
 rsq_out_dt <- data.table()
 
 for(o2 in induction2vsref_21pc[, unique(oxygen)]){
@@ -927,7 +1174,21 @@ for(o2 in induction2vsref_21pc[, unique(oxygen)]){
 }
 
 rsq_out_dt
+```
 
+    ##    oxygen induction2       rsq     n
+    ##    <char>     <char>     <num> <int>
+    ## 1:    1pc     18-24h 0.6976193    42
+    ## 2:    1pc         4h 0.7678493    42
+    ## 3:    1pc         8h 0.9091016    42
+    ## 4:    4pc     18-24h 0.4727418    42
+    ## 5:    4pc         4h 0.8588508    42
+    ## 6:    4pc         8h 0.7383229    42
+    ## 7:   21pc     18-24h 0.4097677    42
+    ## 8:   21pc         4h 0.8504380    42
+    ## 9:   21pc         8h 0.6441541    42
+
+``` r
 pc2wt_on_kinetics <- merge(
   pc2wt_on,
   t50_dt,
@@ -952,7 +1213,11 @@ ggplot(
   ylab("Stoichiometry [% to WT]") +
   coord_cartesian(xlim = c(0, 24)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_hypoxic_sensitivity-2.png)<!-- -->
+
+``` r
 ggplot(
   pc2wt_on_kinetics[n == 7][oxygen != "21pc"],
   aes(
@@ -971,7 +1236,11 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   coord_cartesian(ylim = c(0, 2)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
 
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_hypoxic_sensitivity-3.png)<!-- -->
+
+``` r
 # QC
 ggplot(
   pc2wt_on_kinetics[n == 7],
@@ -990,16 +1259,117 @@ ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   coord_cartesian(ylim = c(0, 2)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1))
-
-
-pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
-
 ```
+
+![](p2-08_analyse_kinetics_files/figure-gfm/plot_hypoxic_sensitivity-4.png)<!-- -->
+
+``` r
+pc2wt_on_kinetics[n == 7][, .N, by = list(oxygen, t50_bin)]
+```
+
+    ##     oxygen t50_bin     N
+    ##     <fctr>  <fctr> <int>
+    ##  1:    1pc     >8h    25
+    ##  2:    4pc     >8h    25
+    ##  3:   01pc     >8h    25
+    ##  4:   21pc     >8h    25
+    ##  5:    1pc    4-8h     6
+    ##  6:    4pc    4-8h     6
+    ##  7:   01pc    4-8h     6
+    ##  8:   21pc    4-8h     6
+    ##  9:    1pc    0-4h     4
+    ## 10:    4pc    0-4h     4
+    ## 11:   01pc    0-4h     4
+    ## 12:   21pc    0-4h     4
 
 # Session information
 
-```{r session_info}
-
+``` r
 sessioninfo::session_info()
-
 ```
+
+    ## ─ Session info ───────────────────────────────────────────────────────────────
+    ##  setting  value
+    ##  version  R version 4.4.3 (2025-02-28)
+    ##  os       Ubuntu 24.04.2 LTS
+    ##  system   x86_64, linux-gnu
+    ##  ui       X11
+    ##  language (EN)
+    ##  collate  C.UTF-8
+    ##  ctype    C.UTF-8
+    ##  tz       Europe/Berlin
+    ##  date     2026-06-18
+    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ## 
+    ## ─ Packages ───────────────────────────────────────────────────────────────────
+    ##  package           * version    date (UTC) lib source
+    ##  beeswarm            0.4.0      2021-06-01 [1] CRAN (R 4.4.3)
+    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
+    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
+    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
+    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggbeeswarm        * 0.7.2      2023-04-29 [1] CRAN (R 4.4.3)
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
+    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
+    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
+    ##  labeling            0.4.3      2023-08-29 [1] CRAN (R 4.4.3)
+    ##  lattice             0.22-5     2023-10-24 [4] CRAN (R 4.3.3)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
+    ##  Matrix              1.7-3      2025-03-11 [1] CRAN (R 4.4.3)
+    ##  mgcv                1.9-1      2023-12-21 [1] CRAN (R 4.4.3)
+    ##  nlme                3.1-168    2025-03-31 [4] CRAN (R 4.4.3)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
+    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
+    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  vipor               0.4.7      2023-12-18 [1] CRAN (R 4.4.3)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
+    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
+    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
+    ## 
+    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
+    ##  [2] /usr/local/lib/R/site-library
+    ##  [3] /usr/lib/R/site-library
+    ##  [4] /usr/lib/R/library
+    ##  * ── Packages attached to the search path.
+    ## 
+    ## ──────────────────────────────────────────────────────────────────────────────

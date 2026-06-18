@@ -1,17 +1,17 @@
----
-title: "p2-09 · Export stoichiometry tables"
-author: "Yoichiro Sugimoto and Pallavi Kesavan"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-   github_document:
-     toc: yes
-     toc_depth: 3
----
+p2-09 · Export stoichiometry tables
+================
+Yoichiro Sugimoto and Pallavi Kesavan
+18 June, 2026
+
+- [Overview](#overview)
+- [Setup](#setup)
+- [Export tables to Excel](#export-tables-to-excel)
+- [Session information](#session-information)
 
 # Overview
 
-**Purpose:** Export processed BRD stoichiometry (MS_SS, MS_KR_1, PNAS) to a
-formatted Excel workbook (supplementary data).
+**Purpose:** Export processed BRD stoichiometry (MS_SS, MS_KR_1, PNAS)
+to a formatted Excel workbook (supplementary data).
 
 **Inputs:** stoichiometry tables from p2-01; reference proteome.
 
@@ -21,8 +21,7 @@ formatted Excel workbook (supplementary data).
 
 # Setup
 
-```{r setup, message = FALSE, warning = FALSE}
-
+``` r
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -33,15 +32,15 @@ repo_root <- local({
 source(file.path(repo_root, "R", "functions", "_setup.R"))
 library("janitor")
 library("openxlsx")
-
 ```
 
 # Export tables to Excel
 
-Assembles the per-site stoichiometry tables (PNAS data-A/B/C, MS_KR_1, MS_SS) and writes them to a formatted Excel workbook for the supplementary data.
+Assembles the per-site stoichiometry tables (PNAS data-A/B/C, MS_KR_1,
+MS_SS) and writes them to a formatted Excel workbook for the
+supplementary data.
 
-```{r load_data}
-
+``` r
 # A diagnostic-peak flag shared by all loaded tables
 add_di_flag <- function(dt) dt[, is_diagnostic_peak := diagnostic_peak == "+"][]
 
@@ -106,11 +105,9 @@ ms_ss_stoic_dt <- read_stoic_data(
   prefix = "MS_SS_", pre_prefix = "", post_fix = "_DI",
   dir_path = file.path(results.dir, "p2-analysis-setting", "MS_SS")
 ) %>% add_di_flag
-
 ```
 
-```{r export_helper}
-
+``` r
 # Output directory for the supplementary workbooks (created if missing)
 export_out_dir <- file.path(results.dir, "p2_MS_SS_KR")
 create.dir(export_out_dir)
@@ -162,44 +159,29 @@ export_stoic_table <- function(stoic_dt, file_name, curated_dt, extra_filter = N
   write.xlsx(dt, file.path(export_out_dir, file_name))
   invisible(dt)
 }
-
 ```
 
-
-```{r export_di_a}
-
+``` r
 # PNAS dataset A (diagnostic ions)
 export_stoic_table(mq_di_a_stoic_dt, "MQ_DI_dtA_stoic_dt.xlsx", pnas2022_stoic_dt)
-
 ```
 
-
-```{r export_di_b}
-
+``` r
 # PNAS datasets B1 and B2 (diagnostic ions)
 export_stoic_table(mq_di_b_stoic_dt, "MQ_DI_dtB_stoic_dt.xlsx", pnas2022_stoic_dt)
-
 ```
 
-
-```{r export_di_c}
-
+``` r
 # PNAS dataset C (diagnostic ions)
 export_stoic_table(mq_di_c_stoic_dt, "MQ_DI_dtC_stoic_dt.xlsx", pnas2022_stoic_dt)
-
 ```
 
-
-```{r export_ms_kr1}
-
+``` r
 # MS_KR_1 (dataset D)
 export_stoic_table(ms_kr1_stoic_dt, "MS_KR1_stoic_K.xlsx", pnas2022_stoic_dt)
-
 ```
 
-
-```{r export_ms_ss}
-
+``` r
 # MS_SS (dataset E). Drops cross-protein false positives (BRD4 signal reported in
 # BRD2/3 samples and vice versa, e.g. from shared / homologous peptides) before
 # formatting.
@@ -210,14 +192,91 @@ export_stoic_table(
         (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
   ]
 )
-
 ```
-
 
 # Session information
 
-```{r session_info}
-
+``` r
 sessioninfo::session_info()
-
 ```
+
+    ## ─ Session info ───────────────────────────────────────────────────────────────
+    ##  setting  value
+    ##  version  R version 4.4.3 (2025-02-28)
+    ##  os       Ubuntu 24.04.2 LTS
+    ##  system   x86_64, linux-gnu
+    ##  ui       X11
+    ##  language (EN)
+    ##  collate  C.UTF-8
+    ##  ctype    C.UTF-8
+    ##  tz       Europe/Berlin
+    ##  date     2026-06-18
+    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ## 
+    ## ─ Packages ───────────────────────────────────────────────────────────────────
+    ##  package           * version    date (UTC) lib source
+    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
+    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
+    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
+    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
+    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
+    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
+    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
+    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
+    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
+    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
+    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
+    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
+    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
+    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
+    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
+    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
+    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
+    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
+    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
+    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
+    ##  janitor           * 2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
+    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
+    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
+    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
+    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
+    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
+    ##  openxlsx          * 4.2.8.1    2025-10-31 [1] CRAN (R 4.4.3)
+    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
+    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
+    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
+    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
+    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
+    ##  Rcpp                1.1.0      2025-07-02 [1] CRAN (R 4.4.3)
+    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
+    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
+    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
+    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
+    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
+    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
+    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
+    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
+    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
+    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
+    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
+    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
+    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
+    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
+    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
+    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
+    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
+    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
+    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
+    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
+    ##  zip                 2.3.3      2025-05-13 [1] CRAN (R 4.4.3)
+    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
+    ## 
+    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
+    ##  [2] /usr/local/lib/R/site-library
+    ##  [3] /usr/lib/R/site-library
+    ##  [4] /usr/lib/R/library
+    ##  * ── Packages attached to the search path.
+    ## 
+    ## ──────────────────────────────────────────────────────────────────────────────
