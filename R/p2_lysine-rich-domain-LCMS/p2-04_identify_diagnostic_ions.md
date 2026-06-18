@@ -116,45 +116,19 @@ brd4_di_long_dt[, `:=`(
     str_replace_all("_", ".") %>%           # remaining "_" -> "."
     factor(levels = c(
       "101.1079", #Lysine   K           immonium ion    C5 H13 N2 +
-      "100.0762", #Hydroxylation (K)    K   O   15.9949 diagnostic ion  C5 H10 N O+
+      "100.0762", #Hydroxylation (K)    K   O   15.9949 cyclic immonium ion C5 H10 N O+
       "82.0657", #Hydroxylation (K) K   O   15.9949 diagnostic ion (water loss) C5 H8 N+
       "117.1028", #Hydroxylation (K)    K   O   15.9949 immonium ion    C5 H13 O N2 + calculated
       "117.0658", #Hydroxylation (K)    K   O   15.9949 immonium ion    C5 H13 O N2 + (from citation)
       "138.0919", #Hydroxylation-Propionylation (K) K   C3 H4 O2    72.02112937 diagnostic ion (water loss) C8 H12 N1 O+
       "145.0977", #Hydroxylation (K)    K   O   15.9949 (intact, water loss)    C6H13N2O2+
-      "156.1025", #Hydroxylation-Propionylation (K) K   C3 H4 O2    72.02112937 diagnostic ion  C8 H14 N1 O2+
+      "156.1025", #Hydroxylation-Propionylation (K) K   C3 H4 O2    72.02112937 cyclic immonium ion C8 H14 N1 O2+
       "173.1290" #Hydroxylation-Propionylation (K)  K   C3 H4 O2    72.02112937 immonium ion    C8 H17 O2 N2 +
     )),
   diagnostic_ion = intensity > 0,
   genotype = factor(genotype, levels = c("WT", "JMJD6KO"))
 )]
 ```
-
-``` r
-# Monoisotopic mass vs intensity by genotype (quasirandom)
-ggplot(
-  brd4_di_long_dt,
-  aes(x = monoisotopic_mass, y = intensity, color = genotype)
-) +
-  geom_quasirandom(dodge.width = 0.5, size = 0.2) +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  scale_color_bright()
-```
-
-![](p2-04_identify_diagnostic_ions_files/figure-gfm/plot_di_all-1.png)<!-- -->
-
-``` r
-# Monoisotopic mass vs intensity by genotype (violin)
-ggplot(
-  brd4_di_long_dt,
-  aes(x = monoisotopic_mass, y = intensity, fill = genotype)
-) +
-  geom_violin(scale = "width") +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  scale_fill_bright()
-```
-
-![](p2-04_identify_diagnostic_ions_files/figure-gfm/plot_di_all-2.png)<!-- -->
 
 ``` r
 selected_ms <- c("100.0762", "156.1025")
@@ -229,19 +203,6 @@ for (ms in selected_ms) {
     ## 0.006489756
 
 ``` r
-# Selected monoisotopic mass vs intensity by genotype (violin)
-ggplot(
-  brd4_di_long_dt[monoisotopic_mass %in% selected_ms],
-  aes(x = monoisotopic_mass, y = intensity, fill = genotype)
-) +
-  geom_violin(scale = "width") +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  scale_fill_bright()
-```
-
-![](p2-04_identify_diagnostic_ions_files/figure-gfm/plot_selected_di-1.png)<!-- -->
-
-``` r
 brd4_di_long_dt[monoisotopic_mass %in% selected_ms][, .N, by = list(monoisotopic_mass, genotype)]
 ```
 
@@ -266,7 +227,7 @@ ggplot(
   ylab("Proportion of PSMs with diagnostic ions")
 ```
 
-![](p2-04_identify_diagnostic_ions_files/figure-gfm/plot_selected_di-2.png)<!-- -->
+![](p2-04_identify_diagnostic_ions_files/figure-gfm/plot_selected_di-1.png)<!-- -->
 
 # Session information
 
