@@ -35,7 +35,6 @@ source(file.path(repo_root, "R", "functions", "_setup.R"))
 ## Script-specific packages
 library("janitor")
 library("ggbeeswarm")
-library("khroma")
 
 ```
 

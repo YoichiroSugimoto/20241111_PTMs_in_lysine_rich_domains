@@ -1,21 +1,27 @@
 p2-01 · Compute PTM stoichiometry
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-18 June, 2026
+24 June, 2026
 
-- [Overview](#overview)
-- [Setup](#setup)
-- [Helper functions and shared
-  settings](#helper-functions-and-shared-settings)
-- [Stoichiometry without diagnostic
-  ions](#stoichiometry-without-diagnostic-ions)
-- [Stoichiometry with diagnostic ions —
-  PNAS](#stoichiometry-with-diagnostic-ions--pnas)
-- [Stoichiometry with diagnostic ions —
-  MS_KR_1](#stoichiometry-with-diagnostic-ions--ms_kr_1)
-- [Stoichiometry with diagnostic ions —
-  MS_SS](#stoichiometry-with-diagnostic-ions--ms_ss)
-- [Session information](#session-information)
+- <a href="#overview" id="toc-overview">Overview</a>
+- <a href="#setup" id="toc-setup">Setup</a>
+- <a href="#helper-functions-and-shared-settings"
+  id="toc-helper-functions-and-shared-settings">Helper functions and
+  shared settings</a>
+- <a href="#stoichiometry-without-diagnostic-ions"
+  id="toc-stoichiometry-without-diagnostic-ions">Stoichiometry without
+  diagnostic ions</a>
+- <a href="#stoichiometry-with-diagnostic-ions--pnas"
+  id="toc-stoichiometry-with-diagnostic-ions--pnas">Stoichiometry with
+  diagnostic ions — PNAS</a>
+- <a href="#stoichiometry-with-diagnostic-ions--ms_kr_1"
+  id="toc-stoichiometry-with-diagnostic-ions--ms_kr_1">Stoichiometry with
+  diagnostic ions — MS_KR_1</a>
+- <a href="#stoichiometry-with-diagnostic-ions--ms_ss"
+  id="toc-stoichiometry-with-diagnostic-ions--ms_ss">Stoichiometry with
+  diagnostic ions — MS_SS</a>
+- <a href="#session-information" id="toc-session-information">Session
+  information</a>
 
 # Overview
 
@@ -52,6 +58,8 @@ repo_root <- local({
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
 ```
+
+    ## - The project is out-of-sync -- use `renv::status()` for details.
 
 # Helper functions and shared settings
 
@@ -371,9 +379,9 @@ process_stoichiometry2(
 
     ## Processing: MS_KR_1_evidence.txt
 
-    ##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
-    ## Ncells  4347231 232.2   13789037 736.5  13789037  736.5
-    ## Vcells 11849723  90.5   57369272 437.7 187872791 1433.4
+    ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+    ## Ncells  19127468 1021.6   33269427 1776.8  33269427 1776.8
+    ## Vcells 210777041 1608.2  498107511 3800.3 498107511 3800.3
 
 # Stoichiometry with diagnostic ions — MS_SS
 
@@ -402,9 +410,9 @@ process_stoichiometry2(
 
     ## Processing: MS_SS_evidence.txt
 
-    ##            used  (Mb) gc trigger  (Mb)  max used   (Mb)
-    ## Ncells  4348040 232.3   13789037 736.5  13789037  736.5
-    ## Vcells 11764388  89.8   45895418 350.2 187872791 1433.4
+    ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
+    ## Ncells  19128236 1021.6   33269427 1776.8  33269427 1776.8
+    ## Vcells 210778290 1608.2  498107511 3800.3 498107511 3800.3
 
 # Session information
 
@@ -414,80 +422,115 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.4.3 (2025-02-28)
-    ##  os       Ubuntu 24.04.2 LTS
+    ##  version  R version 4.5.0 (2025-04-11)
+    ##  os       Red Hat Enterprise Linux 9.6 (Plow)
     ##  system   x86_64, linux-gnu
     ##  ui       X11
     ##  language (EN)
-    ##  collate  C.UTF-8
-    ##  ctype    C.UTF-8
+    ##  collate  en_US.UTF-8
+    ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-18
-    ##  pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
-    ##  quarto   1.5.57 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
+    ##  date     2026-06-24
+    ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
+    ##  quarto   NA
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
-    ##  package           * version    date (UTC) lib source
-    ##  BiocGenerics      * 0.52.0     2024-10-29 [1] Bioconduc~
-    ##  Biostrings        * 2.74.1     2024-12-16 [1] Bioconduc~
-    ##  bit                 4.6.0      2025-03-06 [1] CRAN (R 4.4.3)
-    ##  bit64               4.6.0-1    2025-01-16 [1] CRAN (R 4.4.3)
-    ##  cellranger          1.1.0      2016-07-27 [1] CRAN (R 4.4.3)
-    ##  cli                 3.6.5      2025-04-23 [1] CRAN (R 4.4.3)
-    ##  crayon              1.5.3      2024-06-20 [1] CRAN (R 4.4.3)
-    ##  data.table        * 1.17.8     2025-07-10 [1] CRAN (R 4.4.3)
-    ##  digest              0.6.37     2024-08-19 [1] CRAN (R 4.4.3)
-    ##  dplyr             * 1.1.4      2023-11-17 [1] CRAN (R 4.4.3)
-    ##  evaluate            1.0.5      2025-08-27 [1] CRAN (R 4.4.3)
-    ##  farver              2.1.2      2024-05-13 [1] CRAN (R 4.4.3)
-    ##  fastmap             1.2.0      2024-05-15 [1] CRAN (R 4.4.3)
-    ##  generics            0.1.4      2025-05-09 [1] CRAN (R 4.4.3)
-    ##  GenomeInfoDb      * 1.42.3     2025-01-27 [1] Bioconduc~
-    ##  GenomeInfoDbData    1.2.13     2025-07-21 [1] Bioconductor
-    ##  ggplot2           * 4.0.0      2025-09-11 [1] CRAN (R 4.4.3)
-    ##  glue                1.8.0      2024-09-30 [1] CRAN (R 4.4.3)
-    ##  gtable              0.3.6      2024-10-25 [1] CRAN (R 4.4.3)
-    ##  htmltools           0.5.8.1    2024-04-04 [1] CRAN (R 4.4.3)
-    ##  httr                1.4.7      2023-08-15 [1] CRAN (R 4.4.3)
-    ##  IRanges           * 2.40.1     2024-12-05 [1] Bioconduc~
-    ##  janitor             2.2.1      2024-12-22 [1] CRAN (R 4.4.3)
-    ##  jsonlite            2.0.0      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  khroma            * 1.16.0     2025-02-25 [1] CRAN (R 4.4.3)
-    ##  knitr             * 1.50       2025-03-16 [1] CRAN (R 4.4.3)
-    ##  lifecycle           1.0.4      2023-11-07 [1] CRAN (R 4.4.3)
-    ##  lubridate           1.9.4      2024-12-08 [1] CRAN (R 4.4.3)
-    ##  magrittr          * 2.0.4      2025-09-12 [1] CRAN (R 4.4.3)
-    ##  pillar              1.11.1     2025-09-17 [1] CRAN (R 4.4.3)
-    ##  pkgconfig           2.0.3      2019-09-22 [1] CRAN (R 4.4.3)
-    ##  ptm.stoichiometry * 0.0.0.9000 2025-12-13 [1] local
-    ##  R6                  2.6.1      2025-02-15 [1] CRAN (R 4.4.3)
-    ##  RColorBrewer        1.1-3      2022-04-03 [1] CRAN (R 4.4.3)
-    ##  readxl            * 1.4.5      2025-03-07 [1] CRAN (R 4.4.3)
-    ##  rlang               1.1.6      2025-04-11 [1] CRAN (R 4.4.3)
-    ##  rmarkdown           2.29       2024-11-04 [1] CRAN (R 4.4.3)
-    ##  rstudioapi          0.17.1     2024-10-22 [1] CRAN (R 4.4.3)
-    ##  S4Vectors         * 0.44.0     2024-10-29 [1] Bioconduc~
-    ##  S7                  0.2.0      2024-11-07 [1] CRAN (R 4.4.3)
-    ##  scales              1.4.0      2025-04-24 [1] CRAN (R 4.4.3)
-    ##  sessioninfo         1.2.3      2025-02-05 [1] CRAN (R 4.4.3)
-    ##  snakecase           0.11.1     2023-08-27 [1] CRAN (R 4.4.3)
-    ##  stringi             1.8.7      2025-03-27 [1] CRAN (R 4.4.3)
-    ##  stringr           * 1.5.2      2025-09-08 [1] CRAN (R 4.4.3)
-    ##  tibble              3.3.0      2025-06-08 [1] CRAN (R 4.4.3)
-    ##  tidyselect          1.2.1      2024-03-11 [1] CRAN (R 4.4.3)
-    ##  timechange          0.3.0      2024-01-18 [1] CRAN (R 4.4.3)
-    ##  UCSC.utils          1.2.0      2024-10-29 [1] Bioconduc~
-    ##  vctrs               0.6.5      2023-12-01 [1] CRAN (R 4.4.3)
-    ##  withr               3.0.2      2024-10-28 [1] CRAN (R 4.4.3)
-    ##  xfun                0.53       2025-08-19 [1] CRAN (R 4.4.3)
-    ##  XVector           * 0.46.0     2024-10-29 [1] Bioconduc~
-    ##  yaml                2.3.10     2024-07-26 [1] CRAN (R 4.4.3)
-    ##  zlibbioc            1.52.0     2024-10-29 [1] Bioconduc~
+    ##  ! package           * version    date (UTC) lib source
+    ##  P AnnotationDbi     * 1.72.0     2025-10-29 [?] Bioconduc~
+    ##  P Biobase           * 2.70.0     2025-10-29 [?] Bioconduc~
+    ##  P BiocGenerics      * 0.56.0     2025-10-29 [?] Bioconduc~
+    ##  P Biostrings        * 2.78.0     2025-10-29 [?] Bioconduc~
+    ##  P bit                 4.6.0      2025-03-06 [?] CRAN (R 4.5.0)
+    ##  P bit64               4.8.2      2026-05-19 [?] CRAN (R 4.5.0)
+    ##  P blob                1.3.0      2026-01-14 [?] CRAN (R 4.5.0)
+    ##  P cachem              1.1.0      2024-05-16 [?] CRAN (R 4.5.0)
+    ##  P cellranger          1.1.0      2016-07-27 [?] CRAN (R 4.5.0)
+    ##  P cli                 3.6.6      2026-04-09 [?] CRAN (R 4.5.0)
+    ##  P colourpicker        1.3.0      2023-08-21 [?] CRAN (R 4.5.0)
+    ##  P crayon              1.5.3      2024-06-20 [?] CRAN (R 4.5.0)
+    ##  P data.table        * 1.18.4     2026-05-06 [?] CRAN (R 4.5.0)
+    ##  P DBI                 1.3.0      2026-02-25 [?] CRAN (R 4.5.0)
+    ##  P digest              0.6.39     2025-11-19 [?] CRAN (R 4.5.0)
+    ##  P dplyr             * 1.2.1      2026-04-03 [?] CRAN (R 4.5.0)
+    ##  P evaluate            1.0.5      2025-08-27 [?] CRAN (R 4.5.0)
+    ##  P farver              2.1.2      2024-05-13 [?] CRAN (R 4.5.0)
+    ##  P fastmap             1.2.0      2024-05-15 [?] CRAN (R 4.5.0)
+    ##  P formattable         0.2.1      2021-01-07 [?] CRAN (R 4.5.0)
+    ##  P generics          * 0.1.4      2025-05-09 [?] CRAN (R 4.5.0)
+    ##  P ggplot2           * 4.0.3      2026-04-22 [?] CRAN (R 4.5.0)
+    ##  P glue                1.8.1      2026-04-17 [?] CRAN (R 4.5.0)
+    ##  P gridExtra           2.3        2017-09-09 [?] CRAN (R 4.5.0)
+    ##  P gtable              0.3.6      2024-10-25 [?] CRAN (R 4.5.0)
+    ##  P htmltools           0.5.9      2025-12-04 [?] CRAN (R 4.5.0)
+    ##  P htmlwidgets         1.6.4      2023-12-06 [?] CRAN (R 4.5.0)
+    ##  P httpuv              1.6.17     2026-03-18 [?] CRAN (R 4.5.0)
+    ##  P httr                1.4.8      2026-02-13 [?] CRAN (R 4.5.0)
+    ##  P IRanges           * 2.44.0     2025-10-29 [?] Bioconduc~
+    ##  P janitor             2.2.1      2024-12-22 [?] CRAN (R 4.5.0)
+    ##  P jsonlite            2.0.0      2025-03-27 [?] CRAN (R 4.5.0)
+    ##  P KEGGREST            1.50.0     2025-10-29 [?] Bioconduc~
+    ##  P khroma            * 1.17.0     2025-09-29 [?] CRAN (R 4.5.0)
+    ##  P knitr             * 1.51       2025-12-20 [?] CRAN (R 4.5.0)
+    ##  P labeling            0.4.3      2023-08-29 [?] CRAN (R 4.5.0)
+    ##  P later               1.4.8      2026-03-05 [?] CRAN (R 4.5.0)
+    ##  P lattice             0.22-9     2026-02-09 [?] CRAN (R 4.5.0)
+    ##  P lazyeval            0.2.3      2026-04-04 [?] CRAN (R 4.5.0)
+    ##  P lifecycle           1.0.5      2026-01-08 [?] CRAN (R 4.5.0)
+    ##  P lubridate           1.9.5      2026-02-04 [?] CRAN (R 4.5.0)
+    ##  P magrittr          * 2.0.5      2026-04-04 [?] CRAN (R 4.5.0)
+    ##  P Matrix              1.7-5      2026-03-21 [?] CRAN (R 4.5.0)
+    ##  P memoise             2.0.1      2021-11-26 [?] CRAN (R 4.5.0)
+    ##  P mgcv              * 1.9-4      2025-11-07 [?] CRAN (R 4.5.0)
+    ##  P mime                0.13       2025-03-17 [?] CRAN (R 4.5.0)
+    ##  P miniUI              0.1.2      2025-04-17 [?] CRAN (R 4.5.0)
+    ##  P nlme              * 3.1-169    2026-03-27 [?] CRAN (R 4.5.0)
+    ##  P org.Hs.eg.db      * 3.22.0     2026-06-24 [?] Bioconductor
+    ##  P otel                0.2.0      2025-08-29 [?] CRAN (R 4.5.0)
+    ##  P patchwork         * 1.3.2      2025-08-25 [?] CRAN (R 4.5.0)
+    ##  P pillar              1.11.1     2025-09-17 [?] CRAN (R 4.5.0)
+    ##  P pkgconfig           2.0.3      2019-09-22 [?] CRAN (R 4.5.0)
+    ##  P plotly              4.12.0     2026-01-24 [?] CRAN (R 4.5.0)
+    ##  P plyr                1.8.9      2023-10-02 [?] CRAN (R 4.5.0)
+    ##  P png                 0.1-9      2026-03-15 [?] CRAN (R 4.5.0)
+    ##  P promises            1.5.0      2025-11-01 [?] CRAN (R 4.5.0)
+    ##    ptm.stoichiometry * 0.0.0.9000 2026-06-24 [1] local (/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry)
+    ##  P purrr               1.2.2      2026-04-10 [?] CRAN (R 4.5.0)
+    ##  P R6                  2.6.1      2025-02-15 [?] CRAN (R 4.5.0)
+    ##  P RColorBrewer        1.1-3      2022-04-03 [?] CRAN (R 4.5.0)
+    ##  P Rcpp                1.1.1-1.1  2026-04-24 [?] CRAN (R 4.5.0)
+    ##  P readxl            * 1.5.0      2026-05-16 [?] CRAN (R 4.5.0)
+    ##    renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.0)
+    ##  P rlang               1.2.0      2026-04-06 [?] CRAN (R 4.5.0)
+    ##  P rmarkdown           2.31       2026-03-26 [?] CRAN (R 4.5.0)
+    ##  P RSQLite             3.53.2     2026-06-17 [?] CRAN (R 4.5.0)
+    ##  P S4Vectors         * 0.48.1     2026-04-05 [?] Bioconduc~
+    ##  P S7                  0.2.2      2026-04-22 [?] CRAN (R 4.5.0)
+    ##  P scales              1.4.0      2025-04-24 [?] CRAN (R 4.5.0)
+    ##  P Seqinfo           * 1.0.0      2025-10-29 [?] Bioconduc~
+    ##  P sessioninfo         1.2.4      2026-06-04 [?] CRAN (R 4.5.0)
+    ##  P shiny               1.14.0     2026-06-21 [?] CRAN (R 4.5.0)
+    ##  P shinythemes         1.2.0      2021-01-25 [?] CRAN (R 4.5.0)
+    ##  P snakecase           0.11.1     2023-08-27 [?] CRAN (R 4.5.0)
+    ##  P stringi             1.8.7      2025-03-27 [?] CRAN (R 4.5.0)
+    ##  P stringr           * 1.6.0      2025-11-04 [?] CRAN (R 4.5.0)
+    ##    subcellularvis    * 0.0.0.9000 2026-06-24 [1] local (/fast/AG_Sugimoto/home/users/yoichiro/software/R_packages/subcellularvis)
+    ##  P tibble              3.3.1      2026-01-11 [?] CRAN (R 4.5.0)
+    ##  P tidyr               1.3.2      2025-12-19 [?] CRAN (R 4.5.0)
+    ##  P tidyselect          1.2.1      2024-03-11 [?] CRAN (R 4.5.0)
+    ##  P timechange          0.4.0      2026-01-29 [?] CRAN (R 4.5.0)
+    ##  P UpSetR              1.4.1      2026-05-25 [?] CRAN (R 4.5.0)
+    ##  P vctrs               0.7.3      2026-04-11 [?] CRAN (R 4.5.0)
+    ##  P viridisLite         0.4.3      2026-02-04 [?] CRAN (R 4.5.0)
+    ##  P withr               3.0.3      2026-06-19 [?] CRAN (R 4.5.0)
+    ##  P xfun                0.59       2026-06-19 [?] CRAN (R 4.5.0)
+    ##  P xtable              1.8-8      2026-02-22 [?] CRAN (R 4.5.0)
+    ##  P XVector           * 0.50.0     2025-10-29 [?] Bioconduc~
+    ##  P yaml                2.3.12     2025-12-10 [?] CRAN (R 4.5.0)
     ## 
-    ##  [1] /home/ysugimo/R/x86_64-pc-linux-gnu-library/4.4
-    ##  [2] /usr/local/lib/R/site-library
-    ##  [3] /usr/lib/R/site-library
-    ##  [4] /usr/lib/R/library
+    ##  [1] /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/renv/library/linux-rhel-9.6/R-4.5/x86_64-unknown-linux-gnu
+    ##  [2] /fast/home/y/ysugimo/.cache/R/renv/sandbox/linux-rhel-9.6/R-4.5/x86_64-unknown-linux-gnu/cb72a45c
+    ## 
     ##  * ── Packages attached to the search path.
+    ##  P ── Loaded and on-disk path mismatch.
     ## 
     ## ──────────────────────────────────────────────────────────────────────────────

@@ -31,7 +31,6 @@ repo_root <- local({
   p
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
-library("khroma")
 
 ```
 

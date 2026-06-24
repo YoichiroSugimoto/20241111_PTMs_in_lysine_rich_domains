@@ -1,7 +1,8 @@
-## All hidden files except .gitignore and the project-root sentinel
+## All hidden files except .gitignore, the sentinel, and the renv .Rprofile
 .*
 !/.gitignore
 !/.here
+!/.Rprofile
 
 ## cluster runnning log won't be included
 ## slurm-*
@@ -125,7 +126,19 @@ Thumbs.db
 # Emacs
 .#*
 
-# renv
+# renv — ignore the large, machine-specific library and build caches.
+# Keep renv/activate.R, renv/settings.json and the lockfile (R/renv.lock) tracked.
+# The renv project lives at the repo root here (renv/), not under R/.
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+# (also cover an R/renv/ layout, just in case)
+R/renv/library/
+R/renv/staging/
 R/renv/
 .Rproj.user
 

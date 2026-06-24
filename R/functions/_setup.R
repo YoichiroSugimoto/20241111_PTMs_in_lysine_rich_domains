@@ -4,8 +4,12 @@
 ## project root portably, loads the helper functions, packages, ggplot/knitr
 ## settings, and defines the standard paths.
 ##
-## NOTE: this does NOT manage renv. It assumes the project library has already
-## been restored (see README). It only loads packages and sets up paths.
+## renv: activation happens at R startup via the project-root .Rprofile
+## (source("renv/activate.R")), BEFORE rmarkdown/knitr are loaded. This file only
+## re-activates as a harmless fallback (e.g. when a script is run from a subdir so
+## the root .Rprofile was not picked up). It does NOT restore — restoring during a
+## knit conflicts with the already-loaded knitr/rmarkdown. Restore is a one-time
+## step run in a clean session (see cluster/README.md "one-time setup").
 
 ## --- Resolve the project root (portable, no extra dependencies) -------------
 ## Walks up from the working directory to the repo root, identified by the
@@ -26,6 +30,20 @@
 project.dir <- .find_project_root()
 data.dir    <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
+
+## --- Re-activate the renv library (fallback; normally done by .Rprofile) ------
+## Idempotent: if .Rprofile already activated renv at startup, this is a no-op and
+## does NOT change .libPaths() (so it cannot trigger a package version conflict).
+## It only matters when a script is sourced from a working directory where the
+## root .Rprofile was not picked up. No restore here (see header note).
+local({
+  activate_r <- file.path(project.dir, "renv", "activate.R")
+  if (file.exists(activate_r)) {
+    source(activate_r)  # sets .libPaths() to the project library
+  } else {
+    message("_setup.R: no renv/activate.R found; using the current library.")
+  }
+})
 
 ## --- External UniProt reference proteome ------------------------------------
 ## The reference FASTA is NOT stored in the repository (it is large and freely

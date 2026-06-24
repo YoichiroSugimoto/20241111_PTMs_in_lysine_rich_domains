@@ -490,7 +490,7 @@ m_xic_stoic <- melt(
 
 m_xic_stoic[, `:=`(
   oxygen = factor(oxygen, levels = rev(c("1pc", "4pc", "21pc"))),
-  induction2 = factor(induction2, levels = c("4h", "8h", "18-24h"))
+  induction2 = factor(induction2, levels = c("4h", "8h", "18h"))
 )]
 
 ```
