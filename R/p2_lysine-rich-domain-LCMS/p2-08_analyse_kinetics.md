@@ -1,7 +1,7 @@
 p2-08 · Analyse hydroxylation kinetics
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-24 June, 2026
+26 June, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -41,6 +41,14 @@ data (`data/xic_MS_SS.csv`); reference proteome.
 # Setup
 
 ``` r
+# setwd("~/mdc_fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/")
+# Sys.setenv(USE_BUNDLED_LIBUV = "1")
+# renv::restore(
+#   lockfile = "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R/renv.lock",
+#   prompt = FALSE
+# )
+
+
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -284,12 +292,12 @@ ggplot(
 # Create data table  
 induction_t_test <- data.table()
 
-# Paired t-test 
+# One sample two-sided t.test compared to mu = 1
 for(i in pc2wt_21pc_sub[, unique(induction)]){
   t.out <- t.test(
-    pc2wt_21pc_sub[induction == i][, Stoichiometry],
-    pc2wt_21pc_sub[induction == i][, WT_stoichiometry],
-    paired = TRUE
+    pc2wt_21pc_sub[induction == i][, Stoichiometry / WT_stoichiometry],
+    mu = 1,
+    alternative = "two.sided"
   )
   induction_t_test <- rbind(
     induction_t_test,
@@ -310,11 +318,11 @@ induction_t_test
 
     ##    induction      p_value     n         padj significance
     ##       <char>        <num> <int>        <num>       <char>
-    ## 1:        0h 3.428546e-07    42 1.714273e-06           **
-    ## 2:       18h 2.409872e-01    42 4.819744e-01         N.S.
-    ## 3:       24h 3.362069e-01    42 4.819744e-01         N.S.
-    ## 4:        4h 1.425583e-05    42 5.702331e-05           **
-    ## 5:        8h 6.817018e-03    42 2.045105e-02            *
+    ## 1:        0h 7.743089e-30    42 3.871544e-29           **
+    ## 2:       18h 5.381566e-01    42 1.000000e+00         N.S.
+    ## 3:       24h 7.616065e-01    42 1.000000e+00         N.S.
+    ## 4:        4h 1.244710e-09    42 4.978840e-09           **
+    ## 5:        8h 1.178126e-05    42 3.534378e-05           **
 
 # t50 (time to half-maximal)
 
@@ -1311,7 +1319,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-24
+    ##  date     2026-06-26
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 

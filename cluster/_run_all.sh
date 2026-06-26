@@ -5,6 +5,8 @@
 #SBATCH --time=3-00:00:0
 #SBATCH --mem=8G
 
+## e.g. sbatch cluster/_run_all.sh
+
 source /home/ysugimo/.bashrc
 
 # Avoid conda(base) libraries clashing with Guix's

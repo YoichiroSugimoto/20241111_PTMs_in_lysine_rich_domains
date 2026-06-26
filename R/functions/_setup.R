@@ -31,15 +31,18 @@ project.dir <- .find_project_root()
 data.dir    <- file.path(project.dir, "data")
 results.dir <- file.path(project.dir, "results")
 
-## --- Re-activate the renv library (fallback; normally done by .Rprofile) ------
-## Idempotent: if .Rprofile already activated renv at startup, this is a no-op and
-## does NOT change .libPaths() (so it cannot trigger a package version conflict).
-## It only matters when a script is sourced from a working directory where the
-## root .Rprofile was not picked up. No restore here (see header note).
+## --- Force-activate the renv library for the PROJECT ROOT ---------------------
+## renv/activate.R decides the project from the *working directory*, and
+## knitr / RStudio Server set the working directory to the Rmd's folder. So we
+## temporarily switch to project.dir before sourcing activate.R — this makes renv
+## activate the correct project (and library) no matter where the Rmd is run
+## from (RStudio Server, a subfolder, etc.). Idempotent; no restore here.
 local({
   activate_r <- file.path(project.dir, "renv", "activate.R")
   if (file.exists(activate_r)) {
-    source(activate_r)  # sets .libPaths() to the project library
+    old_wd <- setwd(project.dir)            # activate.R keys off getwd()
+    on.exit(setwd(old_wd), add = TRUE)
+    source(activate_r)                      # sets .libPaths() to <project.dir>/renv/library
   } else {
     message("_setup.R: no renv/activate.R found; using the current library.")
   }

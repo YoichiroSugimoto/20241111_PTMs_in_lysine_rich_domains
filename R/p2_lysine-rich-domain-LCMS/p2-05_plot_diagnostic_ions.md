@@ -1,7 +1,7 @@
 p2-05 · Plot diagnostic-ion analysis
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-24 June, 2026
+26 June, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -419,7 +419,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-24
+    ##  date     2026-06-26
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 

@@ -24,6 +24,14 @@ interaction, and O2 / dox sensitivity.
 
 ```{r setup, message = FALSE, warning = FALSE}
 
+# setwd("~/mdc_fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/")
+# Sys.setenv(USE_BUNDLED_LIBUV = "1")
+# renv::restore(
+#   lockfile = "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R/renv.lock",
+#   prompt = FALSE
+# )
+
+
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -258,12 +266,12 @@ ggplot(
 # Create data table  
 induction_t_test <- data.table()
 
-# Paired t-test 
+# One sample two-sided t.test compared to mu = 1
 for(i in pc2wt_21pc_sub[, unique(induction)]){
   t.out <- t.test(
-    pc2wt_21pc_sub[induction == i][, Stoichiometry],
-    pc2wt_21pc_sub[induction == i][, WT_stoichiometry],
-    paired = TRUE
+    pc2wt_21pc_sub[induction == i][, Stoichiometry / WT_stoichiometry],
+    mu = 1,
+    alternative = "two.sided"
   )
   induction_t_test <- rbind(
     induction_t_test,
