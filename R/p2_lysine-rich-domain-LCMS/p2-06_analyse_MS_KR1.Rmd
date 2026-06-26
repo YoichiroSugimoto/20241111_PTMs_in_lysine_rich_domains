@@ -1,0 +1,86 @@
+---
+title: "p2-06 · Analyse MS_KR_1 stoichiometry"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Analyse MS_KR_1 lysine-hydroxylation stoichiometry — oxygen
+sensitivity (hypoxia vs normoxia) across BRD2/3/4, including JMJD6 re-expression.
+Stoichiometry itself is computed in p2-01; this script reads those tables.
+
+**Inputs:** stoichiometry tables from `results/p2-analysis-setting/MS_KR_1/`
+(written by p2-01); UniProt reference proteome (`reference_fasta`).
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** p2-01. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+```
+
+# Per-site stoichiometry across conditions
+
+Reads the MS_KR_1 stoichiometry table and plots site-specific hydroxylation along
+BRD4 (O60885), BRD3 (Q15059) and BRD2 (P25440) across the four conditions —
+parental WT, induced cells without doxycycline, and JMJD6 re-expression (+Dox)
+under normoxia and 0.1% O2. The `diagnostic_peak` flag marks sites confirmed by the
+hydroxylysine immonium ion.
+
+```{r plot_brd_stoichiometry}
+
+# Read stoichiometry data for MS_KR_1
+ms_kr1_stoic_dt <- read_stoic_data(
+  prefix     = "MS_KR_1_",
+  pre_prefix = "",
+  post_fix   = "_DI",
+  dir_path   = file.path(results.dir, "p2-analysis-setting", "MS_KR_1")
+)
+
+# Diagnostic-ion flag and an ordered sample factor (all four conditions)
+ms_kr1_stoic_dt[, is_diagnostic_peak := diagnostic_peak == "+"]
+
+kr1_conditions <- c(
+  "HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA",
+  "HeLaiJMJD6_Dox_N_NA", "HeLaiJMJD6_Dox_01O224h_NA"
+)
+ms_kr1_stoic_dt[, sample_name := factor(sample_name, levels = kr1_conditions)]
+
+# Per-site stoichiometry for one accession across all four conditions
+plot_brd_stoic <- function(accession, plot_range) {
+  plot_ptm_stoichiometry(
+    ms_kr1_stoic_dt[sample_name %in% kr1_conditions],
+    accession = accession, plot_range = plot_range, all.protein.bs, sample_colors = NA
+  )
+}
+
+plot_brd_stoic("O60885", c(531, 581))  # BRD4
+plot_brd_stoic("Q15059", c(483, 533))  # BRD3
+plot_brd_stoic("P25440", c(540, 590))  # BRD2
+
+```
+
+# Session information
+
+```{r session_info}
+
+sessioninfo::session_info()
+
+```

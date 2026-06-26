@@ -1,0 +1,98 @@
+---
+title: "p2-03 · Compare miscleavage settings"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Compare PSM coverage of the lysine-rich domain of BRD4 across miscleavage
+settings (m2 / m5 / m7).
+
+**Inputs:** stoichiometry tables from p2-01 (`results/p2-analysis-setting/`); sample matrix.
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** p2-01. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+```
+
+# PSM coverage by miscleavage
+
+Compares PSM coverage of lysine-rich domains between the m2, m5 and m7 miscleavage search settings.
+
+```{r load_mq_std}
+
+# Sample run info (one row per run)
+mq_std_sample_dt <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_Std"
+) %>% data.table
+
+# Sequential sample id (1:N)
+mq_std_sample_dt[, sample_id := 1:.N]
+
+# Stoichiometry tables for the MQ_Std (MULTI-MSMS) search
+mq_std_stoic_dt <- lapply(
+  mq_std_sample_dt[, prefix],
+  read_stoic_data,
+  pre_prefix = "",
+  post_fix   = "",
+  dir_path   = file.path(results.dir, "p2-analysis-setting", "MQ_Std_MSMS")
+) %>% rbindlist
+
+```
+
+
+```{r plot_psm_by_miscleavage, fig.height = 3}
+
+## BRD4 PSM coverage across miscleavage settings (m2, m5, m7), WT derivatised,
+## overlaid on a single axis (one coloured line per setting).
+
+brd4_settings <- c("data-A_trp_m2_v2_def", "data-A_trp_m5_v5_def", "data-A_trp_m7_v7_def")
+
+# Per-position PSM coverage profile for one search setting
+brd4_coverage_data <- function(setting) {
+  preprocess_stoichiometry_data_for_plotting(
+    stoichiometry_data = mq_std_stoic_dt[sample_name == "JQ1_HeLaWT_derivatised" & condition == setting],
+    accession = "O60885", plot_range = c(531, 581), all.protein.bs = all.protein.bs
+  )$coverage_data[, miscleavage := setting]
+}
+
+brd4_coverage_dt <- rbindlist(lapply(brd4_settings, brd4_coverage_data))
+brd4_coverage_dt[, miscleavage := factor(miscleavage, levels = brd4_settings, labels = c("m2", "m5", "m7"))]
+
+ggplot(brd4_coverage_dt, aes(x = aa_pos, y = psm_coverage, color = miscleavage)) +
+  geom_line() +
+  coord_cartesian(ylim = c(0, 350)) +
+  labs(title = "BRD4 PSM coverage by miscleavage",
+       x = "Amino-acid position", y = "PSM coverage", color = "Miscleavage") +
+  scale_color_bright()
+
+```
+
+
+# Session information
+
+```{r session_info}
+
+sessioninfo::session_info()
+
+```

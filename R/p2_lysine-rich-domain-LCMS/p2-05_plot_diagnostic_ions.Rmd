@@ -1,0 +1,295 @@
+---
+title: "p2-05 · Plot diagnostic-ion analysis"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Evaluate how diagnostic ions improve hydroxylation analysis —
+precision, WT / KO overlap, and comparison with PNAS 2022.
+
+**Inputs:** stoichiometry tables from p2-01; PNAS2022 reference data.
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** p2-01, p2-04. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+## Script-specific packages
+library("patchwork")
+library("eulerr")
+library("RColorBrewer")
+
+```
+
+# Helper functions
+
+```{r helper_functions}
+
+# Area-proportional Euler diagram of WT vs KO site overlap
+plot_overlap_venn <- function(wt_ids, ko_ids, main) {
+  venn_list <- list(WT_DI_site = wt_ids, KO_DI_site = ko_ids)
+  plot(
+    euler(venn_list),
+    fills      = list(fill = brewer.pal(3, "Set2"), alpha = 0.4),
+    legend     = list(side = "right"),
+    quantities = TRUE,
+    main       = main
+  )
+}
+
+```
+
+# Import data
+
+Loads the diagnostic-ion sample matrix (data paths come from `_setup.R`).
+
+```{r load_inputs, warning=FALSE}
+
+# Sample run info (MQ diagnostic-ion search)
+mq_di_sample_dt <- read_excel(
+  file.path(project.dir, "data/analysis_setting/PXD031221_sample_matrix.xlsx"),
+  sheet = "MQ_DI"
+) %>% data.table
+
+# Sequential sample id (1:N)
+mq_di_sample_dt[, sample_id := 1:.N]
+
+```
+
+# Diagnostic ions and precision
+
+Assesses how requiring a diagnostic ion changes the precision of hydroxylation calls.
+
+```{r precision}
+
+# Read stoichiometry data for MQ_DI (change from the older version: a potential
+# diagnostic ion with water loss is no longer considered)
+mq_di_stoic_dt <- lapply(
+  mq_di_sample_dt[, prefix],
+  read_stoic_data,
+  pre_prefix = "DI_",
+  post_fix   = "_DI",
+  dir_path   = file.path(results.dir, "p2-analysis-setting", "MQ_DI")
+) %>% rbindlist
+
+# fwrite(mq_di_stoic_dt[ptm != ""], file = file.path(results.dir, "p2-analysis-setting", "all_hydroxylysine.csv"))
+
+mq_di_stoic_dt <- mq_di_stoic_dt[aa == "K"]
+mq_di_stoic_dt[, genotype :=
+  str_split_fixed(sample_name, "_", n = 3)[, 2] %>% factor(levels = c("HeLaWT", "HeLaJMJD6KO"))
+]
+
+# Sites with a diagnostic ion, and a per-row flag for them
+di_sites_dt <- mq_di_stoic_dt[diagnostic_peak == "+"][
+  !duplicated(paste(protein_accession, aa_pos)), .(protein_accession, aa_pos)
+]
+mq_di_stoic_dt[, DI_site :=
+  paste(protein_accession, aa_pos) %in% di_sites_dt[, paste(protein_accession, aa_pos)]
+]
+
+# Protein feature data (lysines only), with a methionine-proximity annotation
+protein_feature_dt <- fread(
+  file.path(data.dir, "processed_data_from_PNAS2022/all_protein_feature_per_position.csv")
+)
+protein_feature_dt <- protein_feature_dt[residue == "K"]
+setnames(protein_feature_dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
+
+protein_feature_dt[, met_within_2 := case_when(
+  nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes",  # M in the middle
+  nchar(Window) == 11 ~ "No",                                                     # no M in window
+  TRUE ~ "edge"                                                                   # M present but off-centre
+)]
+
+# Attach feature annotation to the stoichiometry data
+wt_vs_ko_stoic_dt <- merge(
+  copy(mq_di_stoic_dt),
+  protein_feature_dt,
+  by = c("protein_accession", "aa_pos")
+)
+
+# Keep only sites covered (>= 1 PSM) in both WT and KO so presence/absence is comparable
+wt_coverage_dt <- wt_vs_ko_stoic_dt[genotype == "HeLaWT"][
+  , list(total_wt_sum_psm_mapped = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos)]
+ko_coverage_dt <- wt_vs_ko_stoic_dt[genotype == "HeLaJMJD6KO"][
+  , list(total_ko_sum_psm_mapped = sum(sum_psm_mapped)), by = list(protein_accession, aa_pos)]
+
+all_coverage_dt <- merge(wt_coverage_dt, ko_coverage_dt, by = c("protein_accession", "aa_pos"))
+
+wt_vs_ko_stoic_dt <- wt_vs_ko_stoic_dt[
+  paste(protein_accession, aa_pos) %in%
+    all_coverage_dt[total_wt_sum_psm_mapped > 0 & total_ko_sum_psm_mapped > 0][
+      , paste(protein_accession, aa_pos)]
+]
+
+# Number of sites analysed, per genotype
+wt_vs_ko_stoic_dt[!duplicated(paste(genotype, protein_accession, aa_pos))][, .N, by = genotype]
+
+# Hydroxylated K rows only, one (DI-preferred) row per genotype/site
+koh_wt_vs_ko_dt <- wt_vs_ko_stoic_dt[ptm == "[Oxidation (K)]"]
+koh_wt_vs_ko_dt <- koh_wt_vs_ko_dt[order(-DI_site)][
+  !duplicated(paste(genotype, protein_accession, aa_pos))
+]
+
+g1 <- ggplot(
+  koh_wt_vs_ko_dt[met_within_2 != "edge"],
+  aes(x = genotype, fill = met_within_2)
+) +
+  geom_bar() +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
+  theme(aspect.ratio = 3) +
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+g2 <- ggplot(
+  koh_wt_vs_ko_dt[met_within_2 != "edge" & DI_site == TRUE],
+  aes(x = genotype, fill = met_within_2)
+) +
+  geom_bar() +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
+  theme(aspect.ratio = 3) +
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+# Number of sites for plotting g2
+koh_wt_vs_ko_dt[met_within_2 != "edge" & DI_site == TRUE][, .N, by = list(met_within_2, genotype)]
+
+g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+```
+
+# WT vs KO site overlap
+
+Compares hydroxylysine sites detected in JMJD6 WT vs KO cells (overlap and methionine proximity).
+
+```{r overlap_wt_ko}
+
+koh_per_site_dt <- dcast(
+  koh_wt_vs_ko_dt,
+  protein_accession + aa_pos + DI_site + met_within_2 ~ genotype,
+  fun.aggregate = length
+)
+
+koh_per_site_dt[, Hyl_found_in := case_when(
+  HeLaWT == 1 & HeLaJMJD6KO == 1 ~ "both",
+  HeLaWT == 1 ~ "WT",
+  HeLaJMJD6KO == 1 ~ "JMJD6KO",
+  TRUE ~ "not_found"
+) %>% factor(levels = c("WT", "JMJD6KO", "both", "not_found"))]
+
+koh_per_site_dt <- koh_per_site_dt[met_within_2 != "edge"]
+
+koh_per_site_count_dt <- koh_per_site_dt[, .N, by = list(Hyl_found_in, met_within_2, DI_site)]
+
+g1 <- ggplot(koh_per_site_count_dt, aes(x = Hyl_found_in, y = N, fill = met_within_2)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
+  theme(aspect.ratio = 3) +
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+g2 <- ggplot(koh_per_site_count_dt[DI_site == TRUE], aes(x = Hyl_found_in, y = N, fill = met_within_2)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("Yes" = "#4477AA", "No" = "#BBBBBB")) +
+  theme(aspect.ratio = 3) +
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+merge(
+  koh_wt_vs_ko_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
+  koh_per_site_dt[DI_site == TRUE & Hyl_found_in == "both"]
+)
+
+# Statistical significance of methionine enrichment (all sites vs hydroxylated)
+all_k_met_count_dt <- rbind(
+  copy(protein_feature_dt[met_within_2 != "edge", .N, by = met_within_2])[, data_type := "all_K"],
+  copy(koh_per_site_count_dt[, list(N = sum(N)), by = met_within_2])[, data_type := "koh"]
+) %>%
+  dcast(met_within_2 ~ data_type, value.var = "N")
+
+fisher.test(all_k_met_count_dt[, .(all_K, koh)], alternative = "two.sided")
+
+# WT vs KO site overlap (all sites)
+plot_overlap_venn(
+  wt_ids = koh_wt_vs_ko_dt[genotype == "HeLaWT", paste(protein_accession, aa_pos)],
+  ko_ids = koh_wt_vs_ko_dt[genotype == "HeLaJMJD6KO", paste(protein_accession, aa_pos)],
+  main   = "Hydroxylated Sites Overlap (All)"
+)
+
+# WT vs KO site overlap (diagnostic-ion sites only)
+plot_overlap_venn(
+  wt_ids = koh_wt_vs_ko_dt[genotype == "HeLaWT" & DI_site == TRUE, paste(protein_accession, aa_pos)],
+  ko_ids = koh_wt_vs_ko_dt[genotype == "HeLaJMJD6KO" & DI_site == TRUE, paste(protein_accession, aa_pos)],
+  main   = "Hydroxylated Sites Overlap (with DI)"
+)
+
+```
+
+# Comparison with PNAS 2022
+
+Benchmarks the diagnostic-ion-based sites against the manually curated sites from the PNAS 2022 study.
+
+```{r compare_pnas2022}
+
+# PNAS2022 curated stoichiometry data
+pnas2022_stoic_dt <- fread(
+  file.path(data.dir, "processed_data_from_PNAS2022/long_K_stoichiometry_data.csv")
+)
+setnames(pnas2022_stoic_dt, old = c("uniprot_id", "position", "residue"), new = c("protein_accession", "aa_pos", "aa"))
+pnas2022_stoic_dt[, accession_position := paste0(protein_accession, "_", aa_pos)]
+
+# Flag MQ_DI sites that PNAS2022 curated as hydroxylated
+mq_di_stoic_dt[, curated_oxK_site :=
+  paste0(protein_accession, "_", aa_pos) %in%
+  pnas2022_stoic_dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)]
+]
+
+# One hydroxylated WT row per site (DI-preferred)
+mq_di_hydroxyk_dt <- mq_di_stoic_dt[ptm == "[Oxidation (K)]" & genotype == "HeLaWT"][
+  order(genotype, DI_site)
+][!duplicated(paste(protein_accession, aa_pos))]
+
+# Cross-tabulate DI sites against PNAS2022 curated sites
+hyl_precision_dt <- mq_di_hydroxyk_dt[, table(DI_site, curated_oxK_site) %>% addmargins] %>% data.table
+hyl_precision_dt <- hyl_precision_dt[DI_site %in% c("Sum", "TRUE") & curated_oxK_site != "Sum"]
+
+hyl_precision_dt
+
+ggplot(
+  hyl_precision_dt,
+  aes(x = DI_site, y = N, fill = curated_oxK_site)
+) +
+  geom_bar(stat = "identity", position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c("TRUE" = "coral2", "FALSE" = "#BBBBBB")) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  theme(aspect.ratio = 3.5)
+
+dcast(hyl_precision_dt, DI_site ~ curated_oxK_site, value.var = "N") %>%
+  {fisher.test(.[, c("FALSE", "TRUE"), with = FALSE], alternative = "two.sided")}
+
+```
+
+
+# Session information
+
+```{r session_info}
+
+sessioninfo::session_info()
+
+```

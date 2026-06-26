@@ -1,0 +1,241 @@
+---
+title: "p2-07 · Plot site-specific stoichiometry"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Visualise site-specific hydroxylation stoichiometry in BRD2/3/4
+across O2% and dox induction (via `plot_ptm_stoichiometry`).
+
+**Inputs:** MS_KR_1 / MS_SS / PNAS stoichiometry tables from p2-01; reference proteome.
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** p2-01. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+```
+
+# Helper functions
+
+```{r helper_functions}
+
+# Order the sample factor and draw the per-site stoichiometry plot for one accession
+plot_brd_stoic <- function(subset_dt, accession, plot_range, sample_levels) {
+  subset_dt[, sample_name := factor(sample_name, levels = sample_levels)]
+  plot_ptm_stoichiometry(
+    subset_dt,
+    accession = accession, plot_range = plot_range,
+    all.protein.bs, sample_colors = NA
+  )
+}
+
+```
+
+# Load and preprocess data
+
+Loads and preprocesses the MS_KR_1 / MS_SS / PNAS stoichiometry tables (via load_stoichiometry_datasets()).
+
+```{r load_data}
+
+# Load and preprocess the MS_KR_1, MS_SS and PNAS stoichiometry tables
+# (see load_stoichiometry_datasets() in R/functions/2-useful_functions.R).
+.stoic_data       <- load_stoichiometry_datasets(results.dir, data.dir)
+ms_kr1_stoic_dt   <- .stoic_data$MS_KR1_stoic_dt
+ms_ss_stoic_dt    <- .stoic_data$MS_SS_stoic_dt
+pnas2022_stoic_dt <- .stoic_data$pnas2022_stoic_dt
+
+```
+
+
+```{r preprocess}
+
+# Remove BRD2/3 samples reporting BRD4 stoichiometry and vice versa: these are
+# cross-protein false positives (e.g. from shared / homologous peptides).
+ms_ss_stoic_dt <- ms_ss_stoic_dt[
+  !((grepl("_BRD23$", sample_name) & gene_name == "BRD4") |
+       (grepl("_BRD4$", sample_name) & gene_name %in% c("BRD2", "BRD3")))
+]
+
+# Combine the three datasets and keep BRD2/3/4 only
+brd_stoic_dt <- rbindlist(
+  list(ms_ss_stoic_dt, ms_kr1_stoic_dt, pnas2022_stoic_dt),
+  use.names = TRUE
+)
+brd_stoic_dt <- brd_stoic_dt[gene_name %in% c("BRD2", "BRD3", "BRD4")]
+
+# Simplified sample-group label shared by the plots below
+brd_stoic_dt[, sample_group := case_when(
+  condition == "MS_SS" & grepl("minusDox", sample_name) ~ "iJ6_0h_21pc_SS",
+  condition == "MS_SS" ~ paste0("iJ6_", str_split_fixed(sample_name, "_", 3)[, 1], "_", str_split_fixed(sample_name, "_", 3)[, 2], "_SS"),
+  sample_name == "HeLaiJMJD6_noDox_N_NA"       ~ "iJ6_0h_21pc_KR",
+  sample_name == "HeLaiJMJD6_Dox_N_NA"         ~ "iJ6_24h_21pc_KR",
+  sample_name == "HeLaWT_NA_N_NA"              ~ "WT_Inf_21pc_KR",
+  sample_name == "HeLaiJMJD6_Dox_01O224h_NA"   ~ "iJ6_24h_01pc_KR",
+  sample_name == "JQ1_HeLaWT_derivatised"      ~ "WT_Inf_21pc_PNAS",
+  sample_name == "JQ1_HeLaJMJD6KO_derivatised" ~ "iJ6_Inf_21pc_PNAS"
+)]
+
+brd_stoic_dt[grepl("iJ6_0h", sample_group), .N, sample_group]
+
+```
+
+# Normoxia time course
+
+Plots site-specific stoichiometry under normoxia across the JMJD6 re-expression time course for BRD2/3/4. The plotted amino-acid range matches the region shown in the PNAS2022 paper.
+
+```{r plot_brd2_normoxia}
+
+# Select the appropriate minus-Dox (un-induced) control and exclude the JQ1/PNAS
+# derivatised samples from these plots.
+brd2_21pc_dt <- brd_stoic_dt[
+  sample_group %in% c(
+    "WT_Inf_21pc_KR", "iJ6_0h_21pc_KR", "iJ6_4h_21pc_SS", "iJ6_8h_21pc_SS", "iJ6_18h_21pc_SS", "iJ6_24h_21pc_KR"
+    
+  ) &
+    gene_name == "BRD2"
+]
+
+plot_brd_stoic(
+  brd2_21pc_dt, accession = "P25440", plot_range = c(540, 590),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA",
+                    "4h_21pc_BRD23", "8h_21pc_BRD23", "18h_21pc_BRD23",
+                    "HeLaiJMJD6_Dox_N_NA")
+)
+
+```
+
+
+```{r plot_brd3_normoxia}
+
+brd3_21pc_dt <- brd_stoic_dt[
+  grepl("Inf|0h|4h|8h|18h|24h", sample_group) &
+    grepl("21pc", sample_group) &
+    !sample_name %in% c("minusDox_BRD23", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") &
+    gene_name == "BRD3"
+]
+
+plot_brd_stoic(
+  brd3_21pc_dt, accession = "Q15059", plot_range = c(483, 533),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA",
+                    "4h_21pc_BRD23", "8h_21pc_BRD23", "18h_21pc_BRD23",
+                    "HeLaiJMJD6_Dox_N_NA")
+)
+
+```
+
+
+```{r plot_brd4_normoxia}
+
+brd4_21pc_dt <- brd_stoic_dt[
+  grepl("Inf|0h|4h|8h|18h|24h", sample_group) &
+    grepl("21pc", sample_group) &
+    !sample_name %in% c("minusDox_BRD4", "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") &
+    gene_name == "BRD4"
+]
+
+plot_brd_stoic(
+  brd4_21pc_dt, accession = "O60885", plot_range = c(531, 581),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_noDox_N_NA",
+                    "4h_21pc_BRD4", "8h_21pc_BRD4", "18h_21pc_BRD4",
+                    "HeLaiJMJD6_Dox_N_NA")
+)
+
+```
+
+# Normoxia vs hypoxia
+
+Plots site-specific stoichiometry comparing normoxia and hypoxia for BRD2/3/4.
+
+Sample-group ↔ sample-name key:
+
+```
+# HeLaWT_NA_N_NA            - WT_Inf_21pc_KR
+# JQ1_HeLaWT_derivatised    - WT_Inf_21pc_PNAS
+# JQ1_HeLaJMJD6KO_derivatised - iJ6_Inf_21pc_PNAS
+# HeLaiJMJD6_Dox_N_NA       - iJ6_24h_21pc_KR
+# 18h_4pc_BRD23             - iJ6_18h_4pc_SS
+# 18h_1pc_BRD23             - iJ6_18h_1pc_SS
+# HeLaiJMJD6_Dox_01O224h_NA - iJ6_24h_01pc_KR
+# minusDox_BRD23            - iJ6_0h_21pc_SS
+# HeLaiJMJD6_noDox_N_NA     - iJ6_0h_21pc_KR
+```
+
+```{r plot_brd2_hypoxia}
+
+brd2_o2_dt <- brd_stoic_dt[
+  grepl("Inf|18h|24h|0h", sample_group) &
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23", "HeLaiJMJD6_noDox_N_NA",
+                        "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") &
+    gene_name == "BRD2"
+]
+
+plot_brd_stoic(
+  brd2_o2_dt, accession = "P25440", plot_range = c(540, 590),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA",
+                    "18h_4pc_BRD23", "18h_1pc_BRD23", "HeLaiJMJD6_Dox_01O224h_NA")
+)
+
+```
+
+
+```{r plot_brd3_hypoxia}
+
+brd3_o2_dt <- brd_stoic_dt[
+  grepl("Inf|18h|24h|0h", sample_group) &
+    !sample_name %in% c("minusDox_BRD23", "18h_21pc_BRD23", "HeLaiJMJD6_noDox_N_NA",
+                        "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") &
+    gene_name == "BRD3"
+]
+
+plot_brd_stoic(
+  brd3_o2_dt, accession = "Q15059", plot_range = c(483, 533),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA",
+                    "18h_4pc_BRD23", "18h_1pc_BRD23", "HeLaiJMJD6_Dox_01O224h_NA")
+)
+
+```
+
+
+```{r plot_brd4_hypoxia}
+
+brd4_o2_dt <- brd_stoic_dt[
+  grepl("Inf|18h|24h|0h", sample_group) &
+    !sample_name %in% c("minusDox_BRD4", "18h_21pc_BRD4", "HeLaiJMJD6_noDox_N_NA",
+                        "JQ1_HeLaWT_derivatised", "JQ1_HeLaJMJD6KO_derivatised") &
+    gene_name == "BRD4"
+]
+
+plot_brd_stoic(
+  brd4_o2_dt, accession = "O60885", plot_range = c(531, 581),
+  sample_levels = c("HeLaWT_NA_N_NA", "HeLaiJMJD6_Dox_N_NA",
+                    "18h_4pc_BRD4", "18h_1pc_BRD4", "HeLaiJMJD6_Dox_01O224h_NA")
+)
+
+```
+
+# Session information
+
+```{r session_info}
+
+sessioninfo::session_info()
+
+```

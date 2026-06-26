@@ -1,12 +1,15 @@
 
 # Introduction
-An R-based pipeline for the study:
+An R-based pipeline for studying lysine hydroxylations from proteomics data, 
+supporting the study:
 
  **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
  residue-dependent oxygen sensitivity**
 
 > *Preprint available on bioRxiv:* DOI: https://doi.org/10.64898/2026.06.08.730680
 
+This pipeline uses the **`ptm.stoichiometry`** package to calculate the stoichiometry
+of lysine hydroxylations from LC-MS/MS data processed by **`MaxQuant`**.
 
 ![R](https://img.shields.io/badge/R-4.5.1-blue)
 ![bioRxiv](https://img.shields.io/badge/bioRxiv-preprint-red)
@@ -24,39 +27,77 @@ The repository contains:
 
 ---
 
-# Required Package
+## Installation and setup
 
-All the required packages are listed in the (R) Markdown package (see below).
-
-[`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) is available from GitHub.
+R packages are managed with [`renv`](https://rstudio.github.io/renv/). Restore the
+project library from the lockfile:
 
 ```r
-install.packages("devtools")
+renv::restore("R")
+```
+
+The pipeline also requires the companion **`ptm.stoichiometry`** package (not on CRAN):
+
+```r
+# install.packages("devtools")
 devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
 ```
 
+Paths are resolved automatically from the repository root (marked by the `.here`
+file). The one external input — the UniProt
+The path of the reference proteome `UP000005640_9606.fasta` should be specified in R/functions/_setup.R
+
+
 ---
 
-# Directory Structure 
-## R
-Analyses were performed with R Markdown scripts stored in R directory.
-- **p1_lysine-rich-domain-biology**
-  - This script characterises lysine-rich domains of proteins
-- **p2_lysine-rich-domain-LCMS**
-  - The scripts take MaxQuant output as input and progress through PTM stoichiometry calculation, parameter optimisation, diagnostic ion analysis, and visualisation of site-specific lysine hydroxylations.
+# Pipeline
 
-> Figures for the manuscript were generated using these R Markdown scripts, and were saved in the corresponding `_files` folder.
+Scripts are stored in `R/`, numbered in run order. Knit them in sequence, or run
+`Rscript R/_run_all.R`.
 
-## data
+| Script | Purpose |
+|--------|---------|
+| `p1-01_characterise_domains` | Proteome-wide characterisation of lysine-rich domains |
+| `p2-01_compute_stoichiometry` | Compute PTM stoichiometry for **all** datasets (the engine) |
+| `p2-02_optimise_search` | Optimise MaxQuant database-search settings |
+| `p2-03_compare_miscleavages` | Compare PSM coverage across miscleavage settings |
+| `p2-04_identify_diagnostic_ions` | Identify immonium / diagnostic ions marking hydroxylysine |
+| `p2-05_plot_diagnostic_ions` | Evaluate diagnostic-ion gains (precision, WT/KO overlap) |
+| `p2-06_analyse_MS_KR1` | Validate stoichiometry against hypoxia (MS_KR_1) |
+| `p2-07_plot_stoichiometry` | Site-specific stoichiometry plots (BRD2/3/4) |
+| `p2-08_analyse_kinetics` | Hydroxylation kinetics, O2 / dox sensitivity, site interaction |
+| `p2-09_export_tables` | Export stoichiometry supplementary tables (Excel) |
 
-LC-MS/MS data must first be processed using `MaxQuant`. The pipeline uses the following `MaxQuant` output files:
+### Repository layout
 
-- `evidence.txt` — peptide-level search results including information on their intensities, and modifications
-- `sample_info.csv` — sample metadata and experimental design information
-- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified
-- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified
+```
+R/
+├── R.Rproj
+├── _run_all.R            # knit all scripts in run order
+├── functions/
+│   ├── _setup.R          # shared setup: paths, packages, helpers (sourced by every script)
+│   ├── 0-load_essential_packages.R
+│   ├── 1-data_visualization_setting_and_functions.R
+│   └── 2-useful_functions.R
+├── p1_lysine-rich-domain-biology/
+│   └── p1-01_characterise_domains.Rmd
+└── p2_lysine-rich-domain-LCMS/
+    ├── p2-01_compute_stoichiometry.Rmd
+    ├── p2-02_optimise_search.Rmd
+    ├── p2-03_compare_miscleavages.Rmd
+    ├── p2-04_identify_diagnostic_ions.Rmd
+    ├── p2-05_plot_diagnostic_ions.Rmd
+    ├── p2-06_analyse_MS_KR1.Rmd
+    ├── p2-07_plot_stoichiometry.Rmd
+    ├── p2-08_analyse_kinetics.Rmd
+    └── p2-09_export_tables.Rmd
+```
 
-The output files can be retrieved from the PRoteomics IDEntification Database (PRIDE) using the following accession numbers:
+## Data Availability
+
+To run this pipeline, LC-MS/MS data must first be processed using `MaxQuant`. 
+Data A–E can be retrieved from the PRoteomics IDEntification Database (PRIDE) 
+using the following accession numbers:
 
 | Dataset | Description | PRIDE Accession |
 |---------|-------------|-----------------|
@@ -64,114 +105,20 @@ The output files can be retrieved from the PRoteomics IDEntification Database (P
 | D | MS_KR_1 | `PXD079306` |
 | E | MS_SS | `PXD031221` |
 
+### Data Requirements
+To calculate stoichiometry, the pipeline uses the following `MaxQuant` output files:
 
-To run the pipeline, the `MaxQuant` output files and other raw data shuold be placed in the following locations:
+- `evidence.txt` — peptide-level search results including retention times, intensities, and modifications
+- `sample_info.csv` — sample metadata and experimental design information
+- `Oxidation (K) DISites.txt` — lysine hydroxylation sites identified via diagnostic ions
+- `Oxidised Propionylation (K) DISites.txt` — propionylated lysine hydroxylation sites identified via diagnostic ions
 
-```
-.
-├── 20241113_RBPbase_Hs_DescriptiveID.xlsx
-├── 20241113_cd-code.csv
-├── FP_diagnostic_ion_search
-│   └── fragpipe_dataset-A
-│       ├── dataset01.diagnosticIons.tsv
-│       ├── fragger.params
-│       ├── fragpipe.workflow
-│       └── psm.tsv
-├── MQ_standard
-│   └── PNAS2022
-│       ├── evidence
-│       │   ├── data-A_argC_m2_v7_def_evidence.txt
-│       │   ├── data-A_trp_m2_v2_def_evidence.txt
-│       │   ├── data-A_trp_m3_v3_def_evidence.txt
-│       │   ├── data-A_trp_m4_v4_def_evidence.txt
-│       │   ├── data-A_trp_m5_v5_AcP_evidence.txt
-│       │   ├── data-A_trp_m5_v5_def_evidence.txt
-│       │   ├── data-A_trp_m6_v6_def_evidence.txt
-│       │   ├── data-A_trp_m7_v7_def_evidence.txt
-│       │   ├── data-A_trp_m8_v8_def_evidence.txt
-│       │   ├── data-B_trp_m2_v2_mCC_evidence.txt
-│       │   ├── data-B_trp_m5_v5_mCC_evidence.txt
-│       │   ├── data-B_trp_m7_v7_mCC_evidence.txt
-│       │   ├── data-C_trp_m2_v2_mCC_evidence.txt
-│       │   ├── data-C_trp_m5_v5_mCC_evidence.txt
-│       │   ├── data-C_trp_m7_v7_mCC_evidence.txt
-│       │   ├── data-C_trp_m8_v8_mCC_evidence.txt
-│       │   ├── data-D_trp_m2_v2_def_evidence.txt
-│       │   ├── data-D_trp_m5_v5_def_evidence.txt
-│       │   └── data-D_trp_m7_v7_def_evidence.txt
-│       ├── runtime
-│       │   ├── data-A_argC_m2_v7_def_runningTimes.txt
-│       │   ├── data-A_trp_m2_v2_def_runningTimes.txt
-│       │   ├── data-A_trp_m3_v3_def_runningTimes.txt
-│       │   ├── data-A_trp_m4_v4_def_runningTimes.txt
-│       │   ├── data-A_trp_m5_v5_def_runningTimes.txt
-│       │   ├── data-A_trp_m6_v6_def_runningTimes.txt
-│       │   ├── data-A_trp_m7_v7_def_runningTimes.txt
-│       │   ├── data-A_trp_m8_v8_def_runningTimes.txt
-│       │   ├── data-B_trp_m2_v2_mCC_runningTimes.txt
-│       │   ├── data-B_trp_m5_v5_mCC_runningTimes.txt
-│       │   ├── data-B_trp_m7_v7_mCC_runningTimes.txt
-│       │   ├── data-C_trp_m2_v2_mCC_runningTimes.txt
-│       │   ├── data-C_trp_m5_v5_mCC_runningTimes.txt
-│       │   ├── data-C_trp_m7_v7_mCC_runningTimes.txt
-│       │   ├── data-C_trp_m8_v8_mCC_runningTimes.txt
-│       │   ├── data-D_trp_m2_v2_def_runningTimes.txt
-│       │   ├── data-D_trp_m5_v5_def_runningTimes.txt
-│       │   └── data-D_trp_m7_v7_def_runningTimes.txt
-│       └── sample_info
-│           ├── MS_dataset_overview_PXD031221_data-A.csv
-│           ├── MS_dataset_overview_PXD031221_data-B.csv
-│           ├── MS_dataset_overview_PXD031221_data-C.csv
-│           └── MS_dataset_overview_PXD031221_data-D.csv
-├── MQ_with_DI_no_waterloss
-│   ├── MS_KR_1
-│   │   ├── MS_KR_1_evidence.txt
-│   │   ├── ptm
-│   │   │   ├── Oxidation (K) DISites.txt
-│   │   │   └── Oxidised Propionylation (K) DISites.txt
-│   │   └── sample_info.csv
-│   ├── MS_SS
-│   │   ├── MS_SS_evidence.txt
-│   │   ├── ptm
-│   │   │   ├── Oxidation (K) DISites.txt
-│   │   │   └── Oxidised Propionylation (K) DISites.txt
-│   │   └── sample_info.csv
-│   └── PNAS2022
-│       ├── evidence
-│       │   ├── data-A_trp_m7_v7_def_evidence.txt
-│       │   ├── data-B1_trp_m7_v7_mCC_evidence.txt
-│       │   ├── data-B2_trp_m7_v7_mCC_evidence.txt
-│       │   └── data-C_trp_m7_v7_mCC_evidence.txt
-│       ├── ptm
-│       │   ├── data-A_trp_m7_v7_def_ptm
-│       │   │   ├── Oxidation (K) DISites.txt
-│       │   │   └── Oxidised Propionylation (K) DISites.txt
-│       │   ├── data-B1_trp_m7_v7_mCC_ptm
-│       │   │   ├── Oxidation (K) DISites.txt
-│       │   │   └── Oxidised Propionylation (K) DISites.txt
-│       │   ├── data-B2_trp_m7_v7_mCC_ptm
-│       │   │   ├── Oxidation (K) DISites.txt
-│       │   │   └── Oxidised Propionylation (K) DISites.txt
-│       │   └── data-C_trp_m7_v7_mCC_ptm
-│       │       ├── Oxidation (K) DISites.txt
-│       │       └── Oxidised Propionylation (K) DISites.txt
-│       └── sample_info
-│           ├── MS_dataset_overview_PXD031221_data-A.csv
-│           ├── MS_dataset_overview_PXD031221_data-B1.csv
-│           ├── MS_dataset_overview_PXD031221_data-B2.csv
-│           └── MS_dataset_overview_PXD031221_data-C.csv
-├── PNAS2022
-│   ├── all_protein_feature_per_position.csv
-│   └── long_K_stoichiometry_data.csv
-├── analysis_setting
-│   ├── PXD031221_sample_matrix.xlsx
-│   ├── ptm_replacement_de-propionylate_for_hydroxylysine.csv
-│   └── ptm_replacement_de-propionylate_for_hydroxylysine_fragpipe.csv
-└── xic_MS_SS.csv
+### MaxQuant Parameters
+The parameters of the MaxQuant search are available as mqpar.xml file, downloadable from the above-mentioned PRIDE Accession `PXD079306` and `PXD031221`.
 
-```
+### Data structure
 
-
-
-
-
+The full data-directory layout — which files are **bundled** in this repository
+(PTM site lists, MaxQuant parameters, run times, sample sheets, settings) and
+which must be **downloaded**  — is
+documented in [`data/README.md`](data/README.md).

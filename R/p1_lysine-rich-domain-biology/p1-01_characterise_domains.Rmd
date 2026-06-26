@@ -1,0 +1,544 @@
+---
+title: "p1-01 · Characterise lysine-rich domains"
+author: "Yoichiro Sugimoto and Pallavi Kesavan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   github_document:
+     toc: yes
+     toc_depth: 3
+---
+
+# Overview
+
+**Purpose:** Characterise lysine-rich domains across the human proteome — maximum
+K-score vs protein length, subcellular localisation, functional-class enrichment,
+and K-scores in histones.
+
+**Inputs:** `data/processed_data_from_PNAS2022/all_protein_feature_per_position.csv`, the cd-code annotation table under `data/public_data/`, and the UniProt reference proteome;
+annotation packages `org.Hs.eg.db` and `subcellularvis` (loaded where used).
+
+**Outputs:** figures (rendered on knit).
+
+**Upstream:** none. **Downstream:** none.
+
+# Setup
+
+```{r setup, message = FALSE, warning = FALSE}
+
+## Resolve the repository root (via the .here sentinel) and load the shared
+## setup: packages, helper functions, ggplot/knitr settings, and project paths.
+repo_root <- local({
+  p <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  while (!file.exists(file.path(p, ".here")) && !identical(dirname(p), p)) p <- dirname(p)
+  p
+})
+source(file.path(repo_root, "R", "functions", "_setup.R"))
+
+```
+
+# Import data
+
+Loads the per-position protein feature table, maps UniProt IDs to gene symbols, and prepares the K-score data used throughout.
+
+```{r import_data, warning=FALSE}
+
+## Define paths to directory
+data.dir <- file.path(project.dir, "data")
+results.dir <- file.path(project.dir, "results")
+
+#Create p1 results directory
+p1.results.dir <- file.path(results.dir, "p1_characterise_domains")
+create.dirs(c(results.dir, p1.results.dir))
+
+## Load data into environment 
+protein.feature.dt <- fread(file.path(data.dir, "processed_data_from_PNAS2022/all_protein_feature_per_position.csv"))
+
+## Load library  
+library("org.Hs.eg.db")
+
+## Convert gene id and names
+# Map UniProt IDs to gene symbols and ENSEMBL IDs
+gene.id.dt <- select(
+    org.Hs.eg.db,
+    keys = protein.feature.dt[, unique(uniprot_id)],
+    columns = c("SYMBOL","ENSEMBL"),
+    keytype = "UNIPROT"
+) %>%
+    data.table
+
+# Rename columns 
+setnames(
+    gene.id.dt,
+    old = c("UNIPROT", "SYMBOL","ENSEMBL"),
+    new = c("uniprot_id", "gene_name", "gene_id")
+)
+
+## Clean and organize gene mapping table
+# Sort gene_id in ascending order, remove duplicate UniProt id and remove rows missing gene_id 
+gene.id.dt <- gene.id.dt[order(gene_id)][!duplicated(uniprot_id)][!is.na(gene_id)]
+
+# Rename data file and save to directory 
+fwrite(gene.id.dt, file.path(p1.results.dir,"uniprot-ensembl.csv"))
+```
+
+# Maximum K score and protein length
+
+Computes each protein's maximum K score (lysine richness) and its length.
+
+```{r Maximum_K_score_Protein_Length}
+#-----------------------------------
+# Maximum K score and Protein Length
+#-----------------------------------
+
+## Compute maximum K_ratio and protein length for each protein
+max.k.score.dt <- protein.feature.dt[ 
+  , list(
+    max_k_ratio = max(K_ratio), 
+    protein_len = max(position)
+    ), 
+  by = list(Accession, uniprot_id)] 
+
+## Merge gene annotations with protein summary data (max K_ratio, protein length)
+# Merge tables using the UniProt ID as the key
+max.k.score.dt <- merge(
+    gene.id.dt,
+    max.k.score.dt,
+    all.y = TRUE,
+    by = "uniprot_id"
+)
+
+# Create dataset with max k score 
+fwrite(max.k.score.dt, file.path(p1.results.dir, "max-k-score-per-protein.csv")) 
+
+print("The ratio of proteins with the max K ratio > 0.3")
+nrow(max.k.score.dt[max_k_ratio > 0.3]) / nrow(max.k.score.dt)
+
+
+# Median K score of all region in human proteome#
+protein.feature.dt[, median(K_ratio)]
+
+```
+
+# K score distributions
+
+Visualises the distribution of K scores and the relationship between maximum K score and protein length.
+
+```{r Data_Visualization_Max_K_Score_&_Protein_Length}
+
+#---------------------------------------------------------
+# Data Visualization - K score, Maximum K score and Protein Length
+#---------------------------------------------------------
+
+## K_ratio distribution 
+# Count how many proteins have each K_ratio value
+protein.feature.dt[, table(K_ratio)] 
+
+# Create a new column `K_ratio_group` based on the K_ratio
+protein.feature.dt[, K_ratio_group := case_when(
+  K_ratio >= 0.9 ~ 0.9, #If K_ratio is 0.9 or higher, assign value 0.9
+  TRUE ~ K_ratio #If K_ratio is lower than 0.9, then assign original K_ratio value
+)]
+
+# Plot - The number of proteins per K score
+ggplot(
+    protein.feature.dt,
+    aes(
+        x = K_ratio_group
+    )
+) +
+    geom_bar() +
+    scale_x_continuous(breaks=seq(0, 1, 0.1))
+
+
+# Plot - The number of proteins per max K score
+ggplot(
+    max.k.score.dt,
+    aes(
+        x = max_k_ratio
+    )
+) +
+    geom_bar() +
+    scale_x_continuous(breaks=seq(0, 1, 0.1)) + 
+  labs(x = "max_k_ratio", y = "number of protein_count")
+
+#Median - 24112025
+median(max.k.score.dt[, max_k_ratio])
+# 0.3
+
+# Plot - Max K ratio vs protein length
+ggplot(
+  max.k.score.dt,
+  aes(
+    y = protein_len,
+    x = factor(max_k_ratio)
+  )
+) + geom_boxplot(fill = "steelblue", outlier.shape = NA) +
+  labs(x = "max_K_ratio", y = "protein_length") +
+  coord_cartesian(ylim = c(0, 2000))
+
+# Plot - K_score of disordered regions of proteins 
+# This plot indicates K score depending on the level of protein disorderliness
+
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio_group),
+    y = IUPRED2
+  )
+) + 
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
+
+
+# Plot - Protein charge versus K_ratio_group
+ggplot(
+  protein.feature.dt,
+  aes(
+    x = factor(K_ratio_group),
+    y = windowCharge
+  )
+) + 
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_boxplot(fill = "steelblue", outlier.shape = NA)
+
+```
+
+# Subcellular localisation
+
+Annotates proteins with subcellular localisation to relate lysine richness to cellular compartment.
+
+```{r subcellular_localisation_analysis}
+
+#--------------------------------------
+# Sub-cellular localisation analysis
+#--------------------------------------
+
+# Packaged installed 20th Oct 2025
+# install.packages(file.path("/fast/AG_Sugimoto/home/users/pallavi/Software_packages/R/subcellularvis"), repos = NULL, type = "source")
+
+## Load library
+library("subcellularvis")
+
+## Run sub-cellular compartment analysis with enrichment score according Gene Ontology
+# The 'extractCompartment' function runs sub-cellular compartment analysis, retrieves 
+extractCompartment <- function(gene.set, class.name){
+  comp.out <- compartmentData(  # Run compartment enrichment analysis using the compartmentData() function
+    gene.set,
+    id_type = "UNIPROT",
+    aspect = c("Whole cell"),
+    organism = c("Human"),
+    annotationSource =c("Gene Ontology") # Alternatively, Human Protein Atlas can also be used
+  )
+  
+  # Convert enrichment results from comp.out into a data.table 
+  comp.out.dt <- data.table(comp.out$enrichment)
+  
+  # Add metadata columns 
+  comp.out.dt[, `:=`(
+    Genes = NA,
+    n_unmapped = length(str_split(comp.out$unmapped, ",")[[1]]), # Counting the number of unmapped IDs
+    n_mapped = comp.out$nMapped, # adding mapped IDs
+    class_name = class.name 
+  )]
+  
+  #  Updated data table 
+  return(comp.out.dt)
+}
+
+# Add column containing values from 0 - 0.9 only
+max.k.score.dt[, max_k_ratio_group := case_when(
+  max_k_ratio >= 0.9 ~ 0.9, # if ≥ 0.9 → set value to 0.9
+  TRUE ~ max_k_ratio  #if < 0.9, then retain original max k ratio value
+)]
+
+# Apply the 'extractCompartment' function to each subset of protein grouped by
+# max_K_ratio
+k.score.compartment.dt <- mapply(
+  extractCompartment,
+  gene.set = lapply(
+    seq(0, 9, by = 1) / 10, # create a sequence of 0 to 0.9 
+    function(x){ # For each x, extract the 'uniport_id' belonging to that max_k_ratio_group
+      max.k.score.dt[max_k_ratio_group == x, uniprot_id]}
+    ),
+  class.name = as.character(seq(0, 0.9, by = 0.1)), # convert and assign class names as strings
+  SIMPLIFY = FALSE # Return list instead of matrix or array
+) %>% rbindlist # combine all lists into a data table
+  
+# Calculate the negative log10 of FDR and create a new column called 'mlog10FDR'
+k.score.compartment.dt[, mlog10FDR := -log10(FDR)]
+
+# Convert data table into wide format 
+# rows: 'Compartment'
+# column: 'class_name'
+# values: 'mlog10FDR'
+d.k.score.compartment.dt <- dcast(
+  k.score.compartment.dt,
+  Compartment ~ factor(class_name),
+  value.var = "mlog10FDR"
+)
+
+# convert data table into matrix 
+d.k.score.compartment.mat <- as.matrix(d.k.score.compartment.dt[, 2:ncol(d.k.score.compartment.dt)])
+
+# Assign Compartment names as rownames of the matrix 
+rownames(d.k.score.compartment.mat) <- d.k.score.compartment.dt[, Compartment]
+
+```
+
+
+
+# Functional class enrichment
+
+Tests which functional protein classes are enriched among lysine-rich proteins.
+
+```{r functional_classes}
+
+library("mgcv")
+library("subcellularvis")
+
+comp.out <- compartmentData(
+    max.k.score.dt[, uniprot_id],
+    id_type = "UNIPROT",
+    aspect = c("Whole cell"),
+    organism = c("Human"),
+    annotationSource =c("Gene Ontology") #c("Human Protein Atlas")
+  )
+
+localisation_coef = function(i){
+  localised_genes <- comp.out$enrichment[i, "Genes"] %>% {strsplit(., split = ",", fixed = TRUE)[[1]]}
+  max.k.score.dt[, loc := uniprot_id %in% localised_genes]
+  len.gam <- gam(max_k_ratio ~ s(protein_len) + loc, data = max.k.score.dt, method = "REML")
+  
+  dt <- data.table(
+    functional_type = "localisation", 
+    subtype = comp.out$enrichment[, "Compartment"][i],
+    coef = summary(len.gam)$p.coeff["locTRUE"],
+    se = summary(len.gam)$se["locTRUE"],
+    p_value = summary(len.gam)$p.pv["locTRUE"],
+    n = length(localised_genes)
+  )
+  
+  return(dt)
+}
+
+localisation_dt <- lapply(1:length(comp.out$enrichment[, "Compartment"]), localisation_coef) %>%
+  rbindlist
+
+# Molecular condensates
+cd_code <- fread(file.path(data.dir, "public_data/20241113_cd-code.csv"))
+
+condensates_coef <- function(i){  
+  condensate_genes <- cd_code[i, Proteins] %>% {strsplit(., split = "\t", fixed = TRUE)[[1]]}
+  max.k.score.dt[, loc := uniprot_id %in% condensate_genes]
+  len.gam <- gam(max_k_ratio ~ s(protein_len) + loc, data = max.k.score.dt, method = "REML")
+  
+  dt <- data.table(
+    functional_type = "condensates", 
+    subtype = cd_code[i, Name],
+    coef = summary(len.gam)$p.coeff["locTRUE"],
+    se = summary(len.gam)$se["locTRUE"],
+    p_value = summary(len.gam)$p.pv["locTRUE"],
+    n = length(condensate_genes)
+  )
+  
+  return(dt)
+}
+
+condensate_dt <- lapply(1:nrow(cd_code), condensates_coef) %>%
+  rbindlist
+
+condensate_dt <- condensate_dt[order(p_value)][1:5]
+
+# histone
+max.k.score.dt[, histone_protein := grepl("^H[1-4]", gene_name)]
+len.gam <- gam(max_k_ratio ~ s(protein_len) + histone_protein, data = max.k.score.dt, method = "REML")
+  
+histone_dt <- data.table(
+  functional_type = "localisation", 
+  subtype = "Histone",
+  coef = summary(len.gam)$p.coeff["histone_proteinTRUE"],
+  se = summary(len.gam)$se["histone_proteinTRUE"],
+  p_value = summary(len.gam)$p.pv["histone_proteinTRUE"],
+  n = nrow(max.k.score.dt[histone_protein == TRUE])
+)
+
+# Merge all three data
+functional_class_summary <- rbindlist(list(
+  localisation_dt, histone_dt, condensate_dt
+))
+
+functional_class_summary <- functional_class_summary[order(-functional_type, -coef)]
+functional_class_summary[, `:=`(
+  functional_type = factor(functional_type, levels = c("localisation", "condensates")),
+  subtype = factor(subtype, levels = subtype)
+)]
+
+functional_class_summary
+
+ggplot(
+  data = functional_class_summary,
+  aes(
+    x = subtype,
+    y = coef
+  )) +
+  geom_hline(yintercept = 0, color = "gray60") +
+  geom_point() +
+  geom_errorbar(aes(
+    ymin = coef - se, ymax = coef + se, width = 0.3
+  )) +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  facet_grid(~ functional_type, scales = "free", space = "free")
+
+ggplot(
+  data = max.k.score.dt,
+  aes(
+    x = factor(max_k_ratio),
+    y = protein_len,
+    fill = histone_protein
+  )
+) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(preserve = "single")) +
+  scale_fill_bright() +
+  coord_cartesian(ylim = c(0, 2500))
+```
+
+# K score in histones
+
+Examines histones — well-defined lysine-rich proteins — as a reference point.
+
+The definition of histone tail was obtained from "Histone post-translational modifications — cause and consequence of genome function (https://doi.org/10.1038/s41576-022-00468-7)".
+
+```{r histone_k_score_per_position}
+
+#H2A
+ggplot(
+  protein.feature.dt[grepl("Q6FI13", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0,0.5)) +
+  annotate("rect", xmin = 2, xmax = 26, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q6FI13", Accession)][1, Accession])
+
+#H2B
+ggplot(
+  protein.feature.dt[grepl("P33778", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0,0.5)) +
+  annotate("rect", xmin = 2, xmax = 33, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("P33778", Accession)][1, Accession])
+
+#H3
+ggplot(
+  protein.feature.dt[grepl("Q16695", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0,0.5)) +
+  annotate("rect", xmin = 2, xmax = 44, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q16695", Accession)][1, Accession])
+
+#H4
+ggplot(
+  protein.feature.dt[grepl("P62805", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0,0.5)) +
+  annotate("rect", xmin = 2, xmax = 24, ymin = 0, ymax = 1, fill = "red", alpha = 0.2) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("P62805", Accession)][1, Accession])
+
+print("Median K score of histone tails")
+rbindlist(list(
+  protein.feature.dt[grepl("Q6FI13", Accession)][2:26],
+  protein.feature.dt[grepl("P33778", Accession)][2:33],
+  protein.feature.dt[grepl("Q16695", Accession)][2:44],
+  protein.feature.dt[grepl("P62805", Accession)][2:24]
+))[, median(K_ratio_score)]
+
+```
+
+# K score in disordered regions
+
+Relates lysine richness to protein disorder.
+
+```{r kscore_disorderedness_other_proteins}
+
+library("patchwork")
+
+dkc1.1 <- ggplot(
+  protein.feature.dt[grepl("O60832", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("O60832", Accession)][1, Accession]) +
+  geom_point(x = 475, y = 0, color = "red") +
+  geom_point(data = data.table(x = c(501:505), y = rep(0, 5)), aes(x = x, y = y), color = "blue")
+
+dkc1.2 <- ggplot(
+  protein.feature.dt[grepl("O60832", Accession)],
+  aes(
+    x = position,
+    y = IUPRED2
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("O60832", Accession)][1, Accession])
+
+dkc1.1 / dkc1.2
+
+
+ARL6IP4.1 <- ggplot(
+  protein.feature.dt[grepl("Q66PJ3", Accession)],
+  aes(
+    x = position,
+    y = K_ratio_score
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q66PJ3", Accession)][1, Accession]) +
+  geom_point(data = data.table(x = c(290, 292, 294), y = rep(0, 3)), aes(x = x, y = y), color = "red") +
+  geom_point(data = data.table(x = c(290, 292, 294, 303, 304, 306, 307), y = rep(0, 7)), aes(x = x, y = y), color = "blue")
+
+ARL6IP4.2 <- ggplot(
+  protein.feature.dt[grepl("Q66PJ3", Accession)],
+  aes(
+    x = position,
+    y = IUPRED2
+  )
+) +
+  coord_cartesian(ylim = c(0, 1)) +
+  geom_area(fill = "gray40") +
+  ggtitle(protein.feature.dt[grepl("Q66PJ3", Accession)][1, Accession])
+
+ARL6IP4.1 / ARL6IP4.2
+
+
+```
+
+# Session information
+
+```{r sessionInfo}
+
+sessioninfo::session_info()
+
+```

@@ -1,6 +1,8 @@
-## All hidden files except .gitignore
+## All hidden files except .gitignore, the sentinel, and the renv .Rprofile
 .*
 !/.gitignore
+!/.here
+!/.Rprofile
 
 ## cluster runnning log won't be included
 ## slurm-*
@@ -19,7 +21,6 @@ rawdata/
 Rawdata/
 annotation/
 results/
-data/
 ## ignore sofrware directory
 software/
 temp/
@@ -125,6 +126,34 @@ Thumbs.db
 # Emacs
 .#*
 
-# renv
+# renv — ignore the large, machine-specific library and build caches.
+# Keep renv/activate.R, renv/settings.json and the lockfile (R/renv.lock) tracked.
+# The renv project lives at the repo root here (renv/), not under R/.
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+# (also cover an R/renv/ layout, just in case)
+R/renv/library/
+R/renv/staging/
 R/renv/
 .Rproj.user
+
+## ----------------------------------------------------------------------------
+## data/ : commit the small inputs, ignore the large downloads.
+## git cannot filter by size, so large files are matched by name/type below.
+## Add a pattern here if you introduce another large input.
+## ----------------------------------------------------------------------------
+## Large MaxQuant / FragPipe / derived files — fetch from PRIDE / UniProt:
+data/**/*_evidence.txt
+data/**/*proteinGroups.txt
+data/**/all_protein_feature_per_position.csv
+data/**/long_K_stoichiometry_data.csv
+## (psm.tsv and *.diagnosticIons.tsv are already ignored by the *.tsv rule above)
+
+## Re-include the small data files that the global rules above would hide:
+!data/**/*.xlsx
+!data/**/.gitkeep

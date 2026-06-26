@@ -1,0 +1,11 @@
+﻿file_name,sample_name,cell,genotype,purification,derivitisation,replicate
+201021_MC264,JQ1_HeLaWT_derivatised,HeLa,WT,JQ1,yes,1
+20201119_GV2048_MC271,JQ1_HeLaWT_derivatised,HeLa,WT,JQ1,yes,2
+20201119_GV2048_MC273,JQ1_HeLaWT_derivatised,HeLa,WT,JQ1,yes,3
+20201119_GV2048_MC275,JQ1_HeLaWT_derivatised,HeLa,WT,JQ1,yes,4
+20201119_GV2048_MC277,JQ1_HeLaWT_derivatised,HeLa,WT,JQ1,yes,5
+201021_MC265,JQ1_HeLaJMJD6KO_derivatised,HeLa,JMJD6KO,JQ1,yes,1
+20201119_GV2048_MC272,JQ1_HeLaJMJD6KO_derivatised,HeLa,JMJD6KO,JQ1,yes,2
+20201119_GV2048_MC274,JQ1_HeLaJMJD6KO_derivatised,HeLa,JMJD6KO,JQ1,yes,3
+20201119_GV2048_MC276,JQ1_HeLaJMJD6KO_derivatised,HeLa,JMJD6KO,JQ1,yes,4
+20201119_GV2048_MC278,JQ1_HeLaJMJD6KO_derivatised,HeLa,JMJD6KO,JQ1,yes,5

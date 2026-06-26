@@ -1,0 +1,2 @@
+This file marks the project root so scripts can resolve paths portably.
+See R/functions/_setup.R (.find_project_root).
