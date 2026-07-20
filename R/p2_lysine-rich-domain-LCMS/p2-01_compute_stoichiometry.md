@@ -1,7 +1,7 @@
 p2-01 · Compute PTM stoichiometry
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-26 June, 2026
+20 July, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -380,8 +380,8 @@ process_stoichiometry2(
     ## Processing: MS_KR_1_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19127418 1021.6   33269308 1776.8  33269308 1776.8
-    ## Vcells 210776940 1608.2  498107451 3800.3 498107451 3800.3
+    ## Ncells  19127418 1021.6   33269278 1776.8  33269278 1776.8
+    ## Vcells 210776940 1608.2  498107460 3800.3 498107460 3800.3
 
 # Stoichiometry with diagnostic ions — MS_SS
 
@@ -411,8 +411,8 @@ process_stoichiometry2(
     ## Processing: MS_SS_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19128186 1021.6   33269308 1776.8  33269308 1776.8
-    ## Vcells 210778189 1608.2  498107451 3800.3 498107451 3800.3
+    ## Ncells  19128186 1021.6   33269278 1776.8  33269278 1776.8
+    ## Vcells 210778189 1608.2  498107460 3800.3 498107460 3800.3
 
 # Session information
 
@@ -430,7 +430,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-26
+    ##  date     2026-07-20
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 

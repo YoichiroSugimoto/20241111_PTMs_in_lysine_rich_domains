@@ -1,7 +1,7 @@
 p1-01 · Characterise lysine-rich domains
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-26 June, 2026
+20 July, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -159,10 +159,10 @@ print("The ratio of proteins with the max K ratio > 0.3")
     ## [1] "The ratio of proteins with the max K ratio > 0.3"
 
 ``` r
-nrow(max.k.score.dt[max_k_ratio > 0.3]) / nrow(max.k.score.dt)
+round(nrow(max.k.score.dt[max_k_ratio >= 0.3]) / nrow(max.k.score.dt))
 ```
 
-    ## [1] 0.3809687
+    ## [1] 1
 
 ``` r
 # Median K score of all region in human proteome#
@@ -736,7 +736,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-06-26
+    ##  date     2026-07-20
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 
