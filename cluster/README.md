@@ -77,7 +77,8 @@ guix time-machine -C cluster/channels.scm -- shell -m cluster/manifest.scm -- Rs
 # 4. (optional) Confirm the library loads everything before submitting:
 guix time-machine -C cluster/channels.scm -- shell -m cluster/manifest.scm -- Rscript -e '
   for (p in c("Biostrings","org.Hs.eg.db","ptm.stoichiometry","subcellularvis",
-              "eulerr","ggpubr","openxlsx","khroma","knitr","rmarkdown"))
+              "eulerr","openxlsx","khroma","ggbeeswarm","mgcv","readxl",
+              "patchwork","knitr","rmarkdown"))
     suppressMessages(library(p, character.only = TRUE)); cat("all packages load OK\n")'
 ```
 
