@@ -159,10 +159,10 @@ print("The ratio of proteins with the max K ratio > 0.3")
     ## [1] "The ratio of proteins with the max K ratio > 0.3"
 
 ``` r
-round(nrow(max.k.score.dt[max_k_ratio >= 0.3]) / nrow(max.k.score.dt))
+round(nrow(max.k.score.dt[max_k_ratio >= 0.3]) / nrow(max.k.score.dt), digits = 2)
 ```
 
-    ## [1] 1
+    ## [1] 0.74
 
 ``` r
 # Median K score of all region in human proteome#

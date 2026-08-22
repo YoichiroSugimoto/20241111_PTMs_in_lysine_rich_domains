@@ -127,7 +127,7 @@ brd4_di_long_dt[, `:=`(
 
 
 
-```{r plot_selected_di, fig.width = 6, fig.height = 4}
+```{r plot_selected_di, fig.width = 4, fig.height = 5}
 
 selected_ms <- c("100.0762", "156.1025")
 
@@ -167,6 +167,7 @@ ggplot(
   facet_grid(~ monoisotopic_mass) +
   scale_fill_manual(values = c("TRUE" = "#A50026", "FALSE" = "#DDDDDD")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_cartesian(ylim = c(0, 0.25)) +
   ylab("Proportion of PSMs with diagnostic ions")
 
 ```

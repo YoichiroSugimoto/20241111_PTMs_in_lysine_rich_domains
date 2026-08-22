@@ -276,6 +276,7 @@ ggplot(
 ) +
   geom_bar(stat = "identity", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_cartesian(ylim = c(0, 0.4)) +
   scale_fill_manual(values = c("TRUE" = "coral2", "FALSE" = "#BBBBBB")) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme(aspect.ratio = 3.5)

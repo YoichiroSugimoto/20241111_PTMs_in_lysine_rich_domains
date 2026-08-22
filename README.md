@@ -3,8 +3,7 @@
 An R-based pipeline for studying lysine hydroxylations from proteomics data, 
 supporting the study:
 
- **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals 
- residue-dependent oxygen sensitivity**
+ **Quantitative profiling of JMJD6-catalysed lysine hydroxylation reveals a graded, residue-dependent readout of oxygen availability**
 
 > *Preprint available on bioRxiv:* DOI: https://doi.org/10.64898/2026.06.08.730680
 
@@ -29,23 +28,29 @@ The repository contains:
 
 ## Installation and setup
 
+### 1. R packages
 R packages are managed with [`renv`](https://rstudio.github.io/renv/). Restore the
 project library from the lockfile:
 
 ```r
-renv::restore("R")
+renv::restore(lockfile = "R/renv.lock", prompt = FALSE)
 ```
 
-The pipeline also requires the companion **`ptm.stoichiometry`** package (not on CRAN):
+[`ptm.stoichiometry`](https://github.com/YoichiroSugimoto/ptm.stoichiometry) and [`subcellularvis`](https://github.com/JoWatson2011/subcellularvis) are recorded in the lockfile as local
+sources, so they must be installed from a local copy:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("YoichiroSugimoto/ptm.stoichiometry")
+renv::install("/path/to/ptm.stoichiometry")
+renv::install("/path/to/subcellularvis")
 ```
 
+### 2. Path
 Paths are resolved automatically from the repository root (marked by the `.here`
-file). The one external input — the UniProt
-The path of the reference proteome `UP000005640_9606.fasta` should be specified in R/functions/_setup.R
+file).
+The reference proteome `UP000005640_9606.fasta` data is not included in this repository due to its size. Thus, the data should be downloaded from UniProt, and the path should be specified in [`R/functions/_setup.R`](R/functions/_setup.R).
+
+### 3. Input data
+The MaxQuant inputs should be placed in `data/`, as documented in [`data/README.md`](data/README.md).
 
 
 ---

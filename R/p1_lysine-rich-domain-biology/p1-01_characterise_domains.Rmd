@@ -111,7 +111,7 @@ max.k.score.dt <- merge(
 fwrite(max.k.score.dt, file.path(p1.results.dir, "max-k-score-per-protein.csv")) 
 
 print("The ratio of proteins with the max K ratio > 0.3")
-round(nrow(max.k.score.dt[max_k_ratio >= 0.3]) / nrow(max.k.score.dt))
+round(nrow(max.k.score.dt[max_k_ratio >= 0.3]) / nrow(max.k.score.dt), digits = 2)
 
 
 # Median K score of all region in human proteome#

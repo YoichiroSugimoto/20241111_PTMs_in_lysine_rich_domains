@@ -380,8 +380,8 @@ process_stoichiometry2(
     ## Processing: MS_KR_1_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19127418 1021.6   33269278 1776.8  33269278 1776.8
-    ## Vcells 210776940 1608.2  498107460 3800.3 498107460 3800.3
+    ## Ncells  19127421 1021.6   33269300 1776.8  33269300 1776.8
+    ## Vcells 210776940 1608.2  498107463 3800.3 498107443 3800.3
 
 # Stoichiometry with diagnostic ions — MS_SS
 
@@ -411,8 +411,8 @@ process_stoichiometry2(
     ## Processing: MS_SS_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19128186 1021.6   33269278 1776.8  33269278 1776.8
-    ## Vcells 210778189 1608.2  498107460 3800.3 498107460 3800.3
+    ## Ncells  19128189 1021.6   33269300 1776.8  33269300 1776.8
+    ## Vcells 210778189 1608.2  498107463 3800.3 498107443 3800.3
 
 # Session information
 

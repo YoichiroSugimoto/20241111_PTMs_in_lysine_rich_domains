@@ -62,17 +62,16 @@ guix shell --pure bash coreutils gcc-toolchain@11 gfortran-toolchain@11 -- \
 #     (gfortran-toolchain exists only at 11.4.0 here, so both are pinned to @11.)
 
 # 3. Build the renv library once (compiles with the consistent toolchain).
-#    The lockfile is missing some used packages (Bioconductor + custom), so we
-#    restore what is recorded, install the rest, then re-snapshot to record them.
+#    The lockfile records every package the pipeline uses, including the
+#    Bioconductor ones, so a plain restore is enough. Only the two packages
+#    recorded as local sources have to be installed separately.
 #    renv is auto-activated by the root .Rprofile, so no source("renv/activate.R").
+#    Note: eulerr is pinned to 7.0.2 in the lockfile because v8 requires
+#    Rust >= 1.91 (only rustc 1.88 is available here).
 guix time-machine -C cluster/channels.scm -- shell -m cluster/manifest.scm -- Rscript -e '
-  renv::restore(lockfile = "R/renv.lock", prompt = FALSE)                            # recorded pkgs
-  renv::install(c("eulerr@7.0.2", "ggpubr", "openxlsx"))                             # missing CRAN
-  ## eulerr pinned to 7.x: v8 needs Rust >= 1.91 (only rustc 1.88 available here)
-  renv::install(c("bioc::Biostrings", "bioc::org.Hs.eg.db"))                         # Bioconductor (Bioc 3.21 / R 4.5)
-  renv::install("/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry") # local custom pkg
-  renv::install("github::JoWatson2011/subcellularvis")                              # GitHub
-  renv::snapshot(lockfile = "R/renv.lock", prompt = FALSE)                          # record everything
+  renv::restore(lockfile = "R/renv.lock", prompt = FALSE)
+  renv::install("/path/to/ptm.stoichiometry")   # local copy
+  renv::install("/path/to/subcellularvis")      # local copy
 '
 
 # 4. (optional) Confirm the library loads everything before submitting:
