@@ -83,7 +83,7 @@ guix time-machine -C cluster/channels.scm -- shell -m cluster/manifest.scm -- Rs
 ```
 
 Notes:
-- Step 3 needs network access (CRAN/Bioconductor/GitHub) and warms the renv cache +
+- Step 3 needs network access (CRAN/Bioconductor) and warms the renv cache +
   Guix store, so compute nodes don't download/compile anything.
 - The renv library lives on the shared `/fast` filesystem, so the batch job only
   *activates and loads* it (it does not restore) — see `R/functions/_setup.R`.
