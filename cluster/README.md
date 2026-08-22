@@ -87,14 +87,8 @@ Notes:
   Guix store, so compute nodes don't download/compile anything.
 - The renv library lives on the shared `/fast` filesystem, so the batch job only
   *activates and loads* it (it does not restore) — see `R/functions/_setup.R`.
-- Missing packages (not in the original lockfile) and their sources:
-  `eulerr`, `ggpubr`, `openxlsx` (CRAN); `Biostrings`, `org.Hs.eg.db` (Bioconductor);
-  `ptm.stoichiometry` (local: `…/projects/ptm.stoichiometry`); `subcellularvis`
-  (GitHub: `JoWatson2011/subcellularvis`). `mgcv` is a recommended package shipped
-  with R, so it needs no entry.
-- After step 3, **commit the updated `R/renv.lock`** so the additions are permanent.
-- The lockfile pins R 4.5.1 while Guix provides R 4.5.0 — only a harmless
-  version-mismatch *warning* (patch releases are ABI-compatible).
+- `ptm.stoichiometry` and `subcellularvis` are recorded in the lockfile as local
+  sources, so they are installed from local copies in step 3.
 
 ## Submit the job
 
