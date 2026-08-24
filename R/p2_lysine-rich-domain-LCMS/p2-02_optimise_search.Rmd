@@ -191,6 +191,10 @@ rel_count_dt[, `:=`(
   rel_intensity           = total_intensity / m2_v2_total_intensity
 )]
 
+rel_count_dt[type == "MULTI-MSMS", .N, by = list(propionylation, MQ_setting, protease_setting, type)]
+
+rel_count_dt[, .N, by = list(propionylation, MQ_setting, protease_setting, type)]
+
 rel_count_stat_dt <- rel_count_dt[, list(
   mean_rel_total_peptide_count = mean(rel_total_peptide_count),
   sd_rel_total_peptide_count   = sd(rel_total_peptide_count),

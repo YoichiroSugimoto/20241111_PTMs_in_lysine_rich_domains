@@ -533,27 +533,27 @@ Tests for interdependence between neighbouring hydroxylation sites (how one site
 #t50 data subset to BRD4 region (amino acid position - 534 to 560)
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
 
-# For a high- and low-stoichiometry site pair, compare the low site's
+# For a high- and low-t50 site pair, compare the high site's
 # hydroxylation fraction on peptides that do vs. do not also carry hydroxylation
-# at the high site (tests neighbouring-site interaction).
-calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_sites, low_stoic_sites, sample_group) {
+# at the low site (tests neighbouring-site interaction).
+calc_neighbouring_site_interaction <- function(input_per_pos_data, low_t50_sites, high_t50_sites, sample_group) {
 
   di_ptms <- c("[Oxidation (K) DI]", "[Oxidised Propionylation (K) DI]")
 
-  # Fraction of a site's intensity carrying a diagnostic-ion hydroxylation
+  # Fraction of a site's intensity with hydroxylation
   stoic_ratio <- function(dt, site) {
     dt[paste(protein_accession, aa_pos) == site & ptm %in% di_ptms, sum(peak_intensity)] /
       dt[paste(protein_accession, aa_pos) == site, sum(peak_intensity)]
   }
 
-  high_site_ids <- high_stoic_sites[, paste(protein_accession, aa_pos)]
-  low_site_ids  <- low_stoic_sites[, paste(protein_accession, aa_pos)]
+  low_t50_site_ids <- low_t50_sites[, paste(protein_accession, aa_pos)]
+  high_t50_site_ids  <- high_t50_sites[, paste(protein_accession, aa_pos)]
 
-  peptide_with_high_stoic_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_site_ids][, unique(peptide_id)]
-  peptide_with_low_stoic_sites  <- input_per_pos_data[paste(protein_accession, aa_pos) %in% low_site_ids][, unique(peptide_id)]
+  peptide_with_low_t50_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% low_t50_site_ids][, unique(peptide_id)]
+  peptide_with_high_t50_sites  <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_t50_site_ids][, unique(peptide_id)]
 
   hydroxy_input_per_pos_data <- copy(input_per_pos_data)[
-    peptide_id %in% intersect(peptide_with_high_stoic_sites, peptide_with_low_stoic_sites)
+    peptide_id %in% intersect(peptide_with_low_t50_sites, peptide_with_high_t50_sites)
   ]
   peptide_with_multiple_hydroxyK_sites <- hydroxy_input_per_pos_data[, .N, by = list(peptide_id)][N > 1, unique(peptide_id)]
 
@@ -561,12 +561,12 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
 
   rows <- list()
 
-  for (high_hyl_site in high_site_ids) {
-    for (low_hyl_site in low_site_ids) {
+  for (low_t50_hyl_site in low_t50_site_ids) {
+    for (high_t50_hyl_site in high_t50_site_ids) {
 
       peptide_with_both_sites <- sl_input_per_pos_data[
-        (paste(protein_accession, aa_pos) %in% high_hyl_site) |
-          (paste(protein_accession, aa_pos) %in% low_hyl_site)
+        (paste(protein_accession, aa_pos) %in% low_t50_hyl_site) |
+          (paste(protein_accession, aa_pos) %in% high_t50_hyl_site)
       ] %>%
         {.[, .N, by = peptide_id][N > 1, unique(peptide_id)]}
 
@@ -576,18 +576,18 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
         # Peptides carrying a diagnostic-ion hydroxylation at the high site
         peptide_with_hyl_in_high <- both_dt[
           ptm %in% di_ptms
-        ][paste(protein_accession, aa_pos) == high_hyl_site, unique(peptide_id)]
+        ][paste(protein_accession, aa_pos) == low_t50_hyl_site, unique(peptide_id)]
 
         with_high_dt    <- both_dt[peptide_id %in% peptide_with_hyl_in_high]
         without_high_dt <- both_dt[!(peptide_id %in% peptide_with_hyl_in_high)]
 
         rows[[length(rows) + 1L]] <- data.table(
-          protein_accession              = str_split_fixed(high_hyl_site, " ", 2)[, 1],
-          high_stoic_aa_pos              = str_split_fixed(high_hyl_site, " ", 2)[, 2] %>% as.integer,
-          low_stoic_aa_pos               = str_split_fixed(low_hyl_site, " ", 2)[, 2] %>% as.integer,
-          low_hyl_total_stoic            = stoic_ratio(both_dt, low_hyl_site),
-          low_hyl_stoic_with_high_hyl    = stoic_ratio(with_high_dt, low_hyl_site),
-          low_hyl_stoic_without_high_hyl = stoic_ratio(without_high_dt, low_hyl_site),
+          protein_accession              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 1],
+          low_t50_stoic_aa_pos              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
+          high_t50_stoic_aa_pos               = str_split_fixed(high_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
+          high_t50_hyl_total_stoic            = stoic_ratio(both_dt, high_t50_hyl_site),
+          high_t50_hyl_stoic_with_high_hyl    = stoic_ratio(with_high_dt, high_t50_hyl_site),
+          high_t50_hyl_stoic_without_high_hyl = stoic_ratio(without_high_dt, high_t50_hyl_site),
           n                              = length(peptide_with_both_sites),
           sample_group
         )
@@ -595,32 +595,32 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
     }
   }
 
-  rbindlist(rows)[low_hyl_total_stoic > 0]
+  rbindlist(rows)[high_t50_hyl_total_stoic > 0]
 }
 
-# Define high and low stoic sites of BRD4 (535 included here for computation purpose)
-high_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548))
-low_stoic_sites  <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
+# Define high and low t50 sites of BRD4 (535 included here for computation purpose)
+low_t50_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548))
+high_t50_sites  <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
 
-# Calculate interaction between high and low stoic sites across datasets
+# Calculate interaction between high and low t50 sites across datasets
 # PNAS data-A (MQ_DI, no water loss)
 data_a_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")] %>%
   {.[sample_name == "JQ1_HeLaWT_derivatised"]}
-data_a_interaction_summary <- calc_neighbouring_site_interaction(data_a_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT_PNAS2022")
+data_a_interaction_summary <- calc_neighbouring_site_interaction(data_a_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT_PNAS2022")
 
 # MS_KR_1 data
 ms_kr1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_KR_1/MS_KR_1_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")]
 ms_kr1_wt_per_pos <- ms_kr1_per_pos[sample_name == "HeLaWT_NA_N_NA"]
-ms_kr1_wt_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_wt_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT")
+ms_kr1_wt_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_wt_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT")
 
 # MS_KR_1 - iJMJD6 cells, 24h dox induction
 ms_kr1_24h_per_pos <- ms_kr1_per_pos[sample_name == "HeLaiJMJD6_Dox_N_NA"]
-ms_kr1_24h_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_24h_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 24h")
+ms_kr1_24h_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_24h_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 24h")
 
 # MS_SS data
 ms_ss1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_SS/MS_SS_all_per_pos_data.csv")) %>%
   {rbind(.[gene_name %in% c("BRD4")][sample_name == "18h_21pc_BRD4"], .[gene_name %in% c("BRD2", "BRD3")][sample_name == "18h_21pc_BRD23"])}
-ms_ss1_interaction_summary <- calc_neighbouring_site_interaction(ms_ss1_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 18h")
+ms_ss1_interaction_summary <- calc_neighbouring_site_interaction(ms_ss1_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 18h")
 
 # Combine interaction data from each dataset
 all_interaction_summary <- rbindlist(
@@ -633,25 +633,25 @@ all_interaction_summary <- rbindlist(
 #Statistical inference of interaction data 
 interaction_out_data <- data.table()
 
-all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos))][, .(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos)]
+all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos))][, .(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)]
 
 for(irow in 1:nrow(all_sites_to_analyse)){
   
   sl_all_interaction_summary <- merge(
     all_interaction_summary,
     all_sites_to_analyse[irow],
-    by = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos")
+    by = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos")
   )
   
   if(nrow(sl_all_interaction_summary) > 2){
     # Paired t-test: low Hyl stoichiometry without vs. with a high-stoic neighbour
     t_out <- sl_all_interaction_summary %$%
-      t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
+      t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
     
     m_all_interaction_summary <- melt(
       sl_all_interaction_summary, 
-      id.vars = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos", "n"), 
-      measure.vars = c("low_hyl_stoic_without_high_hyl", "low_hyl_stoic_with_high_hyl"),
+      id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n"), 
+      measure.vars = c("high_t50_hyl_stoic_without_high_hyl", "high_t50_hyl_stoic_with_high_hyl"),
       variable.name = "type",
       value.name = "stoichiometry"
     )
@@ -663,33 +663,32 @@ for(irow in 1:nrow(all_sites_to_analyse)){
     )} else {}
 }
 
-
 interaction_out_data
 
 # paired t-test 
 all_interaction_summary %$%
-  t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
+  t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
 
 # convert table into long format for plotting 
 m_all_interaction_summary <- melt(
   all_interaction_summary, 
-  id.vars = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos", "n", "sample_group"), 
-  measure.vars = c("low_hyl_stoic_with_high_hyl", "low_hyl_stoic_without_high_hyl"),
+  id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n", "sample_group"), 
+  measure.vars = c("high_t50_hyl_stoic_with_high_hyl", "high_t50_hyl_stoic_without_high_hyl"),
   variable.name = "type",
   value.name = "stoichiometry"
 )
 
 # new column - type - with or without high_hyl
-m_all_interaction_summary[, type := gsub("low_hyl_stoic_", "", type)]
+m_all_interaction_summary[, type := gsub("high_t50_hyl_stoic_", "", type)]
 
 # Plot
 ggplot(
-  data = m_all_interaction_summary[!(high_stoic_aa_pos == 550)],
+  data = m_all_interaction_summary[!(low_t50_stoic_aa_pos == 550)],
   aes(
     x = type,
     y = stoichiometry,
-    group = paste(sample_group, high_stoic_aa_pos, low_stoic_aa_pos),
-    color = paste(high_stoic_aa_pos, low_stoic_aa_pos)
+    group = paste(sample_group, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos),
+    color = paste(low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)
   )
 ) +
   geom_line(color = "black") +
@@ -700,23 +699,6 @@ ggplot(
   theme_classic_2() +
   theme(aspect.ratio = 4)
 
-ggplot(
-  data = m_all_interaction_summary[high_stoic_aa_pos == 535],
-  aes(
-    x = type,
-    y = stoichiometry,
-    group = paste(sample_group, high_stoic_aa_pos, low_stoic_aa_pos)
-  )
-) +
-  geom_line(color = "black") +
-  geom_point(size = 4) +
-  scale_color_bright() +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  coord_cartesian(ylim = c(0, 1)) +
-  theme_classic_2() +
-  theme(aspect.ratio = 4) +
-  ggtitle("BRD4 K535-K537 interaction")
 
 ```
 

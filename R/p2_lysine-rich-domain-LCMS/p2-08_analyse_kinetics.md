@@ -1,29 +1,20 @@
 p2-08 · Analyse hydroxylation kinetics
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-20 July, 2026
+24 August, 2026
 
-- <a href="#overview" id="toc-overview">Overview</a>
-- <a href="#setup" id="toc-setup">Setup</a>
-- <a href="#load-and-preprocess-data"
-  id="toc-load-and-preprocess-data">Load and preprocess data</a>
-- <a href="#normoxia-vs-hypoxia" id="toc-normoxia-vs-hypoxia">Normoxia vs
-  hypoxia</a>
-- <a href="#normoxia-dox-time-course"
-  id="toc-normoxia-dox-time-course">Normoxia dox time course</a>
-- <a href="#t50-time-to-half-maximal"
-  id="toc-t50-time-to-half-maximal">t50 (time to half-maximal)</a>
-- <a href="#kinetics" id="toc-kinetics">Kinetics</a>
-- <a href="#xic-vs-stoichiometry" id="toc-xic-vs-stoichiometry">XIC vs
-  stoichiometry</a>
-- <a href="#neighbouring-site-interaction"
-  id="toc-neighbouring-site-interaction">Neighbouring-site interaction</a>
-- <a href="#oxygen-sensitivity" id="toc-oxygen-sensitivity">Oxygen
-  sensitivity</a>
-- <a href="#baseline-vs-hypoxic-change"
-  id="toc-baseline-vs-hypoxic-change">Baseline vs hypoxic change</a>
-- <a href="#session-information" id="toc-session-information">Session
-  information</a>
+- [Overview](#overview)
+- [Setup](#setup)
+- [Load and preprocess data](#load-and-preprocess-data)
+- [Normoxia vs hypoxia](#normoxia-vs-hypoxia)
+- [Normoxia dox time course](#normoxia-dox-time-course)
+- [t50 (time to half-maximal)](#t50-time-to-half-maximal)
+- [Kinetics](#kinetics)
+- [XIC vs stoichiometry](#xic-vs-stoichiometry)
+- [Neighbouring-site interaction](#neighbouring-site-interaction)
+- [Oxygen sensitivity](#oxygen-sensitivity)
+- [Baseline vs hypoxic change](#baseline-vs-hypoxic-change)
+- [Session information](#session-information)
 
 # Overview
 
@@ -59,7 +50,107 @@ repo_root <- local({
 source(file.path(repo_root, "R", "functions", "_setup.R"))
 ```
 
-    ## - The project is out-of-sync -- use `renv::status()` for details.
+    ## The following package(s) are missing entries in the cache:
+    ## - AnnotationDbi
+    ## - askpass
+    ## - Biobase
+    ## - bit
+    ## - bit64
+    ## - blob
+    ## - colourpicker
+    ## - commonmark
+    ## - crosstalk
+    ## - curl
+    ## - DBI
+    ## - eulerr
+    ## - formattable
+    ## - GenSA
+    ## - gridExtra
+    ## - htmlwidgets
+    ## - httpuv
+    ## - httr
+    ## - KEGGREST
+    ## - later
+    ## - lattice
+    ## - lazyeval
+    ## - Matrix
+    ## - mgcv
+    ## - miniUI
+    ## - nlme
+    ## - openssl
+    ## - openxlsx
+    ## - org.Hs.eg.db
+    ## - otel
+    ## - plotly
+    ## - plyr
+    ## - png
+    ## - polyclip
+    ## - polylabelr
+    ## - promises
+    ## - Rcpp
+    ## - RcppArmadillo
+    ## - RSQLite
+    ## - shiny
+    ## - shinyjs
+    ## - shinythemes
+    ## - sourcetools
+    ## - sys
+    ## - UpSetR
+    ## - xtable
+    ## - zip
+    ## These packages will need to be reinstalled.
+    ## 
+    ## The following package(s) have broken symlinks into the cache:
+    ## - AnnotationDbi
+    ## - askpass
+    ## - Biobase
+    ## - bit
+    ## - bit64
+    ## - blob
+    ## - colourpicker
+    ## - commonmark
+    ## - crosstalk
+    ## - curl
+    ## - DBI
+    ## - eulerr
+    ## - formattable
+    ## - GenSA
+    ## - gridExtra
+    ## - htmlwidgets
+    ## - httpuv
+    ## - httr
+    ## - KEGGREST
+    ## - later
+    ## - lattice
+    ## - lazyeval
+    ## - Matrix
+    ## - mgcv
+    ## - miniUI
+    ## - nlme
+    ## - openssl
+    ## - openxlsx
+    ## - org.Hs.eg.db
+    ## - otel
+    ## - plotly
+    ## - plyr
+    ## - png
+    ## - polyclip
+    ## - polylabelr
+    ## - promises
+    ## - Rcpp
+    ## - RcppArmadillo
+    ## - RSQLite
+    ## - shiny
+    ## - shinyjs
+    ## - shinythemes
+    ## - sourcetools
+    ## - sys
+    ## - UpSetR
+    ## - xtable
+    ## - zip
+    ## Use `]8;;x-r-run:renv::repair()renv::repair()]8;;` to try and reinstall these packages.
+    ## 
+    ## - The project is out-of-sync -- use `]8;;x-r-run:renv::status()renv::status()]8;;` for details.
 
 # Load and preprocess data
 
@@ -689,27 +780,27 @@ t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
     ## 13:      BRD4    554 11.541566     7     >8h
 
 ``` r
-# For a high- and low-stoichiometry site pair, compare the low site's
+# For a high- and low-t50 site pair, compare the high site's
 # hydroxylation fraction on peptides that do vs. do not also carry hydroxylation
-# at the high site (tests neighbouring-site interaction).
-calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_sites, low_stoic_sites, sample_group) {
+# at the low site (tests neighbouring-site interaction).
+calc_neighbouring_site_interaction <- function(input_per_pos_data, low_t50_sites, high_t50_sites, sample_group) {
 
   di_ptms <- c("[Oxidation (K) DI]", "[Oxidised Propionylation (K) DI]")
 
-  # Fraction of a site's intensity carrying a diagnostic-ion hydroxylation
+  # Fraction of a site's intensity with hydroxylation
   stoic_ratio <- function(dt, site) {
     dt[paste(protein_accession, aa_pos) == site & ptm %in% di_ptms, sum(peak_intensity)] /
       dt[paste(protein_accession, aa_pos) == site, sum(peak_intensity)]
   }
 
-  high_site_ids <- high_stoic_sites[, paste(protein_accession, aa_pos)]
-  low_site_ids  <- low_stoic_sites[, paste(protein_accession, aa_pos)]
+  low_t50_site_ids <- low_t50_sites[, paste(protein_accession, aa_pos)]
+  high_t50_site_ids  <- high_t50_sites[, paste(protein_accession, aa_pos)]
 
-  peptide_with_high_stoic_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_site_ids][, unique(peptide_id)]
-  peptide_with_low_stoic_sites  <- input_per_pos_data[paste(protein_accession, aa_pos) %in% low_site_ids][, unique(peptide_id)]
+  peptide_with_low_t50_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% low_t50_site_ids][, unique(peptide_id)]
+  peptide_with_high_t50_sites  <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_t50_site_ids][, unique(peptide_id)]
 
   hydroxy_input_per_pos_data <- copy(input_per_pos_data)[
-    peptide_id %in% intersect(peptide_with_high_stoic_sites, peptide_with_low_stoic_sites)
+    peptide_id %in% intersect(peptide_with_low_t50_sites, peptide_with_high_t50_sites)
   ]
   peptide_with_multiple_hydroxyK_sites <- hydroxy_input_per_pos_data[, .N, by = list(peptide_id)][N > 1, unique(peptide_id)]
 
@@ -717,12 +808,12 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
 
   rows <- list()
 
-  for (high_hyl_site in high_site_ids) {
-    for (low_hyl_site in low_site_ids) {
+  for (low_t50_hyl_site in low_t50_site_ids) {
+    for (high_t50_hyl_site in high_t50_site_ids) {
 
       peptide_with_both_sites <- sl_input_per_pos_data[
-        (paste(protein_accession, aa_pos) %in% high_hyl_site) |
-          (paste(protein_accession, aa_pos) %in% low_hyl_site)
+        (paste(protein_accession, aa_pos) %in% low_t50_hyl_site) |
+          (paste(protein_accession, aa_pos) %in% high_t50_hyl_site)
       ] %>%
         {.[, .N, by = peptide_id][N > 1, unique(peptide_id)]}
 
@@ -732,18 +823,18 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
         # Peptides carrying a diagnostic-ion hydroxylation at the high site
         peptide_with_hyl_in_high <- both_dt[
           ptm %in% di_ptms
-        ][paste(protein_accession, aa_pos) == high_hyl_site, unique(peptide_id)]
+        ][paste(protein_accession, aa_pos) == low_t50_hyl_site, unique(peptide_id)]
 
         with_high_dt    <- both_dt[peptide_id %in% peptide_with_hyl_in_high]
         without_high_dt <- both_dt[!(peptide_id %in% peptide_with_hyl_in_high)]
 
         rows[[length(rows) + 1L]] <- data.table(
-          protein_accession              = str_split_fixed(high_hyl_site, " ", 2)[, 1],
-          high_stoic_aa_pos              = str_split_fixed(high_hyl_site, " ", 2)[, 2] %>% as.integer,
-          low_stoic_aa_pos               = str_split_fixed(low_hyl_site, " ", 2)[, 2] %>% as.integer,
-          low_hyl_total_stoic            = stoic_ratio(both_dt, low_hyl_site),
-          low_hyl_stoic_with_high_hyl    = stoic_ratio(with_high_dt, low_hyl_site),
-          low_hyl_stoic_without_high_hyl = stoic_ratio(without_high_dt, low_hyl_site),
+          protein_accession              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 1],
+          low_t50_stoic_aa_pos              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
+          high_t50_stoic_aa_pos               = str_split_fixed(high_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
+          high_t50_hyl_total_stoic            = stoic_ratio(both_dt, high_t50_hyl_site),
+          high_t50_hyl_stoic_with_high_hyl    = stoic_ratio(with_high_dt, high_t50_hyl_site),
+          high_t50_hyl_stoic_without_high_hyl = stoic_ratio(without_high_dt, high_t50_hyl_site),
           n                              = length(peptide_with_both_sites),
           sample_group
         )
@@ -751,32 +842,32 @@ calc_neighbouring_site_interaction <- function(input_per_pos_data, high_stoic_si
     }
   }
 
-  rbindlist(rows)[low_hyl_total_stoic > 0]
+  rbindlist(rows)[high_t50_hyl_total_stoic > 0]
 }
 
-# Define high and low stoic sites of BRD4 (535 included here for computation purpose)
-high_stoic_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548))
-low_stoic_sites  <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
+# Define high and low t50 sites of BRD4 (535 included here for computation purpose)
+low_t50_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548))
+high_t50_sites  <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
 
-# Calculate interaction between high and low stoic sites across datasets
+# Calculate interaction between high and low t50 sites across datasets
 # PNAS data-A (MQ_DI, no water loss)
 data_a_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")] %>%
   {.[sample_name == "JQ1_HeLaWT_derivatised"]}
-data_a_interaction_summary <- calc_neighbouring_site_interaction(data_a_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT_PNAS2022")
+data_a_interaction_summary <- calc_neighbouring_site_interaction(data_a_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT_PNAS2022")
 
 # MS_KR_1 data
 ms_kr1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_KR_1/MS_KR_1_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")]
 ms_kr1_wt_per_pos <- ms_kr1_per_pos[sample_name == "HeLaWT_NA_N_NA"]
-ms_kr1_wt_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_wt_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "WT")
+ms_kr1_wt_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_wt_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT")
 
 # MS_KR_1 - iJMJD6 cells, 24h dox induction
 ms_kr1_24h_per_pos <- ms_kr1_per_pos[sample_name == "HeLaiJMJD6_Dox_N_NA"]
-ms_kr1_24h_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_24h_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 24h")
+ms_kr1_24h_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_24h_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 24h")
 
 # MS_SS data
 ms_ss1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_SS/MS_SS_all_per_pos_data.csv")) %>%
   {rbind(.[gene_name %in% c("BRD4")][sample_name == "18h_21pc_BRD4"], .[gene_name %in% c("BRD2", "BRD3")][sample_name == "18h_21pc_BRD23"])}
-ms_ss1_interaction_summary <- calc_neighbouring_site_interaction(ms_ss1_per_pos, high_stoic_sites, low_stoic_sites, sample_group = "iJMJD6 18h")
+ms_ss1_interaction_summary <- calc_neighbouring_site_interaction(ms_ss1_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 18h")
 
 # Combine interaction data from each dataset
 all_interaction_summary <- rbindlist(
@@ -789,25 +880,25 @@ all_interaction_summary <- rbindlist(
 #Statistical inference of interaction data 
 interaction_out_data <- data.table()
 
-all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos))][, .(protein_accession, high_stoic_aa_pos, low_stoic_aa_pos)]
+all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos))][, .(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)]
 
 for(irow in 1:nrow(all_sites_to_analyse)){
   
   sl_all_interaction_summary <- merge(
     all_interaction_summary,
     all_sites_to_analyse[irow],
-    by = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos")
+    by = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos")
   )
   
   if(nrow(sl_all_interaction_summary) > 2){
     # Paired t-test: low Hyl stoichiometry without vs. with a high-stoic neighbour
     t_out <- sl_all_interaction_summary %$%
-      t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
+      t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
     
     m_all_interaction_summary <- melt(
       sl_all_interaction_summary, 
-      id.vars = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos", "n"), 
-      measure.vars = c("low_hyl_stoic_without_high_hyl", "low_hyl_stoic_with_high_hyl"),
+      id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n"), 
+      measure.vars = c("high_t50_hyl_stoic_without_high_hyl", "high_t50_hyl_stoic_with_high_hyl"),
       variable.name = "type",
       value.name = "stoichiometry"
     )
@@ -819,28 +910,34 @@ for(irow in 1:nrow(all_sites_to_analyse)){
     )} else {}
 }
 
-
 interaction_out_data
 ```
 
-    ##    protein_accession high_stoic_aa_pos low_stoic_aa_pos       p_val     n
-    ##               <char>             <int>            <int>       <num> <int>
-    ## 1:            O60885               535              537 0.066869776     4
-    ## 2:            O60885               538              535 0.003700816     4
-    ## 3:            O60885               538              537 0.071239152     4
-    ## 4:            O60885               548              550 0.057590253     4
-    ## 5:            O60885               548              552 0.136244776     4
+    ##    protein_accession low_t50_stoic_aa_pos high_t50_stoic_aa_pos       p_val
+    ##               <char>                <int>                 <int>       <num>
+    ## 1:            O60885                  535                   537 0.066869776
+    ## 2:            O60885                  538                   535 0.003700816
+    ## 3:            O60885                  538                   537 0.071239152
+    ## 4:            O60885                  548                   550 0.057590253
+    ## 5:            O60885                  548                   552 0.136244776
+    ##        n
+    ##    <int>
+    ## 1:     4
+    ## 2:     4
+    ## 3:     4
+    ## 4:     4
+    ## 5:     4
 
 ``` r
 # paired t-test 
 all_interaction_summary %$%
-  t.test(low_hyl_stoic_without_high_hyl, low_hyl_stoic_with_high_hyl, paired = TRUE)
+  t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
 ```
 
     ## 
     ##  Paired t-test
     ## 
-    ## data:  low_hyl_stoic_without_high_hyl and low_hyl_stoic_with_high_hyl
+    ## data:  high_t50_hyl_stoic_without_high_hyl and high_t50_hyl_stoic_with_high_hyl
     ## t = -6.0346, df = 19, p-value = 8.345e-06
     ## alternative hypothesis: true mean difference is not equal to 0
     ## 95 percent confidence interval:
@@ -853,23 +950,23 @@ all_interaction_summary %$%
 # convert table into long format for plotting 
 m_all_interaction_summary <- melt(
   all_interaction_summary, 
-  id.vars = c("protein_accession", "high_stoic_aa_pos", "low_stoic_aa_pos", "n", "sample_group"), 
-  measure.vars = c("low_hyl_stoic_with_high_hyl", "low_hyl_stoic_without_high_hyl"),
+  id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n", "sample_group"), 
+  measure.vars = c("high_t50_hyl_stoic_with_high_hyl", "high_t50_hyl_stoic_without_high_hyl"),
   variable.name = "type",
   value.name = "stoichiometry"
 )
 
 # new column - type - with or without high_hyl
-m_all_interaction_summary[, type := gsub("low_hyl_stoic_", "", type)]
+m_all_interaction_summary[, type := gsub("high_t50_hyl_stoic_", "", type)]
 
 # Plot
 ggplot(
-  data = m_all_interaction_summary[!(high_stoic_aa_pos == 550)],
+  data = m_all_interaction_summary[!(low_t50_stoic_aa_pos == 550)],
   aes(
     x = type,
     y = stoichiometry,
-    group = paste(sample_group, high_stoic_aa_pos, low_stoic_aa_pos),
-    color = paste(high_stoic_aa_pos, low_stoic_aa_pos)
+    group = paste(sample_group, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos),
+    color = paste(low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)
   )
 ) +
   geom_line(color = "black") +
@@ -882,28 +979,6 @@ ggplot(
 ```
 
 ![](p2-08_analyse_kinetics_files/figure-gfm/analyse_site_interaction-1.png)<!-- -->
-
-``` r
-ggplot(
-  data = m_all_interaction_summary[high_stoic_aa_pos == 535],
-  aes(
-    x = type,
-    y = stoichiometry,
-    group = paste(sample_group, high_stoic_aa_pos, low_stoic_aa_pos)
-  )
-) +
-  geom_line(color = "black") +
-  geom_point(size = 4) +
-  scale_color_bright() +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_x_discrete(guide = guide_axis(angle = 90)) +
-  coord_cartesian(ylim = c(0, 1)) +
-  theme_classic_2() +
-  theme(aspect.ratio = 4) +
-  ggtitle("BRD4 K535-K537 interaction")
-```
-
-![](p2-08_analyse_kinetics_files/figure-gfm/analyse_site_interaction-2.png)<!-- -->
 
 # Oxygen sensitivity
 
@@ -1311,119 +1386,79 @@ sessioninfo::session_info()
 
     ## ─ Session info ───────────────────────────────────────────────────────────────
     ##  setting  value
-    ##  version  R version 4.5.0 (2025-04-11)
-    ##  os       Red Hat Enterprise Linux 9.6 (Plow)
+    ##  version  R version 4.5.1 (2025-06-13)
+    ##  os       Ubuntu 24.04.2 LTS
     ##  system   x86_64, linux-gnu
     ##  ui       X11
     ##  language (EN)
-    ##  collate  en_US.UTF-8
-    ##  ctype    en_US.UTF-8
+    ##  collate  C.UTF-8
+    ##  ctype    C.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-07-20
-    ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
-    ##  quarto   NA
+    ##  date     2026-08-24
+    ##  pandoc   3.4 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+    ##  quarto   1.6.42 @ /usr/lib/rstudio-server/bin/quarto/bin/quarto
     ## 
     ## ─ Packages ───────────────────────────────────────────────────────────────────
     ##  ! package           * version    date (UTC) lib source
-    ##  P AnnotationDbi     * 1.72.0     2025-10-29 [?] Bioconduc~
-    ##  P beeswarm            0.4.0      2021-06-01 [?] CRAN (R 4.5.0)
-    ##  P Biobase           * 2.70.0     2025-10-29 [?] Bioconduc~
+    ##  P beeswarm            0.4.0      2021-06-01 [?] CRAN (R 4.5.1)
     ##  P BiocGenerics      * 0.56.0     2025-10-29 [?] Bioconduc~
     ##  P Biostrings        * 2.78.0     2025-10-29 [?] Bioconduc~
-    ##  P bit                 4.6.0      2025-03-06 [?] CRAN (R 4.5.0)
-    ##  P bit64               4.8.2      2026-05-19 [?] CRAN (R 4.5.0)
-    ##  P blob                1.3.0      2026-01-14 [?] CRAN (R 4.5.0)
-    ##  P cachem              1.1.0      2024-05-16 [?] CRAN (R 4.5.0)
-    ##  P cellranger          1.1.0      2016-07-27 [?] CRAN (R 4.5.0)
-    ##  P cli                 3.6.6      2026-04-09 [?] CRAN (R 4.5.0)
-    ##  P colourpicker        1.3.0      2023-08-21 [?] CRAN (R 4.5.0)
-    ##  P crayon              1.5.3      2024-06-20 [?] CRAN (R 4.5.0)
-    ##  P data.table        * 1.18.4     2026-05-06 [?] CRAN (R 4.5.0)
-    ##  P DBI                 1.3.0      2026-02-25 [?] CRAN (R 4.5.0)
-    ##  P digest              0.6.39     2025-11-19 [?] CRAN (R 4.5.0)
-    ##  P dplyr             * 1.2.1      2026-04-03 [?] CRAN (R 4.5.0)
-    ##  P eulerr            * 7.0.2      2024-03-28 [?] CRAN (R 4.5.0)
-    ##  P evaluate            1.0.5      2025-08-27 [?] CRAN (R 4.5.0)
-    ##  P farver              2.1.2      2024-05-13 [?] CRAN (R 4.5.0)
-    ##  P fastmap             1.2.0      2024-05-15 [?] CRAN (R 4.5.0)
-    ##  P formattable         0.2.1      2021-01-07 [?] CRAN (R 4.5.0)
-    ##  P generics          * 0.1.4      2025-05-09 [?] CRAN (R 4.5.0)
-    ##  P ggbeeswarm        * 0.7.3      2025-11-29 [?] CRAN (R 4.5.0)
-    ##  P ggplot2           * 4.0.3      2026-04-22 [?] CRAN (R 4.5.0)
-    ##  P glue                1.8.1      2026-04-17 [?] CRAN (R 4.5.0)
-    ##  P gridExtra           2.3        2017-09-09 [?] CRAN (R 4.5.0)
-    ##  P gtable              0.3.6      2024-10-25 [?] CRAN (R 4.5.0)
-    ##  P htmltools           0.5.9      2025-12-04 [?] CRAN (R 4.5.0)
-    ##  P htmlwidgets         1.6.4      2023-12-06 [?] CRAN (R 4.5.0)
-    ##  P httpuv              1.6.17     2026-03-18 [?] CRAN (R 4.5.0)
-    ##  P httr                1.4.8      2026-02-13 [?] CRAN (R 4.5.0)
+    ##  P cellranger          1.1.0      2016-07-27 [?] CRAN (R 4.5.1)
+    ##  P cli                 3.6.6      2026-04-09 [?] CRAN (R 4.5.1)
+    ##  P crayon              1.5.3      2024-06-20 [?] CRAN (R 4.5.1)
+    ##  P data.table        * 1.18.6.1   2026-08-24 [?] CRAN (R 4.5.1)
+    ##  P digest              0.6.39     2025-11-19 [?] CRAN (R 4.5.1)
+    ##  P dplyr             * 1.2.1      2026-04-03 [?] CRAN (R 4.5.1)
+    ##  P evaluate            1.0.5      2025-08-27 [?] CRAN (R 4.5.1)
+    ##  P farver              2.1.2      2024-05-13 [?] CRAN (R 4.5.1)
+    ##  P fastmap             1.2.0      2024-05-15 [?] CRAN (R 4.5.1)
+    ##  P generics          * 0.1.4      2025-05-09 [?] CRAN (R 4.5.1)
+    ##  P ggbeeswarm        * 0.7.3      2025-11-29 [?] CRAN (R 4.5.1)
+    ##  P ggplot2           * 4.0.3      2026-04-22 [?] CRAN (R 4.5.1)
+    ##  P glue                1.8.1      2026-04-17 [?] CRAN (R 4.5.1)
+    ##  P gtable              0.3.6      2024-10-25 [?] CRAN (R 4.5.1)
+    ##  P htmltools           0.5.9      2025-12-04 [?] CRAN (R 4.5.1)
     ##  P IRanges           * 2.44.0     2025-10-29 [?] Bioconduc~
-    ##  P janitor           * 2.2.1      2024-12-22 [?] CRAN (R 4.5.0)
-    ##  P jsonlite            2.0.0      2025-03-27 [?] CRAN (R 4.5.0)
-    ##  P KEGGREST            1.50.0     2025-10-29 [?] Bioconduc~
-    ##  P khroma            * 1.17.0     2025-09-29 [?] CRAN (R 4.5.0)
-    ##  P knitr             * 1.51       2025-12-20 [?] CRAN (R 4.5.0)
-    ##  P labeling            0.4.3      2023-08-29 [?] CRAN (R 4.5.0)
-    ##  P later               1.4.8      2026-03-05 [?] CRAN (R 4.5.0)
-    ##  P lattice             0.22-9     2026-02-09 [?] CRAN (R 4.5.0)
-    ##  P lazyeval            0.2.3      2026-04-04 [?] CRAN (R 4.5.0)
-    ##  P lifecycle           1.0.5      2026-01-08 [?] CRAN (R 4.5.0)
-    ##  P lubridate           1.9.5      2026-02-04 [?] CRAN (R 4.5.0)
-    ##  P magrittr          * 2.0.5      2026-04-04 [?] CRAN (R 4.5.0)
-    ##  P Matrix              1.7-5      2026-03-21 [?] CRAN (R 4.5.0)
-    ##  P memoise             2.0.1      2021-11-26 [?] CRAN (R 4.5.0)
-    ##  P mgcv              * 1.9-4      2025-11-07 [?] CRAN (R 4.5.0)
-    ##  P mime                0.13       2025-03-17 [?] CRAN (R 4.5.0)
-    ##  P miniUI              0.1.2      2025-04-17 [?] CRAN (R 4.5.0)
-    ##  P nlme              * 3.1-169    2026-03-27 [?] CRAN (R 4.5.0)
-    ##  P org.Hs.eg.db      * 3.22.0     2026-06-24 [?] Bioconductor
-    ##  P otel                0.2.0      2025-08-29 [?] CRAN (R 4.5.0)
-    ##  P patchwork         * 1.3.2      2025-08-25 [?] CRAN (R 4.5.0)
-    ##  P pillar              1.11.1     2025-09-17 [?] CRAN (R 4.5.0)
-    ##  P pkgconfig           2.0.3      2019-09-22 [?] CRAN (R 4.5.0)
-    ##  P plotly              4.12.0     2026-01-24 [?] CRAN (R 4.5.0)
-    ##  P plyr                1.8.9      2023-10-02 [?] CRAN (R 4.5.0)
-    ##  P png                 0.1-9      2026-03-15 [?] CRAN (R 4.5.0)
-    ##  P polyclip            1.10-7     2024-07-23 [?] CRAN (R 4.5.0)
-    ##  P polylabelr          1.0.0      2026-01-19 [?] CRAN (R 4.5.0)
-    ##  P promises            1.5.0      2025-11-01 [?] CRAN (R 4.5.0)
-    ##    ptm.stoichiometry * 0.0.0.9000 2026-06-24 [1] local (/fast/AG_Sugimoto/home/users/yoichiro/projects/ptm.stoichiometry)
-    ##  P purrr               1.2.2      2026-04-10 [?] CRAN (R 4.5.0)
-    ##  P R6                  2.6.1      2025-02-15 [?] CRAN (R 4.5.0)
-    ##  P RColorBrewer      * 1.1-3      2022-04-03 [?] CRAN (R 4.5.0)
-    ##  P Rcpp                1.1.1-1.1  2026-04-24 [?] CRAN (R 4.5.0)
-    ##  P readxl            * 1.5.0      2026-05-16 [?] CRAN (R 4.5.0)
-    ##    renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.0)
-    ##  P rlang               1.2.0      2026-04-06 [?] CRAN (R 4.5.0)
-    ##  P rmarkdown           2.31       2026-03-26 [?] CRAN (R 4.5.0)
-    ##  P RSQLite             3.53.2     2026-06-17 [?] CRAN (R 4.5.0)
+    ##  P janitor             2.2.1      2024-12-22 [?] CRAN (R 4.5.1)
+    ##  P khroma            * 1.17.0     2025-09-29 [?] CRAN (R 4.5.1)
+    ##  P knitr             * 1.51       2025-12-20 [?] CRAN (R 4.5.1)
+    ##  P labeling            0.4.3      2023-08-29 [?] CRAN (R 4.5.1)
+    ##  P lattice             0.22-5     2023-10-24 [?] CRAN (R 4.3.3)
+    ##  P lifecycle           1.0.5      2026-01-08 [?] CRAN (R 4.5.1)
+    ##  P lubridate           1.9.5      2026-02-04 [?] CRAN (R 4.5.1)
+    ##  P magrittr          * 2.0.5      2026-04-04 [?] CRAN (R 4.5.1)
+    ##  P Matrix              1.7-3      2025-03-11 [?] CRAN (R 4.4.3)
+    ##  P mgcv                1.9-1      2023-12-21 [?] CRAN (R 4.3.2)
+    ##  P nlme                3.1-168    2025-03-31 [?] CRAN (R 4.4.3)
+    ##  P pillar              1.11.1     2025-09-17 [?] CRAN (R 4.5.1)
+    ##  P pkgconfig           2.0.3      2019-09-22 [?] CRAN (R 4.5.1)
+    ##    ptm.stoichiometry * 0.0.0.9000 2026-08-24 [1] local
+    ##  P R6                  2.6.1      2025-02-15 [?] CRAN (R 4.5.1)
+    ##  P RColorBrewer        1.1-3      2022-04-03 [?] CRAN (R 4.5.1)
+    ##  P readxl            * 1.5.0      2026-05-16 [?] CRAN (R 4.5.1)
+    ##    renv                1.1.5      2025-07-24 [1] CRAN (R 4.5.1)
+    ##  P rlang               1.3.0      2026-07-05 [?] CRAN (R 4.5.1)
+    ##    rmarkdown           2.31       2026-03-26 [1] CRAN (R 4.5.1)
     ##  P S4Vectors         * 0.48.1     2026-04-05 [?] Bioconduc~
-    ##  P S7                  0.2.2      2026-04-22 [?] CRAN (R 4.5.0)
-    ##  P scales              1.4.0      2025-04-24 [?] CRAN (R 4.5.0)
+    ##  P S7                  0.2.2      2026-04-22 [?] CRAN (R 4.5.1)
+    ##  P scales              1.4.0      2025-04-24 [?] CRAN (R 4.5.1)
     ##  P Seqinfo           * 1.0.0      2025-10-29 [?] Bioconduc~
-    ##  P sessioninfo         1.2.4      2026-06-04 [?] CRAN (R 4.5.0)
-    ##  P shiny               1.14.0     2026-06-21 [?] CRAN (R 4.5.0)
-    ##  P shinythemes         1.2.0      2021-01-25 [?] CRAN (R 4.5.0)
-    ##  P snakecase           0.11.1     2023-08-27 [?] CRAN (R 4.5.0)
-    ##  P stringi             1.8.7      2025-03-27 [?] CRAN (R 4.5.0)
-    ##  P stringr           * 1.6.0      2025-11-04 [?] CRAN (R 4.5.0)
-    ##    subcellularvis    * 0.0.0.9000 2026-06-24 [1] local (/fast/AG_Sugimoto/home/users/yoichiro/software/R_packages/subcellularvis)
-    ##  P tibble              3.3.1      2026-01-11 [?] CRAN (R 4.5.0)
-    ##  P tidyr               1.3.2      2025-12-19 [?] CRAN (R 4.5.0)
-    ##  P tidyselect          1.2.1      2024-03-11 [?] CRAN (R 4.5.0)
-    ##  P timechange          0.4.0      2026-01-29 [?] CRAN (R 4.5.0)
-    ##  P UpSetR              1.4.1      2026-05-25 [?] CRAN (R 4.5.0)
-    ##  P vctrs               0.7.3      2026-04-11 [?] CRAN (R 4.5.0)
-    ##  P vipor               0.4.7      2023-12-18 [?] CRAN (R 4.5.0)
-    ##  P viridisLite         0.4.3      2026-02-04 [?] CRAN (R 4.5.0)
-    ##  P withr               3.0.3      2026-06-19 [?] CRAN (R 4.5.0)
-    ##  P xfun                0.59       2026-06-19 [?] CRAN (R 4.5.0)
-    ##  P xtable              1.8-8      2026-02-22 [?] CRAN (R 4.5.0)
+    ##  P sessioninfo         1.2.4      2026-06-04 [?] CRAN (R 4.5.1)
+    ##  P snakecase           0.11.1     2023-08-27 [?] CRAN (R 4.5.1)
+    ##  P stringi             1.8.9      2026-08-04 [?] CRAN (R 4.5.1)
+    ##  P stringr           * 1.6.0      2025-11-04 [?] CRAN (R 4.5.1)
+    ##  P tibble              3.3.1      2026-01-11 [?] CRAN (R 4.5.1)
+    ##  P tidyselect          1.2.1      2024-03-11 [?] CRAN (R 4.5.1)
+    ##  P timechange          0.4.0      2026-01-29 [?] CRAN (R 4.5.1)
+    ##  P vctrs               0.7.3      2026-04-11 [?] CRAN (R 4.5.1)
+    ##  P vipor               0.4.7      2023-12-18 [?] CRAN (R 4.5.1)
+    ##  P withr               3.0.3      2026-06-19 [?] CRAN (R 4.5.1)
+    ##  P xfun                0.60       2026-07-09 [?] CRAN (R 4.5.1)
     ##  P XVector           * 0.50.0     2025-10-29 [?] Bioconduc~
-    ##  P yaml                2.3.12     2025-12-10 [?] CRAN (R 4.5.0)
+    ##  P yaml                2.3.12     2025-12-10 [?] CRAN (R 4.5.1)
     ## 
-    ##  [1] /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/renv/library/linux-rhel-9.6/R-4.5/x86_64-unknown-linux-gnu
-    ##  [2] /fast/home/y/ysugimo/.cache/R/renv/sandbox/linux-rhel-9.6/R-4.5/x86_64-unknown-linux-gnu/cb72a45c
+    ##  [1] /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/renv/library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
+    ##  [2] /home/ysugimo/.cache/R/renv/sandbox/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu/9a444a72
     ## 
     ##  * ── Packages attached to the search path.
     ##  P ── Loaded and on-disk path mismatch.
