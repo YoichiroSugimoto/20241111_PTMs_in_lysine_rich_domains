@@ -1,7 +1,7 @@
 p2-02 · Optimise database search
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-20 July, 2026
+24 August, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -205,6 +205,55 @@ rel_count_dt[, `:=`(
   rel_intensity           = total_intensity / m2_v2_total_intensity
 )]
 
+rel_count_dt[type == "MULTI-MSMS", .N, by = list(propionylation, MQ_setting, protease_setting, type)]
+```
+
+    ##        propionylation MQ_setting protease_setting       type     N
+    ##                <char>     <char>           <char>     <char> <int>
+    ##  1:    propionylation      m2_v2              trp MULTI-MSMS    10
+    ##  2:    propionylation      m3_v3              trp MULTI-MSMS    10
+    ##  3:    propionylation      m4_v4              trp MULTI-MSMS    10
+    ##  4:    propionylation      m5_v5              trp MULTI-MSMS    10
+    ##  5:    propionylation      m6_v6              trp MULTI-MSMS    10
+    ##  6:    propionylation      m7_v7              trp MULTI-MSMS    10
+    ##  7:    propionylation      m8_v8              trp MULTI-MSMS    10
+    ##  8:    propionylation      m2_v7             argC MULTI-MSMS    10
+    ##  9: no_propionylation      m2_v2              trp MULTI-MSMS     6
+    ## 10: no_propionylation      m5_v5              trp MULTI-MSMS     6
+    ## 11: no_propionylation      m7_v7              trp MULTI-MSMS     6
+
+``` r
+rel_count_dt[, .N, by = list(propionylation, MQ_setting, protease_setting, type)]
+```
+
+    ##        propionylation MQ_setting protease_setting         type     N
+    ##                <char>     <char>           <char>       <char> <int>
+    ##  1:    propionylation      m2_v2              trp   MULTI-MSMS    10
+    ##  2:    propionylation      m2_v2              trp MULTI-SECPEP    10
+    ##  3:    propionylation      m3_v3              trp   MULTI-MSMS    10
+    ##  4:    propionylation      m3_v3              trp MULTI-SECPEP    10
+    ##  5:    propionylation      m4_v4              trp   MULTI-MSMS    10
+    ##  6:    propionylation      m4_v4              trp MULTI-SECPEP    10
+    ##  7:    propionylation      m5_v5              trp   MULTI-MSMS    10
+    ##  8:    propionylation      m5_v5              trp MULTI-SECPEP    10
+    ##  9:    propionylation      m6_v6              trp   MULTI-MSMS    10
+    ## 10:    propionylation      m6_v6              trp MULTI-SECPEP    10
+    ## 11:    propionylation      m7_v7              trp   MULTI-MSMS    10
+    ## 12:    propionylation      m7_v7              trp MULTI-SECPEP    10
+    ## 13:    propionylation      m8_v8              trp   MULTI-MSMS    10
+    ## 14:    propionylation      m8_v8              trp MULTI-SECPEP    10
+    ## 15:    propionylation      m2_v7             argC   MULTI-MSMS    10
+    ## 16:    propionylation      m2_v7             argC MULTI-SECPEP    10
+    ## 17: no_propionylation      m2_v2              trp   MULTI-MSMS     6
+    ## 18: no_propionylation      m2_v2              trp MULTI-SECPEP     6
+    ## 19: no_propionylation      m5_v5              trp   MULTI-MSMS     6
+    ## 20: no_propionylation      m5_v5              trp MULTI-SECPEP     6
+    ## 21: no_propionylation      m7_v7              trp   MULTI-MSMS     6
+    ## 22: no_propionylation      m7_v7              trp MULTI-SECPEP     6
+    ##        propionylation MQ_setting protease_setting         type     N
+    ##                <char>     <char>           <char>       <char> <int>
+
+``` r
 rel_count_stat_dt <- rel_count_dt[, list(
   mean_rel_total_peptide_count = mean(rel_total_peptide_count),
   sd_rel_total_peptide_count   = sd(rel_total_peptide_count),
@@ -524,7 +573,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-07-20
+    ##  date     2026-08-24
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 

@@ -58,7 +58,8 @@ The MaxQuant inputs should be placed in `data/`, as documented in [`data/README.
 # Pipeline
 
 Scripts are stored in `R/`, numbered in run order. Knit them in sequence, or run
-`Rscript R/_run_all.R`.
+`Rscript R/_run_all.R`. 
+A full run takes approximately 21 minutes on a 4-CPU, 8 GB node.
 
 | Script | Purpose |
 |--------|---------|

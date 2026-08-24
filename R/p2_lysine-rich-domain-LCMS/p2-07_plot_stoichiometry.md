@@ -1,7 +1,7 @@
 p2-07 · Plot site-specific stoichiometry
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-20 July, 2026
+24 August, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -253,7 +253,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-07-20
+    ##  date     2026-08-24
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 

@@ -526,169 +526,150 @@ ggplot(
 
 # Neighbouring-site interaction
 
-Tests for interdependence between neighbouring hydroxylation sites (how one site's modification affects another).
+Tests for interdependence between neighbouring hydroxylation sites: within peptides covering a pair of lysines, is the Hyl stoichiometry of the higher-t50 residue different when the neighbouring lower-t50 residue is hydroxylated?
 
 ```{r analyse_site_interaction}
 
-#t50 data subset to BRD4 region (amino acid position - 534 to 560)
+# Apparent kinetics (t50) of the BRD4 lysine-rich region, used to assign the
+# residues below to lower- and higher-t50 categories.
 t50_dt[gene_name == "BRD4"][aa_pos > 534 & aa_pos < 560]
 
-# For a high- and low-t50 site pair, compare the high site's
-# hydroxylation fraction on peptides that do vs. do not also carry hydroxylation
-# at the low site (tests neighbouring-site interaction).
-calc_neighbouring_site_interaction <- function(input_per_pos_data, low_t50_sites, high_t50_sites, sample_group) {
+# Hydroxylation assignments supported by diagnostic immonium ions
+di_ptms <- c("[Oxidation (K) DI]", "[Oxidised Propionylation (K) DI]")
 
-  di_ptms <- c("[Oxidation (K) DI]", "[Oxidised Propionylation (K) DI]")
+# For each pair of a lower- and a higher-t50 residue, compare the Hyl
+# stoichiometry of the higher-t50 residue between peptides in which the
+# lower-t50 residue is hydroxylated and peptides in which it is not.
+calc_neighbouring_site_interaction <- function(per_pos_data, site_pairs, sample_group) {
 
-  # Fraction of a site's intensity with hydroxylation
-  stoic_ratio <- function(dt, site) {
-    dt[paste(protein_accession, aa_pos) == site & ptm %in% di_ptms, sum(peak_intensity)] /
-      dt[paste(protein_accession, aa_pos) == site, sum(peak_intensity)]
-  }
-
-  low_t50_site_ids <- low_t50_sites[, paste(protein_accession, aa_pos)]
-  high_t50_site_ids  <- high_t50_sites[, paste(protein_accession, aa_pos)]
-
-  peptide_with_low_t50_sites <- input_per_pos_data[paste(protein_accession, aa_pos) %in% low_t50_site_ids][, unique(peptide_id)]
-  peptide_with_high_t50_sites  <- input_per_pos_data[paste(protein_accession, aa_pos) %in% high_t50_site_ids][, unique(peptide_id)]
-
-  hydroxy_input_per_pos_data <- copy(input_per_pos_data)[
-    peptide_id %in% intersect(peptide_with_low_t50_sites, peptide_with_high_t50_sites)
+  # One row per (peptide, residue), restricted to the residues of interest.
+  site_dt <- per_pos_data[
+    protein_accession %in% site_pairs$protein_accession &
+      aa_pos %in% c(site_pairs$low_t50_aa_pos, site_pairs$high_t50_aa_pos),
+    .(peptide_id, protein_accession, aa_pos, peak_intensity, hyl = ptm %in% di_ptms)
   ]
-  peptide_with_multiple_hydroxyK_sites <- hydroxy_input_per_pos_data[, .N, by = list(peptide_id)][N > 1, unique(peptide_id)]
 
-  sl_input_per_pos_data <- input_per_pos_data[peptide_id %in% peptide_with_multiple_hydroxyK_sites]
+  summarise_pair <- function(acc, low_pos, high_pos) {
 
-  rows <- list()
+    pair_dt <- site_dt[protein_accession == acc & aa_pos %in% c(low_pos, high_pos)]
 
-  for (low_t50_hyl_site in low_t50_site_ids) {
-    for (high_t50_hyl_site in high_t50_site_ids) {
+    # Use only peptides covering both residues, so that the two groups compared
+    # below differ solely in the modification state of the lower-t50 residue.
+    # This is what excludes pairs whose residues fall in different tryptic
+    # peptides. The `< 2` guard only stops the with/without split degenerating
+    # to a single peptide; it does not bind on these data, where every retained
+    # pair is supported by 13-157 peptides and every excluded pair by none.
+    both_peptides <- pair_dt[, .N, by = peptide_id][N == 2L, peptide_id]
+    if (length(both_peptides) < 2L) return(NULL)
+    pair_dt <- pair_dt[peptide_id %in% both_peptides]
 
-      peptide_with_both_sites <- sl_input_per_pos_data[
-        (paste(protein_accession, aa_pos) %in% low_t50_hyl_site) |
-          (paste(protein_accession, aa_pos) %in% high_t50_hyl_site)
-      ] %>%
-        {.[, .N, by = peptide_id][N > 1, unique(peptide_id)]}
-
-      if (length(peptide_with_both_sites) > 1) {
-        both_dt <- sl_input_per_pos_data[peptide_id %in% peptide_with_both_sites]
-
-        # Peptides carrying a diagnostic-ion hydroxylation at the high site
-        peptide_with_hyl_in_high <- both_dt[
-          ptm %in% di_ptms
-        ][paste(protein_accession, aa_pos) == low_t50_hyl_site, unique(peptide_id)]
-
-        with_high_dt    <- both_dt[peptide_id %in% peptide_with_hyl_in_high]
-        without_high_dt <- both_dt[!(peptide_id %in% peptide_with_hyl_in_high)]
-
-        rows[[length(rows) + 1L]] <- data.table(
-          protein_accession              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 1],
-          low_t50_stoic_aa_pos              = str_split_fixed(low_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
-          high_t50_stoic_aa_pos               = str_split_fixed(high_t50_hyl_site, " ", 2)[, 2] %>% as.integer,
-          high_t50_hyl_total_stoic            = stoic_ratio(both_dt, high_t50_hyl_site),
-          high_t50_hyl_stoic_with_high_hyl    = stoic_ratio(with_high_dt, high_t50_hyl_site),
-          high_t50_hyl_stoic_without_high_hyl = stoic_ratio(without_high_dt, high_t50_hyl_site),
-          n                              = length(peptide_with_both_sites),
-          sample_group
-        )
-      }
+    # Intensity-weighted Hyl stoichiometry of the higher-t50 residue
+    high_t50_stoic <- function(peptides) {
+      x <- pair_dt[aa_pos == high_pos & peptide_id %in% peptides]
+      x[hyl == TRUE, sum(peak_intensity)] / x[, sum(peak_intensity)]
     }
+    low_t50_hyl_peptides <- pair_dt[aa_pos == low_pos & hyl == TRUE, peptide_id]
+
+    data.table(
+      protein_accession   = acc,
+      low_t50_aa_pos      = low_pos,
+      high_t50_aa_pos     = high_pos,
+      stoic_all           = high_t50_stoic(both_peptides),
+      stoic_low_t50_hyl   = high_t50_stoic(low_t50_hyl_peptides),
+      stoic_low_t50_unmod = high_t50_stoic(setdiff(both_peptides, low_t50_hyl_peptides)),
+      n_peptides          = length(both_peptides),
+      sample_group        = sample_group
+    )
   }
 
-  rbindlist(rows)[high_t50_hyl_total_stoic > 0]
+  # Pairs without enough supporting peptides, or with no hydroxylation at the
+  # higher-t50 residue, drop out here.
+  out <- rbindlist(Map(
+    summarise_pair,
+    site_pairs$protein_accession, site_pairs$low_t50_aa_pos, site_pairs$high_t50_aa_pos
+  ))
+  out[stoic_all > 0]
 }
 
-# Define high and low t50 sites of BRD4 (535 included here for computation purpose)
-low_t50_sites <- data.table(protein_accession = "O60885", aa_pos = c(535, 538, 548))
-high_t50_sites  <- data.table(protein_accession = "O60885", aa_pos = c(535, 537, 550, 552))
+# Candidate BRD4 residues by t50 category. K535 is intermediate and therefore
+# appears in both lists: it is the higher-t50 partner of K538 and the lower-t50
+# partner of K537. Self-pairs are dropped.
+site_pairs <- CJ(
+  low_t50_aa_pos  = c(535L, 538L, 548L),
+  high_t50_aa_pos = c(535L, 537L, 550L, 552L)
+)[low_t50_aa_pos != high_t50_aa_pos][, protein_accession := "O60885"][]
 
-# Calculate interaction between high and low t50 sites across datasets
-# PNAS data-A (MQ_DI, no water loss)
-data_a_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")] %>%
-  {.[sample_name == "JQ1_HeLaWT_derivatised"]}
-data_a_interaction_summary <- calc_neighbouring_site_interaction(data_a_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT_PNAS2022")
+# Datasets contributing to the comparison: three independent experiments, with
+# MS_KR_1 providing both a WT and a JMJD6-induced sample.
+brd_genes <- c("BRD2", "BRD3", "BRD4")
+ms_kr1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_KR_1/MS_KR_1_all_per_pos_data.csv"))[gene_name %in% brd_genes]
+ms_ss_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_SS/MS_SS_all_per_pos_data.csv"))
 
-# MS_KR_1 data
-ms_kr1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_KR_1/MS_KR_1_all_per_pos_data.csv"))[gene_name %in% c("BRD2", "BRD3", "BRD4")]
-ms_kr1_wt_per_pos <- ms_kr1_per_pos[sample_name == "HeLaWT_NA_N_NA"]
-ms_kr1_wt_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_wt_per_pos, low_t50_sites, high_t50_sites, sample_group = "WT")
-
-# MS_KR_1 - iJMJD6 cells, 24h dox induction
-ms_kr1_24h_per_pos <- ms_kr1_per_pos[sample_name == "HeLaiJMJD6_Dox_N_NA"]
-ms_kr1_24h_interaction_summary <- calc_neighbouring_site_interaction(ms_kr1_24h_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 24h")
-
-# MS_SS data
-ms_ss1_per_pos <- fread(file.path(results.dir, "p2-analysis-setting/MS_SS/MS_SS_all_per_pos_data.csv")) %>%
-  {rbind(.[gene_name %in% c("BRD4")][sample_name == "18h_21pc_BRD4"], .[gene_name %in% c("BRD2", "BRD3")][sample_name == "18h_21pc_BRD23"])}
-ms_ss1_interaction_summary <- calc_neighbouring_site_interaction(ms_ss1_per_pos, low_t50_sites, high_t50_sites, sample_group = "iJMJD6 18h")
-
-# Combine interaction data from each dataset
-all_interaction_summary <- rbindlist(
-  list(
-    data_a_interaction_summary, ms_kr1_wt_interaction_summary,
-    ms_kr1_24h_interaction_summary, ms_ss1_interaction_summary
+per_pos_data_list <- list(
+  # PNAS data-A (MQ_DI, no water loss)
+  WT_PNAS2022 = fread(file.path(results.dir, "p2-analysis-setting/MQ_DI/DI_data-A_trp_m7_v7_def_all_per_pos_data.csv"))[
+    gene_name %in% brd_genes & sample_name == "JQ1_HeLaWT_derivatised"],
+  WT = ms_kr1_per_pos[sample_name == "HeLaWT_NA_N_NA"],
+  `iJMJD6 24h` = ms_kr1_per_pos[sample_name == "HeLaiJMJD6_Dox_N_NA"],
+  # In MS_SS, BRD4 and BRD2/3 were acquired in separate runs
+  `iJMJD6 18h` = rbind(
+    ms_ss_per_pos[gene_name == "BRD4" & sample_name == "18h_21pc_BRD4"],
+    ms_ss_per_pos[gene_name %in% c("BRD2", "BRD3") & sample_name == "18h_21pc_BRD23"]
   )
 )
 
-#Statistical inference of interaction data 
-interaction_out_data <- data.table()
+all_interaction_summary <- rbindlist(Map(
+  function(per_pos_data, sample_group) {
+    calc_neighbouring_site_interaction(per_pos_data, site_pairs, sample_group)
+  },
+  per_pos_data_list, names(per_pos_data_list)
+))
 
-all_sites_to_analyse <- all_interaction_summary[!duplicated(paste(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos))][, .(protein_accession, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)]
+# Per-pair paired t-tests across datasets (exploratory, unadjusted; pairs
+# quantified in fewer than three datasets are skipped).
+interaction_out_data <- all_interaction_summary[
+  , if (.N > 2) {
+    .(p_val = t.test(stoic_low_t50_unmod, stoic_low_t50_hyl, paired = TRUE)$p.value, n = .N)
+  },
+  by = .(protein_accession, low_t50_aa_pos, high_t50_aa_pos)
+]
 
-for(irow in 1:nrow(all_sites_to_analyse)){
-  
-  sl_all_interaction_summary <- merge(
-    all_interaction_summary,
-    all_sites_to_analyse[irow],
-    by = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos")
-  )
-  
-  if(nrow(sl_all_interaction_summary) > 2){
-    # Paired t-test: low Hyl stoichiometry without vs. with a high-stoic neighbour
-    t_out <- sl_all_interaction_summary %$%
-      t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
-    
-    m_all_interaction_summary <- melt(
-      sl_all_interaction_summary, 
-      id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n"), 
-      measure.vars = c("high_t50_hyl_stoic_without_high_hyl", "high_t50_hyl_stoic_with_high_hyl"),
-      variable.name = "type",
-      value.name = "stoichiometry"
-    )
-    
-    # combine the interaction_out_data table with p-value and sample size for site pair 
-    interaction_out_data <- rbind(
-      interaction_out_data,
-      data.table(all_sites_to_analyse[irow], p_val = t_out$p.value, n = nrow(sl_all_interaction_summary))
-    )} else {}
-}
 
-interaction_out_data
-
-# paired t-test 
+# Paired t-test pooling all residue pairs and datasets (reported in the paper)
 all_interaction_summary %$%
-  t.test(high_t50_hyl_stoic_without_high_hyl, high_t50_hyl_stoic_with_high_hyl, paired = TRUE)
+  t.test(stoic_low_t50_unmod, stoic_low_t50_hyl, paired = TRUE)
 
-# convert table into long format for plotting 
+# The 20 values above are 5 residue pairs measured in each of 4 samples, and so
+# are not mutually independent. As a robustness check, average the samples
+# within each residue pair so that every pair contributes one value, and repeat
+# the test (also reported in the paper).
+all_interaction_summary[
+  , .(stoic_low_t50_hyl = mean(stoic_low_t50_hyl),
+      stoic_low_t50_unmod = mean(stoic_low_t50_unmod)),
+  by = .(protein_accession, low_t50_aa_pos, high_t50_aa_pos)
+] %$%
+  t.test(stoic_low_t50_unmod, stoic_low_t50_hyl, paired = TRUE)
+
+# Convert table into long format for plotting
 m_all_interaction_summary <- melt(
-  all_interaction_summary, 
-  id.vars = c("protein_accession", "low_t50_stoic_aa_pos", "high_t50_stoic_aa_pos", "n", "sample_group"), 
-  measure.vars = c("high_t50_hyl_stoic_with_high_hyl", "high_t50_hyl_stoic_without_high_hyl"),
+  all_interaction_summary,
+  id.vars = c("protein_accession", "low_t50_aa_pos", "high_t50_aa_pos", "n_peptides", "sample_group"),
+  measure.vars = c("stoic_low_t50_hyl", "stoic_low_t50_unmod"),
   variable.name = "type",
   value.name = "stoichiometry"
 )
 
-# new column - type - with or without high_hyl
-m_all_interaction_summary[, type := gsub("high_t50_hyl_stoic_", "", type)]
+m_all_interaction_summary[
+  , type := factor(type, labels = c("low_t50_hyl", "low_t50_unmodified"))]
 
 # Plot
 ggplot(
-  data = m_all_interaction_summary[!(low_t50_stoic_aa_pos == 550)],
+  data = m_all_interaction_summary,
   aes(
     x = type,
     y = stoichiometry,
-    group = paste(sample_group, low_t50_stoic_aa_pos, high_t50_stoic_aa_pos),
-    color = paste(low_t50_stoic_aa_pos, high_t50_stoic_aa_pos)
+    group = paste(sample_group, low_t50_aa_pos, high_t50_aa_pos),
+    color = paste(low_t50_aa_pos, high_t50_aa_pos)
   )
 ) +
   geom_line(color = "black") +
@@ -701,6 +682,7 @@ ggplot(
 
 
 ```
+
 
 # Oxygen sensitivity
 

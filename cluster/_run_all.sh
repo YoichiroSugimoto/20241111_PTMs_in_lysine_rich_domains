@@ -25,6 +25,24 @@ export LANG=en_US.UTF-8
 # Submit as:  sbatch cluster/_run_all.sh
 cd /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains
 
+RUN_START=$(date +%s)
+
+report_runtime() {
+  local status=$?
+  local elapsed=$(( $(date +%s) - RUN_START ))
+  echo
+  echo " Pipeline run summary"
+  printf ' exit status : %d\n' "$status"
+  printf ' wall-clock  : %02d:%02d:%02d\n' \
+    $(( elapsed / 3600 )) $(( (elapsed % 3600) / 60 )) $(( elapsed % 60 ))
+  if [[ -n "${SLURM_JOB_ID:-}" ]] && command -v sacct >/dev/null 2>&1; then
+    sacct -j "$SLURM_JOB_ID" --units=G \
+      --format=JobID%-20,Elapsed,TotalCPU,MaxRSS,MaxVMSize,State 2>/dev/null
+  fi
+  return $status
+}
+trap report_runtime EXIT
+
 # Pin Guix (cluster/channels.scm) + reproducible toolchain (cluster/manifest.scm),
 # then knit. renv (activated in R/functions/_setup.R) restores the package library
 # on first run; with the consistent GCC from manifest.scm, Rcpp et al. compile cleanly.
