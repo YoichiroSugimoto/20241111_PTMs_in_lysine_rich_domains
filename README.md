@@ -59,7 +59,7 @@ The MaxQuant inputs should be placed in `data/`, as documented in [`data/README.
 
 Scripts are stored in `R/`, numbered in run order. Knit them in sequence, or run
 `Rscript R/_run_all.R`. 
-A full run takes approximately 21 minutes on a 4-CPU, 8 GB node.
+A full run takes approximately 20 minutes on a 4-CPU, 16 GB node.
 
 | Script | Purpose |
 |--------|---------|

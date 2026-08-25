@@ -33,10 +33,75 @@ scripts <- c(
 )
 r.dir <- dirname(.this_file)
 
+## --- Knit, timing each script ------------------------------------------------
+fmt_hms <- function(secs) {
+  sprintf("%02d:%02d:%02d", secs %/% 3600, (secs %% 3600) %/% 60, round(secs %% 60))
+}
+
+timings <- data.frame(
+  script  = character(0),
+  seconds = numeric(0),
+  status  = character(0),
+  stringsAsFactors = FALSE
+)
+
+run_start <- proc.time()[["elapsed"]]
+
 for (s in scripts) {
   rmd <- file.path(r.dir, s)
   message("\n=== Knitting: ", s, " ===")
-  rmarkdown::render(rmd, envir = new.env(), quiet = TRUE)
+
+  t0 <- proc.time()[["elapsed"]]
+  ok <- tryCatch({
+    rmarkdown::render(rmd, envir = new.env(), quiet = TRUE)
+    TRUE
+  }, error = function(e) {
+    message("!!! FAILED: ", conditionMessage(e))
+    FALSE
+  })
+  elapsed <- proc.time()[["elapsed"]] - t0
+
+  message(sprintf("    -> %s in %s", if (ok) "done" else "FAILED", fmt_hms(elapsed)))
+
+  timings <- rbind(timings, data.frame(
+    script  = basename(s),
+    seconds = elapsed,
+    status  = if (ok) "ok" else "FAILED",
+    stringsAsFactors = FALSE
+  ))
+
+  ## p2-01 produces the stoichiometry tables every later script reads, so there
+  ## is no point continuing if it failed.
+  if (!ok && grepl("p2-01", s)) stop("p2-01 failed; downstream scripts cannot run.")
 }
 
+total <- proc.time()[["elapsed"]] - run_start
+
+## --- Summary table -----------------------------------------------------------
+message("\n===============================================================")
+message(" Per-script run times")
+message("===============================================================")
+for (i in seq_len(nrow(timings))) {
+  message(sprintf(" %-42s %10s  %8s  %s",
+                  timings$script[i],
+                  fmt_hms(timings$seconds[i]),
+                  sprintf("%.1f min", timings$seconds[i] / 60),
+                  timings$status[i]))
+}
+message(sprintf("%s\n %-42s %10s  %8s",
+                strrep("-", 63), "TOTAL", fmt_hms(total),
+                sprintf("%.1f min", total / 60)))
+message(" R ", getRversion(), " | ", R.version$platform)
+message("===============================================================")
+
+## Machine-readable copy, so the README figures can be regenerated.
+results.dir <- file.path(dirname(r.dir), "results")
+dir.create(results.dir, showWarnings = FALSE, recursive = TRUE)
+utils::write.csv(
+  timings, file.path(results.dir, "run_all_timings.csv"), row.names = FALSE
+)
+
+if (any(timings$status == "FAILED")) {
+  quit(status = 1L)
+}
 message("\nAll scripts knitted.")

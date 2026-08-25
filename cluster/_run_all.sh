@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=3-00:00:0
-#SBATCH --mem=8G
+#SBATCH --mem=16G
 
 ## e.g. sbatch cluster/_run_all.sh
 
@@ -25,20 +25,53 @@ export LANG=en_US.UTF-8
 # Submit as:  sbatch cluster/_run_all.sh
 cd /fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains
 
+## --- Run-time reporting -----------------------------------------------------
+## The README quotes the wall-clock time and peak memory of a full pipeline run.
+## Those figures come from the block below, which is printed to the SLURM output
+## file. `report_runtime` is registered on EXIT so the summary is printed whether
+## the job succeeds or fails (needed because of `set -e` above).
+
 RUN_START=$(date +%s)
 
 report_runtime() {
   local status=$?
   local elapsed=$(( $(date +%s) - RUN_START ))
+
   echo
+  echo "==============================================================="
   echo " Pipeline run summary"
-  printf ' exit status : %d\n' "$status"
-  printf ' wall-clock  : %02d:%02d:%02d\n' \
+  echo "==============================================================="
+  printf ' exit status      : %d\n' "$status"
+  printf ' wall-clock       : %02d:%02d:%02d (hh:mm:ss)\n' \
     $(( elapsed / 3600 )) $(( (elapsed % 3600) / 60 )) $(( elapsed % 60 ))
-  if [[ -n "${SLURM_JOB_ID:-}" ]] && command -v sacct >/dev/null 2>&1; then
-    sacct -j "$SLURM_JOB_ID" --units=G \
-      --format=JobID%-20,Elapsed,TotalCPU,MaxRSS,MaxVMSize,State 2>/dev/null
+  printf ' host             : %s\n' "$(hostname)"
+  printf ' cpus-per-task    : %s\n' "${SLURM_CPUS_PER_TASK:-NA}"
+  printf ' mem requested    : %s\n' "${SLURM_MEM_PER_NODE:-NA} MB"
+
+  # Peak memory, read from the cgroup the job runs in. Unlike sacct's MaxRSS,
+  # this IS available from inside the job. memory.peak is cgroup v2; the
+  # max_usage_in_bytes path is the cgroup v1 equivalent.
+  for f in /sys/fs/cgroup/memory.peak \
+           /sys/fs/cgroup/memory/memory.max_usage_in_bytes; do
+    if [[ -r "$f" ]]; then
+      printf ' peak memory      : %s MiB (from %s)\n' \
+        "$(( $(cat "$f") / 1048576 ))" "$f"
+      break
+    fi
+  done
+
+  # sacct CANNOT report MaxRSS or TotalCPU while the job is still RUNNING, and
+  # this trap runs inside the job -- so those fields would come back blank.
+  # Print the command to run once the job has finished instead.
+  if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    echo
+    echo " For peak memory and CPU time from the accounting database, run this"
+    echo " AFTER the job has completed:"
+    echo "   sacct -j $SLURM_JOB_ID --units=M \\"
+    echo "     --format=JobID%-20,Elapsed,TotalCPU,MaxRSS,State"
   fi
+  echo "==============================================================="
+
   return $status
 }
 trap report_runtime EXIT
