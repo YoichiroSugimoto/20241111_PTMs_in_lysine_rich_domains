@@ -162,3 +162,56 @@ contrast_hydroxylation <- function(all_stoic_dt, group_col, sample_col = group_c
         value.var = "stoichiometry"
     )
 }
+
+## Is there a methionine within `n` residues of `positions` in each protein?
+##
+## accessions : character, UniProt accessions (must match `protein_bs` names)
+## positions  : integer, 1-based residue positions
+## protein_bs : AAStringSet from the reference FASTA (e.g. `all.protein.bs`)
+## n          : window half-width (2 = K±2, matching `met_within_2`)
+##
+## Returns "Yes"/"No", or NA if the accession is absent from `protein_bs`.
+## The window is clamped to the protein, so terminal sites are classified from
+## the residues that actually exist rather than excluded.
+met_within_n <- function(accessions, positions, protein_bs, n = 2L) {
+  
+  stopifnot(length(accessions) == length(positions))
+  
+  ## FASTA headers are sp|ACCESSION|NAME ... -- take the accession, the same
+  ## way import_reference_fasta() does.
+  acc <- stringr::str_split_fixed(names(protein_bs), "\\|", n = 3)[, 2]
+  
+  ## Materialise once as plain strings: substr() clamps and vectorises, which
+  ## avoids the out-of-bounds handling that subseq()/getSeq() would need.
+  seq_lookup <- setNames(as.character(protein_bs), acc)
+  
+  s <- seq_lookup[accessions]
+  
+  start <- pmax(1L, positions - n)
+  end   <- pmin(nchar(s), positions + n)
+  win   <- substr(s, start, end)
+  
+  out <- ifelse(grepl("M", win, fixed = TRUE), "Yes", "No")
+  out[is.na(s)] <- NA_character_
+  out
+}
+
+
+## Confirm that `positions` really index the same sequence as `protein_bs`.
+## Cheap insurance: if the reference FASTA used for the MaxQuant search differs
+## from the one loaded here, positions silently shift and every downstream
+## methionine call is wrong. Returns the offending rows (empty = all good).
+check_residue_at_position <- function(accessions, positions, protein_bs,
+                                      expected = "K") {
+  acc <- stringr::str_split_fixed(names(protein_bs), "\\|", n = 3)[, 2]
+  seq_lookup <- setNames(as.character(protein_bs), acc)
+  s <- seq_lookup[accessions]
+  observed <- substr(s, positions, positions)
+  data.table::data.table(
+    protein_accession = accessions,
+    aa_pos            = positions,
+    observed          = observed,
+    in_reference      = !is.na(s)
+  )[in_reference & observed != expected]
+}
+

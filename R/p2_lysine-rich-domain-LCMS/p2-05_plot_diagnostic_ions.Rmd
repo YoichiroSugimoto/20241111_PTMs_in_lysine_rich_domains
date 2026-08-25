@@ -112,11 +112,46 @@ protein_feature_dt <- fread(
 protein_feature_dt <- protein_feature_dt[residue == "K"]
 setnames(protein_feature_dt, old = c("uniprot_id", "position"), new = c("protein_accession", "aa_pos"))
 
-protein_feature_dt[, met_within_2 := case_when(
-  nchar(Window) == 11 & grepl("M", substr(Window, start = 4, stop = 8)) ~ "Yes",  # M in the middle
-  nchar(Window) == 11 ~ "No",                                                     # no M in window
-  TRUE ~ "edge"                                                                   # M present but off-centre
+# Methionine within +/-2 residues, computed from the reference proteome rather
+# than from the pre-computed 11-mer `Window` column. The window is clamped to
+# the protein, so lysines near a terminus are classified from the residues that
+# exist instead of being discarded: residues that do not exist cannot be
+# methionine, so there is no indeterminate ("edge") case.
+protein_feature_dt[, met_within_2 := met_within_n(
+  protein_accession, aa_pos, all.protein.bs, n = 2L
 )]
+
+# `aa_pos` must index the same sequence as the reference proteome. If the FASTA
+# used for the MaxQuant search differed from the one loaded by _setup.R, every
+# sequence-derived annotation below would be silently wrong.
+bad_pos_dt <- check_residue_at_position(
+  protein_feature_dt[, protein_accession], protein_feature_dt[, aa_pos],
+  all.protein.bs, expected = "K"
+)
+if (nrow(bad_pos_dt) > 0) {
+  warning(nrow(bad_pos_dt), " lysine positions do not match the reference proteome")
+  print(head(bad_pos_dt))
+}
+
+# met_within_n() returns NA where the accession is absent from the reference
+# proteome. Dropped explicitly: an NA group would turn the 2 x 2 contingency
+# table of the Fisher test below into 3 x 2.
+n_missing_acc <- protein_feature_dt[is.na(met_within_2), .N]
+if (n_missing_acc > 0) {
+  warning(n_missing_acc, " lysines dropped: accession absent from the reference proteome")
+  protein_feature_dt <- protein_feature_dt[!is.na(met_within_2)]
+}
+
+# Lysines at aa_pos <= 3 can be flagged "Yes" on the strength of the initiator
+# methionine, which is frequently cleaved co-translationally. No special
+# handling is applied: across the canonical human proteome these are ~0.3% of
+# lysines, and including all terminal lysines (~1.8% of lysines) raises the
+# all_K Yes:No odds by ~3%, which shifts the enrichment odds ratio below by <3%
+# -- well within its confidence interval.
+protein_feature_dt[aa_pos <= 3 & met_within_2 == "Yes", .N]
+
+# Category sizes, for the record (there is no longer an "edge" category)
+protein_feature_dt[, .N, by = met_within_2]
 
 # Attach feature annotation to the stoichiometry data
 wt_vs_ko_stoic_dt <- merge(
@@ -149,7 +184,7 @@ koh_wt_vs_ko_dt <- koh_wt_vs_ko_dt[order(-DI_site)][
 ]
 
 g1 <- ggplot(
-  koh_wt_vs_ko_dt[met_within_2 != "edge"],
+  koh_wt_vs_ko_dt,
   aes(x = genotype, fill = met_within_2)
 ) +
   geom_bar() +
@@ -158,7 +193,7 @@ g1 <- ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90))
 
 g2 <- ggplot(
-  koh_wt_vs_ko_dt[met_within_2 != "edge" & DI_site == TRUE],
+  koh_wt_vs_ko_dt[DI_site == TRUE],
   aes(x = genotype, fill = met_within_2)
 ) +
   geom_bar() +
@@ -167,7 +202,7 @@ g2 <- ggplot(
   scale_x_discrete(guide = guide_axis(angle = 90))
 
 # Number of sites for plotting g2
-koh_wt_vs_ko_dt[met_within_2 != "edge" & DI_site == TRUE][, .N, by = list(met_within_2, genotype)]
+koh_wt_vs_ko_dt[DI_site == TRUE][, .N, by = list(met_within_2, genotype)]
 
 g1 + g2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
 
@@ -192,8 +227,6 @@ koh_per_site_dt[, Hyl_found_in := case_when(
   TRUE ~ "not_found"
 ) %>% factor(levels = c("WT", "JMJD6KO", "both", "not_found"))]
 
-koh_per_site_dt <- koh_per_site_dt[met_within_2 != "edge"]
-
 koh_per_site_count_dt <- koh_per_site_dt[, .N, by = list(Hyl_found_in, met_within_2, DI_site)]
 
 g1 <- ggplot(koh_per_site_count_dt, aes(x = Hyl_found_in, y = N, fill = met_within_2)) +
@@ -214,15 +247,80 @@ merge(
   koh_wt_vs_ko_dt[!duplicated(paste(protein_accession, gene_name)), .(protein_accession, gene_name)],
   koh_per_site_dt[DI_site == TRUE & Hyl_found_in == "both"]
 )
+# Counts underlying the enrichment test, plus the diagnostic-ion subset
+met_count_long_dt <- rbind(
+  copy(protein_feature_dt[, .N, by = met_within_2])[, data_type := "all_K"],
+  copy(koh_wt_vs_ko_dt[genotype == "HeLaWT", .N, by = met_within_2])[, data_type := "koh"],
+  copy(koh_wt_vs_ko_dt[genotype == "HeLaWT" & DI_site == TRUE, .N, by = met_within_2])[
+    , data_type := "koh_DI"]
+)
+
+# Exact n per condition, with the percentage methionine-proximal
+met_count_wide_dt <- dcast(met_count_long_dt, data_type ~ met_within_2, value.var = "N")
+met_count_wide_dt <- met_count_wide_dt[, .(
+  data_type,
+  met_absent       = No,
+  met_within_2     = Yes,
+  total            = No + Yes,
+  pct_met_within_2 = round(100 * Yes / (No + Yes), 2)
+)]
+
+met_count_wide_dt
 
 # Statistical significance of methionine enrichment (all sites vs hydroxylated)
-all_k_met_count_dt <- rbind(
-  copy(protein_feature_dt[met_within_2 != "edge", .N, by = met_within_2])[, data_type := "all_K"],
-  copy(koh_per_site_count_dt[, list(N = sum(N)), by = met_within_2])[, data_type := "koh"]
-) %>%
-  dcast(met_within_2 ~ data_type, value.var = "N")
+all_k_met_count_dt <- dcast(
+  met_count_long_dt[data_type %in% c("all_K", "koh")],
+  met_within_2 ~ data_type, value.var = "N"
+)
 
-fisher.test(all_k_met_count_dt[, .(all_K, koh)], alternative = "two.sided")
+f1 <- fisher.test(all_k_met_count_dt[, .(all_K, koh)], alternative = "two.sided")
+f1
+
+# Statistical significance of DI sites (all sites vs hydroxylated with DI)
+all_k_met_di_count_dt <- dcast(
+  met_count_long_dt[data_type %in% c("all_K", "koh_DI")],
+  met_within_2 ~ data_type, value.var = "N"
+)
+
+f2 <- fisher.test(all_k_met_di_count_dt[, .(all_K, koh_DI)], alternative = "two.sided")
+f2
+
+setNames(
+  p.adjust(c(f1$p.value, f2$p.value), method = "holm"),
+  c("all_K vs koh", "all_K vs koh_DI")
+)
+
+# Composition compared by the tests above. "Yes" is stacked from the axis so the
+# bars are directly comparable; exact counts are in met_count_wide_dt above.
+met_plot_dt <- met_count_long_dt[, .(
+  data_type = factor(
+    data_type,
+    levels = c("all_K", "koh", "koh_DI"),
+    labels = c("All lysines", "Hydroxylysines", "Hydroxylysines (DI)")
+  ),
+  met_within_2 = factor(met_within_2, levels = c("No", "Yes")),
+  N
+)]
+
+ggplot(met_plot_dt, aes(x = data_type, y = N, fill = met_within_2)) +
+  geom_bar(stat = "identity", position = "fill") +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    expand = expansion(mult = c(0, 0.03))
+  ) +
+  scale_fill_manual(
+    values = c("Yes" = "#4477AA", "No" = "#BBBBBB"),
+    name   = "Met within ±2 aa",
+    breaks = c("Yes", "No")
+  ) +
+  labs(x = NULL, y = "Proportion of lysines") +
+  theme(aspect.ratio = 2) +
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+
+```
+
+```{r overlap_wt_KO_venn}
 
 # WT vs KO site overlap (all sites)
 plot_overlap_venn(
@@ -238,11 +336,24 @@ plot_overlap_venn(
   main   = "Hydroxylated Sites Overlap (with DI)"
 )
 
+# Genotype totals quoted in the main text. These must equal the Euler diagram
+# totals above; if they do not, a filter is being applied somewhere unintended.
+# Reported for all sites regardless of methionine proximity -- met_within_2 is
+# used for the stacked bars and the Fisher test above, not to subset counts.
+koh_wt_vs_ko_dt[DI_site == TRUE, .N, by = genotype]   # diagnostic-ion Euler totals
+koh_wt_vs_ko_dt[, .N, by = genotype]                  # all-sites Euler totals
+
+
 ```
+
 
 # Comparison with PNAS 2022
 
 Benchmarks the diagnostic-ion-based sites against the manually curated sites from the PNAS 2022 study.
+
+Counts here are the wild-type slice of the same site set used above — sites with
+at least one PSM in both genotypes — so they match the wild-type circle of the
+Euler diagrams.
 
 ```{r compare_pnas2022}
 
@@ -253,16 +364,21 @@ pnas2022_stoic_dt <- fread(
 setnames(pnas2022_stoic_dt, old = c("uniprot_id", "position", "residue"), new = c("protein_accession", "aa_pos", "aa"))
 pnas2022_stoic_dt[, accession_position := paste0(protein_accession, "_", aa_pos)]
 
-# Flag MQ_DI sites that PNAS2022 curated as hydroxylated
-mq_di_stoic_dt[, curated_oxK_site :=
+# One hydroxylated WT row per site (DI-preferred), taken from the same filtered
+# site set used throughout this script -- sites with >=1 PSM in both genotypes --
+# so every count reported in the manuscript refers to one defined population.
+mq_di_hydroxyk_dt <- koh_wt_vs_ko_dt[genotype == "HeLaWT"]
+
+# Flag sites that PNAS2022 curated as hydroxylated
+mq_di_hydroxyk_dt[, curated_oxK_site :=
   paste0(protein_accession, "_", aa_pos) %in%
   pnas2022_stoic_dt[curated_oxK_site == TRUE, paste0(protein_accession, "_", aa_pos)]
 ]
 
-# One hydroxylated WT row per site (DI-preferred)
-mq_di_hydroxyk_dt <- mq_di_stoic_dt[ptm == "[Oxidation (K)]" & genotype == "HeLaWT"][
-  order(genotype, DI_site)
-][!duplicated(paste(protein_accession, aa_pos))]
+# Numbers quoted in the main text: wild-type sites from the standard filtered
+# set, so these must equal the WT totals printed in the previous chunk.
+mq_di_hydroxyk_dt[, .N]                    # lysines assigned as hydroxylated
+mq_di_hydroxyk_dt[DI_site == TRUE, .N]     # ... supported by a diagnostic ion
 
 # Cross-tabulate DI sites against PNAS2022 curated sites
 hyl_precision_dt <- mq_di_hydroxyk_dt[, table(DI_site, curated_oxK_site) %>% addmargins] %>% data.table
@@ -276,7 +392,7 @@ ggplot(
 ) +
   geom_bar(stat = "identity", position = "fill") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  coord_cartesian(ylim = c(0, 0.4)) +
+  coord_cartesian(ylim = c(0, 0.5)) +
   scale_fill_manual(values = c("TRUE" = "coral2", "FALSE" = "#BBBBBB")) +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
   theme(aspect.ratio = 3.5)

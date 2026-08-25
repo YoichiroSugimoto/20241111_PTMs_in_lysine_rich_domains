@@ -21,7 +21,7 @@ not restore.
 | `cluster/channels.scm` | Pins the Guix revision (toolchain, R version, build deps). |
 | `cluster/manifest.scm` | Declares R + pandoc + **one consistent GCC toolchain** + system libs. |
 | `cluster/_run_all.sh`  | SLURM batch script: wraps `Rscript R/_run_all.R` in the Guix env. |
-| `R/renv.lock`          | The R package lockfile (note: kept under `R/`, not the root). |
+| `renv.lock`          | The R package lockfile |
 
 ## Why a single GCC version (the Rcpp fix)
 
