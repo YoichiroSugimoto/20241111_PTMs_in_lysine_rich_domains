@@ -1,7 +1,7 @@
 p2-01 · Compute PTM stoichiometry
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-25 August, 2026
+26 August, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -58,8 +58,6 @@ repo_root <- local({
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
 ```
-
-    ## - The project is out-of-sync -- use `renv::status()` for details.
 
 # Helper functions and shared settings
 
@@ -380,8 +378,8 @@ process_stoichiometry2(
     ## Processing: MS_KR_1_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19127763 1021.6   33303302 1778.6  33303302 1778.6
-    ## Vcells 210777540 1608.2  498108776 3800.3 498108773 3800.3
+    ## Ncells  19269436 1029.1   33435547 1785.7  33435547 1785.7
+    ## Vcells 211277249 1612.0  495190454 3778.1 495190453 3778.1
 
 # Stoichiometry with diagnostic ions — MS_SS
 
@@ -411,8 +409,8 @@ process_stoichiometry2(
     ## Processing: MS_SS_evidence.txt
 
     ##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-    ## Ncells  19128537 1021.6   33303302 1778.6  33303302 1778.6
-    ## Vcells 210778799 1608.2  498108776 3800.3 498108773 3800.3
+    ## Ncells  19270206 1029.2   33435547 1785.7  33435547 1785.7
+    ## Vcells 211278493 1612.0  495190454 3778.1 495190453 3778.1
 
 # Session information
 
@@ -430,7 +428,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-08-25
+    ##  date     2026-08-26
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 
@@ -439,6 +437,7 @@ sessioninfo::session_info()
     ##  P AnnotationDbi     * 1.72.0     2025-10-29 [?] Bioconduc~
     ##  P Biobase           * 2.70.0     2025-10-29 [?] Bioconduc~
     ##  P BiocGenerics      * 0.56.0     2025-10-29 [?] Bioconduc~
+    ##  P BiocManager         1.30.27    2025-11-14 [?] CRAN (R 4.5.0)
     ##  P Biostrings        * 2.78.0     2025-10-29 [?] Bioconduc~
     ##  P bit                 4.6.0      2025-03-06 [?] CRAN (R 4.5.0)
     ##  P bit64               4.8.2      2026-05-19 [?] CRAN (R 4.5.0)

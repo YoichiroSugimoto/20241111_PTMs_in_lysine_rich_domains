@@ -1,7 +1,7 @@
 p2-08 · Analyse hydroxylation kinetics
 ================
 Yoichiro Sugimoto and Pallavi Kesavan
-25 August, 2026
+26 August, 2026
 
 - <a href="#overview" id="toc-overview">Overview</a>
 - <a href="#setup" id="toc-setup">Setup</a>
@@ -41,14 +41,6 @@ data (`data/xic_MS_SS.csv`); reference proteome.
 # Setup
 
 ``` r
-# setwd("~/mdc_fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/")
-# Sys.setenv(USE_BUNDLED_LIBUV = "1")
-# renv::restore(
-#   lockfile = "/fast/AG_Sugimoto/home/users/yoichiro/projects/20241111_PTMs_in_lysine_rich_domains/R/renv.lock",
-#   prompt = FALSE
-# )
-
-
 ## Resolve the repository root (via the .here sentinel) and load the shared
 ## setup: packages, helper functions, ggplot/knitr settings, and project paths.
 repo_root <- local({
@@ -58,8 +50,6 @@ repo_root <- local({
 })
 source(file.path(repo_root, "R", "functions", "_setup.R"))
 ```
-
-    ## - The project is out-of-sync -- use `renv::status()` for details.
 
 # Load and preprocess data
 
@@ -1283,7 +1273,7 @@ sessioninfo::session_info()
     ##  collate  en_US.UTF-8
     ##  ctype    en_US.UTF-8
     ##  tz       Europe/Berlin
-    ##  date     2026-08-25
+    ##  date     2026-08-26
     ##  pandoc   2.19.2 @ /gnu/store/sqwwnsp5xb8yd3z1a57lhldcsvx3z9gb-profile/bin/ (via rmarkdown)
     ##  quarto   NA
     ## 
@@ -1293,6 +1283,7 @@ sessioninfo::session_info()
     ##  P beeswarm            0.4.0      2021-06-01 [?] CRAN (R 4.5.0)
     ##  P Biobase           * 2.70.0     2025-10-29 [?] Bioconduc~
     ##  P BiocGenerics      * 0.56.0     2025-10-29 [?] Bioconduc~
+    ##  P BiocManager         1.30.27    2025-11-14 [?] CRAN (R 4.5.0)
     ##  P Biostrings        * 2.78.0     2025-10-29 [?] Bioconduc~
     ##  P bit                 4.6.0      2025-03-06 [?] CRAN (R 4.5.0)
     ##  P bit64               4.8.2      2026-05-19 [?] CRAN (R 4.5.0)
